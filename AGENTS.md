@@ -30,3 +30,13 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 - Maintain meaningful commits throughout development. No post-deadline fixes or commits unless the organisers authorise them.
 - Official preliminary deadline: **25 October 2026, 07:59:59 MYT (UTC+8)**. The team's recommended internal target is **24 October, 20:00 MYT**.
 - Current official announcements and Terms & Conditions take precedence over this planning summary. Consult the linked sources if requirements change.
+
+<!-- antislop:start -->
+## Required skills for UI work
+
+- Use both `ui-ux-pro-max` and `antislop` throughout UI planning, implementation, changes and review for this project.
+- Read their `SKILL.md` instructions before UI work. Current locations: `~/.agents/skills/ui-ux-pro-max/SKILL.md` and `~/.agents/skills/antislop/SKILL.md`. If these paths change, resolve the skills from the current session's skill catalog.
+- The project's selected `antislop` mode is **during**: apply its rules while working, rather than waiting for a final audit. Do not ask the team to select the mode again unless they request a change. An explicit later user instruction takes precedence.
+- Use `ui-ux-pro-max` for contextual design and UX guidance, accessibility, responsive layout and implementation guidance for the chosen stack. Use `antislop` as the quality filter for visual decisions, content and working interactions; run its Delivery Gate and report evidence before delivering UI.
+- Follow the team's chosen product and design direction. This skill requirement does not select a product, visual style or technology stack, or authorise application implementation before the team supplies a concrete direction.
+<!-- antislop:end -->
