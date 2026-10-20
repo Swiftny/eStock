@@ -1,97 +1,178 @@
-# Preliminary submission checklist
+# eStock: complete submission checklist
 
-Working checklist based on the supplied written sources, reviewed 20 October 2026. Confirm current organiser announcements before submission. Unticked items indicate work to verify, not proof that a requirement has been completed.
+20 October 2026 | TooGoodToBeTrue | Domain 2 | All boxes remain unverified unless supported by actual evidence.
 
-**Official deadline: 25 October 2026, 07:59:59 MYT (UTC+8).**
+**Internal target:** Saturday, 24 October 2026, 20:00 MYT. PH/orientation set 25 October, 07:59:59 AM; website/FAQ say 11:59 PM. Use the earlier deadline until official clarification. See COMPLIANCE_MATRIX.md for sources and all conflicts.
 
-**Recommended team target: 24 October 2026, 20:00 MYT.**
+The internal PRD is product/prd.md. Internal files do not replace official PDF templates. Names other than the two official PDFs below are team conventions, not claimed organiser filename restrictions.
 
-## 1. Proposal / requirements PDF
+## 1. Six preliminary deliverables
 
-Use the official template and name the single PDF `SDC2026_TooGoodToBeTrue_Preliminary.pdf` (the template's TeamName placeholder replaced with the team's name).
+| No. | Artifact | Required file/URL | Complete when |
+| --- | --- | --- | --- |
+| 1 | Official-template proposal PDF | submission/SDC2026_TooGoodToBeTrue_Preliminary.pdf | All fields complete, word limits correct, signed/dated |
+| 2 | Pitch deck | submission/eStock_Pitch_Deck.pptx; additional preview PDF | Opens correctly; problem/solution/technical/impact content matches video |
+| 3 | Working prototype | Live Replit/deployment URL and access guide | Tested in a fresh session; core journey and UI work |
+| 4 | Technical & Tools Declaration | submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf | All actual resources/proof included; signed/dated |
+| 5 | GitHub source | Correct public repository URL | Source matches demo; Apache LICENSE; committee access |
+| 6 | Pitch/demo video | YouTube URL; optional local master submission/eStock_Pitch_Demo.mp4 | 5–7 minutes, accessible, shows prototype |
 
-- [ ] Team and project details completed.
-- [ ] Specific problem and affected users: maximum 250 words.
-- [ ] Proposed AI solution: maximum 300 words; explain the actual role of AI.
-- [ ] Stack, interfaces and conceptual architecture described, including sponsor resources if used.
-- [ ] Design-thinking and deployment strategy: maximum 200 words.
-- [ ] Exact SDG target(s), numeric baseline, measurable KPI and realistic final-stage impact target completed.
-- [ ] Estimates and external benchmarks labelled and cited; synthetic demo measurements distinguished from real-world impact.
-- [ ] Readiness/workshop checklist checked truthfully. Verify the template's mandatory GenAI, Database and Cloud Deployment workshop requirement with the organisers; do not mark attendance that did not happen.
-- [ ] Prior work, third-party code/data/models/licences and any employment IP questions answered accurately.
-- [ ] Leader signature and date added.
-- [ ] All fields and word limits checked; exported PDF inspected for clipping or blank responses.
+No explicit preliminary deck extension requirement was found in reviewed sources. The team chooses PPTX for editing/opening and a backup PDF. No official ten-slide cap is verified; the pitch guide's ten-slide outline is a team recommendation.
 
-## 2. Pitch slides
+## 2. Official proposal
 
-- [ ] Problem, users, approach, technical implementation and expected impact covered.
-- [ ] One clear demonstrated workflow aligns with proposal and deployed build.
-- [ ] Orbyte hub fit, reuse, human approval, permissions and log explained.
-- [ ] Main build risk and fallback explained.
-- [ ] Links accessible to judges.
+- [ ] Use the [PT template](https://drive.google.com/file/d/1jNjuMJfhMYjo3qQw_PmmeGM-INEwuleo/view), not just an export of the long PRD.
+- [ ] Team, Domain 2, SDG 8, eStock, leader, contact, university, four members.
+- [ ] Problem Context ≤250 words.
+- [ ] Proposed AI Solution ≤300 words.
+- [ ] Conceptual Tech Stack: framework/API/DB/cloud, block diagram, sponsor usage.
+- [ ] Design-Thinking/Deployment ≤200 words.
+- [ ] Exact SDG subtargets 8.2/8.3.
+- [ ] Numeric baseline, core KPI, percentage Phase 2 target; distinguish assumptions from results.
+- [ ] GenAI/Database/Cloud checklist for all members completed truthfully; source conflict clarified.
+- [ ] Prior-owned/pre-existing work yes/no with explanation if needed.
+- [ ] For significant pre-event assets, record applicability of OH §8.2.1 organiser approval, status and written reference/date if required. Clarify uncertainty before marking complete; distinguish ordinary supporting libraries.
+- [ ] Third-party code/data/models and licences.
+- [ ] Employment/internship IP conflicts yes/no using each member's facts.
+- [ ] All members review/adapt the narrative and can explain it.
+- [ ] Actual leader signature and date.
+- [ ] Export one PDF with the official name; open it to check clipping, fonts and page breaks.
 
-## 3. Working prototype
+Source draft: submission/PROPOSAL_DRAFT.md relative to docs/. This is not yet an official PDF or signed document.
 
-- [ ] Functional interface and accessible working build provided.
-- [ ] One trigger → connected data → decision → human approval → outcome/log journey works.
-- [ ] Synthetic records only; simulated integrations and roles clearly labelled.
-- [ ] Missing information, rejected approval and other core exceptions handled.
-- [ ] Judge access instructions and synthetic demo account(s), if needed, documented.
-- [ ] Deployment tested outside the developer's signed-in session.
-- [ ] No real payments or statutory submissions performed.
+## 3. Technical & Tools Declaration
 
-## 4. Technical & Tools Declaration PDF
+- [ ] Use the [TD template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view).
+- [ ] Team/leader/contact/university/live URL/repository URL.
+- [ ] Architecture ≤200 words.
+- [ ] Languages/frameworks/libraries: names, actual versions, purpose, licences.
+- [ ] External APIs: provider/purpose/free-paid-sponsor tier; no keys.
+- [ ] Hosting/storage/DB/auth/compute: provider, actual plan and region.
+- [ ] Runtime model: ID, pinned revision, pretrained/fine-tuned/trained, source and terms.
+- [ ] Dataset: generator/version/seed/synthetic/no personal records, source/licence.
+- [ ] AI-assisted development: actual Codex/model/tool, purpose and extent.
+- [ ] Team review/testing explanation ≤100 words.
+- [ ] Sponsor resources: Replit/RunPod credit/platform and mentoring if actually used.
+- [ ] Essential/replaceable explanation ≤100 words.
+- [ ] Privacy/data handling ≤150 words.
+- [ ] Risks/limitations ≤150 words.
+- [ ] Licence/security/access/declaration checklist completed truthfully.
+- [ ] Non-applicable categories marked No/None; unknowns are not disguised as None.
+- [ ] Replit/RunPod proof included in this PDF.
+- [ ] Leader signature and date.
+- [ ] Correctly named PDF exported and inspected.
 
-Use the official template and name the single PDF `SDC2026_TooGoodToBeTrue_TechDeclaration.pdf`.
+Source draft: docs/submission/TECH_DECLARATION_DRAFT.md. Do not declare planned resources as already used.
 
-- [ ] Team, live prototype and repository URLs completed.
-- [ ] Architecture overview: maximum 200 words.
-- [ ] Languages, framework/library versions, purpose and licences recorded.
-- [ ] Every external API and access tier recorded, without keys.
-- [ ] Cloud platforms, purpose, deployment, plan and region recorded.
-- [ ] Models/providers/versions/terms and every dataset recorded.
-- [ ] AI-assisted development tools, extent and purpose of use recorded.
-- [ ] Team review of AI outputs explained: maximum 100 words.
-- [ ] Sponsor resources and whether replaceable explained: maximum 100 words for the explanation.
-- [ ] Data handling, protection and retention explained: maximum 150 words.
-- [ ] Known AI/technical risks and mitigations explained: maximum 150 words.
-- [ ] Own Replit project/history or live deployment link included as proof.
-- [ ] RunPod applicability clarified with organisers; if used, include required own-account evidence (Pod ID/GPU/runtime, or serverless endpoint as applicable).
-- [ ] No blank categories: use No/None where appropriate.
-- [ ] Compliance checklist, leader signature and date completed truthfully.
+## 4. Replit and RunPod proof
 
-## 5. GitHub repository
+- [ ] Replit actually forms part of the solution in the team's account/project.
+- [ ] Include at least one PH §10.6 proof: live URL, project history link or credit-finished proof; exhausting credit is not required.
+- [ ] Model actually performs inference on RunPod; merely storing code/model is insufficient.
+- [ ] Own-account dashboard shows Pod ID, GPU type and runtime.
+- [ ] For serverless, endpoint URL replaces Pod ID; clarify GPU/runtime/equivalent evidence if the display differs.
+- [ ] Actual model request/result, revision, data hash and timestamp stored as supporting evidence.
+- [ ] Redact API keys/payment details/tokens. Do not fabricate screenshots.
+- [ ] Include proof in TechDecl; additional standalone PDFs may follow the sample if chosen.
 
-- [ ] Correct new repository and remote verified.
-- [ ] Genuine meaningful commits reflect development throughout the event.
-- [ ] Apache 2.0 `LICENSE` present at repository root; applicable notices preserved.
-- [ ] README explains project, team/domain/SDG, setup, demo and links.
-- [ ] Configuration examples use placeholders; credentials and local secrets excluded.
-- [ ] Submission documents and proof files organised clearly (sample uses `submission/`).
-- [ ] Designated committee GitHub accounts added as collaborators before deadline.
-- [ ] Repository made public by submission and stays accessible for judging.
-- [ ] Repository and materials frozen at the official deadline unless organisers authorise changes.
+Recommended team paths:
 
-## 6. YouTube pitch/demo video
+    submission/REPLIT PROOF OF USE.pdf
+    submission/RUNPOD PROOF OF USE.pdf
+    submission/evidence/forecast-evaluation.csv
+    submission/evidence/forecast-evaluation.md
+    submission/evidence/acceptance-results.md
+    submission/evidence/demo-access-check.md
 
-- [ ] Complete duration is 5–7 minutes.
-- [ ] Pitch includes the functional prototype demonstration.
-- [ ] Recorded behaviour matches source code, slides and proposal.
-- [ ] Audio and screen text are understandable.
-- [ ] YouTube link opens for a viewer outside the team's account.
+These files have not been created by the PRD work. Actual evidence can only be produced after implementation/testing.
 
-## Final submission
+## 5. Prototype and data
 
-- [ ] Team member watches the submission/GitHub tutorials; current portal and Discord requirements checked.
-- [ ] All six items submitted through `sdchack.my` before the deadline.
-- [ ] Submitted URLs and PDF files opened and checked.
-- [ ] Submission confirmation retained by the team.
+- [ ] Operational/evaluation dataset is team-created synthetic data, clearly labelled.
+- [ ] CSV and outgoing-stock/receiving forms.
+- [ ] Consistent stock ledger, canonical sales, daily cutoff and units.
+- [ ] Inference/model source/fallback visible.
+- [ ] Quantity accounts for lead time, cycle, buffer and dated inbound.
+- [ ] Pending unconfirmed POs prevent duplicate purchasing.
+- [ ] Manager notification and approval.
+- [ ] Staff cannot approve by calling the endpoint directly.
+- [ ] Stale/duplicate approvals handled.
+- [ ] Clear outbox/PO outcomes; do not claim a mock channel is real WhatsApp.
+- [ ] Supplier acknowledgement differs from message delivery.
+- [ ] Working partial/full receiving and audit.
+- [ ] Demonstrable errors/missing data/late inbound/rejection/fallback.
+- [ ] No real payments/statutory filing/advice.
+- [ ] No dependency on live Orbyte APIs; all mock contracts labelled.
+- [ ] Deployment/database persist after restart/redeploy.
+- [ ] Access guide/demo reset usable by judges without developer login.
 
-## Sources
+## 6. GitHub and repository
 
-- [Participant Handbook: §§6.3, 9 and 10](https://drive.google.com/file/d/1fGBS-jevDj_FrF8wsbYNPzyU5TTrfk1V/view)
-- [Domain 2 brief](https://drive.google.com/file/d/11wqbeO-HYep-DJPQ-LPZnrZfQvCgr5BU/view)
-- [Proposal template](https://drive.google.com/file/d/1jNjuMJfhMYjo3qQw_PmmeGM-INEwuleo/view)
-- [Tools declaration template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view)
-- [Terms & Conditions](https://drive.google.com/file/d/1tZOLKK-fA7Uh3zu1otdL6Z-oC_FKMtyl/view)
-- [Sample repository](https://drive.google.com/file/d/1Atfzhuehpr6zYvM0oenDOzXeNymTHow_/view)
+- [ ] Correct repository, created after 19 October, 20:00 MYT per TC/ORI.
+- [ ] Genuine history and meaningful development commits; no backdating/force rewrite/sample .git.
+- [ ] Root Apache 2.0 LICENSE preserved; upstream notices available.
+- [ ] README includes problem, solution, team/domain/SDG, implemented features, setup, model, demo, limitations and all links.
+- [ ] .env.example contains placeholders only; .gitignore excludes secrets/cache/private contacts.
+- [ ] No credentials in source, history, logs, screenshots or video.
+- [ ] Committee usernames taken from official instructions and given access before deadline.
+- [ ] Private during development; public before submission and accessible during judging.
+- [ ] Source/deployment/documents opened incognito.
+- [ ] Record judged release commit/tag and deployment snapshot URL.
+- [ ] Freeze source, deployment and materials after deadline unless authorised.
+
+## 7. Deck and video
+
+- [ ] Outline/script follow docs/submission/PITCH_AND_DEMO.md.
+- [ ] Editable PPTX opens on another machine; backup PDF available.
+- [ ] Readable text/screenshots; no fabricated features/figures.
+- [ ] Total video 5–7 minutes; six-minute target.
+- [ ] Demo shows trigger → connected data → forecast/rules → approval → outcome/log.
+- [ ] Show real RunPod inference, simulated channels and synthetic labels.
+- [ ] Show one exception and uncertainty limits.
+- [ ] Explain benefit/SDG, source/provenance, risk/fallback and Orbyte reuse.
+- [ ] Narrative matches prototype, proposal, declaration and README.
+- [ ] No API keys/private emails/payment details in the recording.
+- [ ] Judges can open YouTube URL; upload/processing complete.
+- [ ] Clear audio, readable cursor/window and duration checked after export.
+- [ ] Local recording/backup stored; does not replace mandatory prototype link.
+
+## 8. Team readiness and official updates
+
+- [ ] Four members match portal; Marco is leader; phone/contact/university details match.
+- [ ] All members joined Discord and checked official announcements.
+- [ ] Reveal attendance and workshop checklist verified.
+- [ ] All AI/framework/model/data/sponsor/prior-work usage declared.
+- [ ] Every member can explain model, baselines, quantity rules, database, approval and mocks.
+- [ ] Check domain-specific synthetic-only rule; general templates do not authorise real data.
+- [ ] Retain any written clarification of morning vs evening deadline.
+- [ ] Check submission/GitHub tutorials and portal fields; file sizes/types comply.
+- [ ] No undocumented mystery dependency on prototype/demo accounts.
+
+## 9. Final upload gate
+
+- [ ] All six items final and aligned.
+- [ ] Two official PDF names and word counts correct.
+- [ ] Check every link/file/video/deck/prototype/proof in a fresh session.
+- [ ] Accurate signatures/dates/declarations.
+- [ ] Submit through sdchack.my before the internal target.
+- [ ] Retain receipt/screenshot/portal confirmation timestamp.
+- [ ] Recheck submitted links, not just clipboard values.
+- [ ] Record Git commit/deployment version matching the video.
+- [ ] Freeze after deadline; changes only under official instruction.
+
+## 10. Owner and final-link tracker
+
+Complete when the team assigns work; names have not been allocated at the PRD stage.
+
+| Item | Owner | Target | Actual status/link |
+| --- | --- | --- | --- |
+| Official proposal PDF | NOT ALLOCATED | Friday draft; Saturday final | Not created |
+| Technical & Tools Declaration and proof | NOT ALLOCATED | Inventory from Tuesday; Saturday final | Not created |
+| PPTX and backup PDF | NOT ALLOCATED | Friday draft; final before recording | Not created |
+| Prototype and access guide | NOT ALLOCATED | Full workflow Thursday; stable Friday | Not created |
+| GitHub, committee access and licence | NOT ALLOCATED | Throughout development; check before submission | Repository exists; submission readiness unverified |
+| Video and YouTube | NOT ALLOCATED | Friday rehearsal; Saturday upload | Not created |
+| Portal submission/confirmation | NOT ALLOCATED | Saturday, 24 October, 20:00 MYT | Not submitted |
+| Workshops/announcements/metadata | NOT ALLOCATED | Check Tuesday and again before submission | Unverified |
+
+For each incomplete checkbox, record owner, blocker and next action. Do not let AI mark a checkbox complete without evidence.

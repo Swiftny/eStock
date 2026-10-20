@@ -1,79 +1,87 @@
-# sdc2026-TooGoodToBeTrue-domain2
+# eStock
 
+A replenishment assistant for SMEs: connect sales and stock records, estimate demand, and turn manager approval into a recorded supplier request.
 
-Four-person team participating in **Domain 2: Orbyte Smart SME Challenge — Less Busywork, Better Business**.
+**TooGoodToBeTrue — SDC Hackathon 2026, Domain 2: Orbyte Smart SME Challenge.**
 
-**Status:** problem discovery and repository setup. The team has not selected a problem, solution or technology stack. Product fields below are intentionally blank.
+**Status:** documentation and planning. The application, deployment, runtime model, testing and submission have not been completed. eStock is the team's proposal for the Orbyte ecosystem, not an official module or an integration already approved by the sponsor.
 
-## Project name
+## Selected product workflow
 
-## Problem
+Synthetic CSV/outgoing-stock form → daily snapshot → forecast and rules → quantity recommendation → manager notification → approve/reject → supplier outbox/PO → supplier confirmation → receiving and activity log.
 
-## Proposed solution
+The product is configurable for SMEs managing physical stock. Recommended MVP fixture: one organisation/location, 3–5 SKUs and one primary supplier per SKU.
 
-## Target users
+- Input: team-created synthetic data and entry forms.
+- AI: demand forecasting from sales history, compared against baselines.
+- Rules: lead time, 7/30-day cycle, buffer, incoming stock, pack/MOQ and budget.
+- Controls: manager approval, version validation and duplicate protection.
+- Channels: mandatory outbox/simulator; real WhatsApp if feasible; Telegram if time permits.
+- Proposed platforms: application on Replit and real forecast inference on RunPod. Accounts/credits have not been verified.
+- Framework, model revision and final assignments remain undecided.
+- All repository documentation must be in English. Future UI work must use both `ui-ux-pro-max` and `antislop` in `during` mode, as specified in AGENTS.md.
 
-## Core workflow
+## Start here
 
-## MVP features
-
-## Out of scope
-
-## Technology stack and architecture
-
-## AI's role
-
-## Impact measurement
-
-| Baseline | KPI | Target | Observed result / evidence |
-| --- | --- | --- | --- |
-| | | | |
-
-## Current implementation
-
-Repository guidance and the submission checklist are prepared. There is no application prototype or verified deployment yet.
-
-## Run and demonstrate
-
-Run instructions, configuration examples and a synthetic demo scenario will be documented after the team selects and builds the project.
-
-## Links
-
-| Resource | URL |
+| Document | Purpose |
 | --- | --- |
-| Live prototype | |
-| Replit project / proof | |
-| RunPod proof, if applicable | |
-| Proposal PDF | |
-| Pitch deck | |
-| Tools declaration PDF | |
-| YouTube pitch and demo | |
+| [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) | Decisions, actual status, team, repository setup and next actions |
+| [Full PRD](docs/product/prd.md) | Scope, data, workflow, AI, rules, architecture, API, UX and acceptance |
+| [Decision register](docs/product/DECISIONS.md) | User decisions, recommendations and unknown facts |
+| [Rules and source conflicts](docs/COMPLIANCE_MATRIX.md) | Official requirements, provenance and verification gaps |
+| [Tuesday–Saturday build plan](docs/plans/BUILD_PLAN.md) | Work sequence, workstreams and scope cuts |
+| [Submission checklist](docs/SUBMISSION_CHECKLIST.md) | Six deliverables, proof, exports, access and final gate |
+| [Deck, pitch and demo guide](docs/submission/PITCH_AND_DEMO.md) | Slide outline, six-minute rundown, recording and upload |
+| [Proposal draft](docs/submission/PROPOSAL_DRAFT.md) | Text to transfer into the official PDF template |
+| [Tools declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md) | Resources, AI assistance, licences, privacy and proof |
+| [AI handoff](docs/AI_HANDOFF.md) / [AGENTS.md](AGENTS.md) | Instructions for future sessions and working rules |
 
 ## Team
 
-| Member | Role | GitHub |
+| Member | Reported skills/contributions | University |
 | --- | --- | --- |
-| | | |
-| | | |
-| | | |
-| | | |
+| Marco Ryan Suseno | Team leader; frontend | Xiamen University |
+| Riakudu Vittorios Surjoraharjos | PRD, frontend, UI/UX | Xiamen University |
+| Maximillion Cang | Database | Xiamen University |
+| William Christiansen | System design | Xiamen University |
 
-## Project guidance
+All four members reported Xiamen University. These skills are context, not final assignments. Registration contacts are stored separately from public source.
 
-- [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md): verified requirements, current decisions, progress, blockers and next actions.
-- [AGENTS.md](AGENTS.md): working instructions for Codex and other assistants that support this file.
-- [Submission checklist](docs/SUBMISSION_CHECKLIST.md): proposal, pitch, prototype, declaration, repository and 5–7-minute YouTube demonstration.
+## Running and testing
 
-Official preliminary deadline: **25 October 2026, 07:59:59 MYT (UTC+8)**. Recommended internal target: **24 October, 20:00 MYT**.
+There is no application or run command yet. Once the stack is selected and implementation is authorised, add runtime requirements, installation, migration/seed instructions, configuration examples without secrets, run commands, tests and demo instructions. Do not include untested run steps.
 
-## Competition sources
+## Results and evidence
 
-- [Domain 2 brief and rubric](https://drive.google.com/file/d/11wqbeO-HYep-DJPQ-LPZnrZfQvCgr5BU/view)
-- [Participant Handbook](https://drive.google.com/file/d/1fGBS-jevDj_FrF8wsbYNPzyU5TTrfk1V/view)
-- [All shared materials](https://drive.google.com/drive/folders/1xw7c2aN8N-at8hPEULzkcU76e_FFb0Ef)
+| Item | Status |
+| --- | --- |
+| Time to prepare a replenishment decision | Planning assumption: 10 minutes; not measured |
+| Phase 2 target | Proposed 50% reduction; not achieved/verified |
+| Model vs baselines | Method planned; no results yet |
+| Replit/RunPod | No runtime usage evidence yet |
+| Application acceptance | Not run |
 
-Use team-created synthetic business records, keep people in control of consequential actions, and retain an activity log. Replit is required; the RunPod requirement discrepancy remains pending organiser clarification. Record actual tool use in the tools declaration.
+## Submission links
+
+| Resource | URL/status |
+| --- | --- |
+| Live prototype and access guide | Not created |
+| Replit project/proof | Not provided |
+| RunPod proof | Not created |
+| Official proposal PDF | Not exported/signed |
+| Pitch PPTX / backup PDF | Not created |
+| Tools declaration PDF | Not exported/signed |
+| YouTube pitch/demo | Not recorded/uploaded |
+| GitHub | [Swiftny/sdc2026-TooGoodToBeTrue-domain2](https://github.com/Swiftny/sdc2026-TooGoodToBeTrue-domain2) |
+
+All repository drafts are working materials, not evidence of completed deliverables.
+
+## Timing and main rules
+
+Internal target: **Saturday, 24 October 2026, 20:00 MYT**. The handbook/orientation specify **25 October, 07:59:59 AM**; the website/FAQ specify **11:59 PM**. Use the earlier deadline until official clarification. See the compliance matrix for sources and other conflicts.
+
+Use only synthetic operational data, human approval and audit records. The prototype must work; a deck/video alone is insufficient. Prepare all six deliverables, platform proof and judge access. Do not expose secrets or describe simulation as real messaging/integration.
 
 ## Licence
 
-This project uses the [Apache License 2.0](LICENSE).
+Project source uses the [Apache License 2.0](LICENSE). Third-party models, datasets, libraries, assets and materials retain their own licences and must be declared.

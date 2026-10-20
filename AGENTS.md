@@ -4,13 +4,18 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 
 ## Current state
 
-- Four-person team, TooGoodToBeTrue; assigned Domain 2, Orbyte Smart SME Challenge.
-- The problem, target business and technology stack are still undecided. Discussed examples are candidates, not approved features or validated demand.
-- The user has authorised repository setup and context transfer. Application implementation needs a concrete direction from the team; do not treat the WhatsApp order idea as selected.
-- The user requested blank problem and solution fields. Leave all undecided product fields blank until the team supplies its choice; do not fill them from earlier brainstorms.
+- Four-person team TooGoodToBeTrue; Domain 2, Orbyte Smart SME Challenge.
+- The user has now selected **eStock**: a configurable replenishment assistant for SMEs managing physical inventory. This supersedes the earlier instruction to leave product fields blank.
+- Read docs/product/prd.md and docs/product/DECISIONS.md after PROJECT_CONTEXT.md. Review docs/COMPLIANCE_MATRIX.md, docs/plans/BUILD_PLAN.md and docs/SUBMISSION_CHECKLIST.md before relevant work.
+- Approved input: team-created synthetic CSV plus outgoing-stock and receiving forms. Workflow: movement → daily analysis/forecast → recommendation → manager approval → supplier outbox/PO → acknowledgement → receiving/audit.
+- Core demo requires a persistent simulated outbox. Real WhatsApp is preferred if feasible; Telegram is optional. Label each integration honestly.
+- Frameworks, active platform credits, final work assignments and visual direction remain open. Proposed technical defaults in the PRD are recommendations.
+- This request authorises documentation and project handoff. **Do not build an application, purchase services, send real messages, commit or push solely because this PRD exists.** Follow subsequent user instructions for implementation or publishing.
+- Names/university are recorded in the context; registration contacts live in ignored .private/TEAM_DETAILS.md. Keep personal contacts outside synthetic demo data and public source.
 
 ## Working approach
 
+- Write all repository documentation and new explanatory text in English. Preserve proper names, contact values, URLs, file paths and technical identifiers. This language requirement does not authorise application scaffolding; agree on M0 technical choices first.
 - Build one complete SME workflow: trigger → connected information → decision → human approval → visible outcome and activity log.
 - Use synthetic data only. Mock Orbyte interfaces and permissions are allowed. Live Orbyte access is not provided.
 - Prefer a small working workflow, clear explanations and tools the team can understand. Use AI where it has a specific purpose; keep arithmetic and validation reliable.
@@ -25,10 +30,10 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 
 ## Competition constraints
 
-- Replit must be used, with proof of use. Resolve the RunPod inconsistency described in the context file through the organisers.
+- Replit must be used with own-project evidence. The eStock plan requires real numerical forecast inference on RunPod with own-account evidence; merely writing a worker or taking a dashboard screenshot is insufficient. Record the handbook/sample conditionality in the compliance matrix.
 - The repository requires an Apache 2.0 `LICENSE` file. Keep it private while building, add designated committee collaborators before submission, and make it public by submission for judging.
 - Maintain meaningful commits throughout development. No post-deadline fixes or commits unless the organisers authorise them.
-- Official preliminary deadline: **25 October 2026, 07:59:59 MYT (UTC+8)**. The team's recommended internal target is **24 October, 20:00 MYT**.
+- Deadline conflict: Participant Handbook/orientation say **25 October 2026, 07:59:59 AM MYT**; website/FAQ say **11:59 PM MYT**. Use the earlier deadline pending authoritative written clarification. Internal target: **24 October, 20:00 MYT**. Freeze the judged repository and live build after the applicable deadline.
 - Current official announcements and Terms & Conditions take precedence over this planning summary. Consult the linked sources if requirements change.
 
 <!-- antislop:start -->

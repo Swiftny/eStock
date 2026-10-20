@@ -10,7 +10,7 @@ Thumbs.db
 *.pem
 *.key
 
-# Common local dependencies and caches; stack is still undecided
+# Common local dependencies and caches; final stack remains open
 node_modules/
 .venv/
 venv/
@@ -19,3 +19,6 @@ __pycache__/
 .pytest_cache/
 .cache/
 *.log
+
+# Private registration contacts and local submission working notes
+.private/
