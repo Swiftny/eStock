@@ -13,9 +13,9 @@ Handoff prepared on 20 October 2026, Malaysia time. This is a planning summary o
 
 ### Local setup status
 
-The project folder was initially empty and had no local Git metadata. The setup creates a local `main` branch and configures the user-supplied `origin` remote, with the handoff files left uncommitted. The remote history, README and LICENSE have **not** been downloaded: SSH reported that GitHub's ED25519 host key was not yet trusted, and HTTPS had no available username/authentication. Do not claim that GitHub authentication, remote access or the remote files have been verified.
+GitHub SSH authentication was verified on 20 October 2026 as `Swiftny`, and `origin/main` was fetched. Local setup commit `81dc491` and GitHub initial commit `79541d5` started as separate histories, which caused the first fast-forward-only pull to fail. Both histories have now been joined by a merge without rewriting or discarding either commit. The remote `README.md` and Apache 2.0 `LICENSE` were imported unchanged and their content hashes verified against the fetched remote files.
 
-Before the first local commit, finish GitHub authentication, fetch `origin`, and base the local branch on the remote's actual default branch so the GitHub-created initial commit is preserved. Inspect untracked files before checkout and preserve any user work. Do not create an independent initial history, force-push, or overwrite the remote README/LICENSE to work around authentication.
+The local branch is `main`, and `origin` is the user-supplied SSH remote. Use normal fetch/push operations and verify the current branch, tracking status and working tree before work. Keep the team's problem and solution fields blank until the team decides.
 
 ## What is decided and what remains open
 
@@ -39,12 +39,12 @@ These blank cells are intentional. Keep them empty until the team provides a dec
 
 ## Current handoff
 
-- Latest review (20 October 2026): read `AGENTS.md`, this context and the submission checklist; inspected local files, Git status, remote and README draft. Local `main` has no commits or remote-tracking branches; `origin` matches the supplied SSH URL. All handoff files remain untracked. No root `README.md` or `LICENSE` is present locally. `.gitignore` excludes local secrets and common caches. Remote access and current organiser announcements were not rechecked during this review.
+- Latest review (20 October 2026): inspected local and fetched remote commits, confirmed no shared ancestor and no overlapping filenames, merged both initial histories, and verified the imported README/LICENSE against the remote. GitHub SSH authentication works as Swiftny. The product fields remain blank; no application has been built.
 - User direction reconfirmed: keep all undecided product fields blank and do not build an application. Record subsequent team decisions here before implementation.
 - AI assistance to carry into the tools declaration: Codex reviewed the handoff and local repository, summarised requirements/setup and updated this context. No application code or product decisions were generated in this review; the team still needs to review the summary.
-- Completed: local Git initialisation, origin configuration, Codex instructions, requirements context and submission checklist. A README draft is provided for later merging with the remote README.
-- Not completed: GitHub authentication, remote fetch, remote README/LICENSE verification, product selection, application implementation, deployment or submission.
-- Next steps: finish GitHub authentication and fetch its initial history; agree on the business problem with the team; record that decision and its reason before scaffolding the application.
+- Completed: local Git setup, origin configuration, SSH authentication, remote fetch, merge of the local and remote initial histories, README/LICENSE verification, Codex instructions, requirements context and submission checklist. A README draft is available for later project documentation.
+- Not completed: product selection, application implementation, deployment or submission.
+- Next steps: verify teammate repository access and current organiser announcements; agree on the business problem with the team; record that decision and its reason before scaffolding the application. Check Git tracking status when starting work.
 - Rule provenance: the Domain 2 requirements and mandatory platform/submission items below come from linked official documents. The internal Saturday deadline, role split and daily milestones are recommendations. Product fields are team decisions.
 - At meaningful handoffs, update these bullets with completed work, actual verification, blockers and the next actions. Keep estimates, mock behaviour and synthetic measurements distinct from observed real-world evidence.
 

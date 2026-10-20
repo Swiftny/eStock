@@ -15,7 +15,7 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 - Use synthetic data only. Mock Orbyte interfaces and permissions are allowed. Live Orbyte access is not provided.
 - Prefer a small working workflow, clear explanations and tools the team can understand. Use AI where it has a specific purpose; keep arithmetic and validation reliable.
 - Preserve existing files, licence, Git history and user changes. Inspect Git status and remotes before editing; do not reset or replace an existing project.
-- Remote history has not been fetched because GitHub authentication needs setup. Before the first local commit, fetch and base this branch on the remote's actual default branch; preserve its existing README/LICENSE and initial commit. Do not force-push or create an unrelated initial history.
+- GitHub SSH authentication is verified as Swiftny. The initial remote README/LICENSE and local setup history have been merged without rewriting either history. Check branch, remote and working-tree status before changes, preserve the initial files, and use normal pushes.
 - Keep keys and credentials out of source files and commits. Use environment secrets and a placeholder `.env.example` if configuration becomes necessary.
 - Update the tools declaration as resources are used. The team must review, understand and be able to explain AI-assisted work.
 - Run checks appropriate to each implementation change and describe what actually passed. Label mock integrations, estimates and synthetic test results clearly.

@@ -4,7 +4,7 @@ Four-person team participating in **Domain 2: Orbyte Smart SME Challenge — Les
 
 **Status:** problem discovery and repository setup. The team has not selected a problem, solution or technology stack. Product fields below are intentionally blank.
 
-This is a draft for the repository's main README. Merge it with the existing GitHub README after fetching the remote history; preserve applicable existing information.
+This is a draft for the repository's main README. The GitHub README has been fetched and preserved; merge this draft into it as the team makes project decisions.
 
 ## Project name
 
@@ -77,4 +77,4 @@ Use team-created synthetic business records, keep people in control of consequen
 
 ## Licence
 
-Apache License 2.0 was selected when creating the GitHub repository. Preserve and verify its root `LICENSE` file after fetching the remote history.
+This repository includes the Apache License 2.0 text in its root `LICENSE` file, verified against the GitHub initial commit.
