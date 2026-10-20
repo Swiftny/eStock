@@ -1,6 +1,6 @@
 # eStock: project context and handoff
 
-20 October 2026, MYT. Planning summary, not an official organiser document or evidence that features are complete.
+Updated 21 October 2026, MYT. Planning summary, not an official organiser document or evidence that features are complete.
 
 ## Latest decisions
 
@@ -22,11 +22,13 @@ The user selected **eStock**, a general replenishment assistant for SMEs managin
 | Recommended fixture | One organisation/location, 3–5 SKUs, one primary supplier per SKU |
 | Recommended policy | Per-SKU lead time, 7/30-day cycle, buffer, pack/MOQ and budget |
 | Channels | Persistent outbox/simulator required; real WhatsApp if feasible; Telegram if time permits |
-| Stack | Not selected; TypeScript/PostgreSQL/Python are proposals |
+| Stack | Approved frontend: Next.js App Router, TypeScript and plain CSS. PostgreSQL/ORM and Python worker remain proposals |
+| Current implementation stage | Landing page completed locally and ready for user review; inventory backend, forecasting, authentication and messaging are outside this stage |
+| Visual direction | User selected a light, minimal, professional presentation with generous spacing, readable type, limited accents and prominent product previews; Attio is a reference |
 | Model | Candidate: Chronos-Bolt Small; spike, revision and final selection not completed |
 | Accounts/credits | Replit and RunPod status not provided |
 | Final assignments | Not allocated |
-| Work status | Documentation; no application, inference, deployment or submission |
+| Work status | Documentation and verified local landing page with a synthetic manager-review demo. No inventory application, real inference, deployment or submission |
 | Repository language | English, as requested by the user; proper names and technical identifiers retained |
 
 The PRD contains proposed technical defaults, not claims that the user has selected every option. Record material changes here and in the [decision register](docs/product/DECISIONS.md).
@@ -103,17 +105,33 @@ The documents created so far are **guides and drafts**, not those six finished d
 
 ## Current handoff
 
+**21 October landing-page stage:** after the recommendation of Next.js App Router, TypeScript and plain CSS, the user asked to proceed based on the PRD. That frontend stack was approved for the landing page. The requested page is now implemented and verified locally. Stop for user review before application work. No commits, pushes or deployment publication were performed or authorised.
+
+**Preparation actually completed:** checked `main` tracking `origin/main` with a clean working tree and inspected the existing documentation-only repository. Read the requested handoff, PRD, decisions, build plan and checklist. Opened the actual [Attio home page](https://attio.com/) and reviewed its hero and product/table sections visually in Safari on 21 October. No Attio assets or copy were imported. Confirmed the PRD §7.5 arithmetic example: 100 + 20 − 45 − 25 = 50 raw units, rounded to 60 with pack size 12. This is a fixed synthetic example, not an inference result.
+
+**Implemented:** all seven requested page sections, working section anchors and mobile menu, original stock/quantity/workflow previews, four synthetic scenario states, and a native manager-review dialog. Approval, pack-size validation, quantity changes with a note, rejection and the activity list work in browser memory. Reset/refresh clears the simulation. Available stock remains 45 units. No backend, persistence, auth, live model, supplier outbox or external messaging was added.
+
+**Code and design:** `src/app/page.tsx` holds the page; reusable text identity/status/symbols and interactive components are in `src/components/`; `src/lib/demo-fixture.ts` computes the fixed PRD fixture. `src/styles/tokens.css` and plain CSS define a light, restrained green identity with locally served Manrope. Exact versions are pinned in package-lock.json. Biome handles lint/format; tsc handles types. `DESIGN.md` records the user's direction and routine implementation reasons. The original Apache LICENSE is unchanged; Manrope's full OFL is included under public/licenses/.
+
+**Actual verification:** clean cached `npm ci`, lint, typecheck and production build passed on Node 24.16.0/npm 11.13.0. Both dev and production servers were run. Production `/` and the font licence returned HTTP 200. Assertions verified the PRD's ten-day horizon, demand 100, raw need 50, rounded quantity 60 and unchanged stock 45. Safari and Chrome were used for visual/interactivity checks. Chrome measured page width equal to viewport width at 375, 768, 812 and 1440 px. Its rendered-text check examined 177 elements with a minimum contrast of 4.93:1. Reduced-motion emulation produced automatic scrolling and zero-second transitions. Approval, edits, rejection, reset, scenario recovery, navigation, keyboard wrapping and Escape/focus return were checked. The final production console was empty after reload. Detailed evidence, limits and every antislop Delivery Gate item are in [LANDING_PAGE.md](docs/verification/LANDING_PAGE.md).
+
+**Run and review:** follow README's verified install/dev/build/start instructions. The production preview was started locally at http://localhost:3000 for review; start it again if the process has stopped. No credentials are required. Review the four scenarios and manager decision flow. The demo is intentionally temporary and does not meet the future persistent-outbox requirement.
+
+**Antislop installation and use, 21 October:** the user supplied `codex plugin marketplace add miqdadbadjuber/anti-slop` and `codex plugin add antislop@anti-slop`. Both commands succeeded. The CLI lists `antislop@anti-slop` version `3.2.21` as installed and enabled. Its core file is `~/.codex/plugins/cache/anti-slop/antislop/3.2.21/skills/antislop/SKILL.md`; supporting UI, copywriting, human/accessibility, mobile-layout and code-comment skills are bundled. Read and applied in the user's selected `during` mode. The landing-page Delivery Gate is recorded in the verification report.
+
+**Skill cleanup and availability, 21 October:** at the user's request, removed repository-local `.codex`, which held a duplicate antislop core. The global plugin remains installed. ui-ux-pro-max is available at `.agents/skills/ui-ux-pro-max/SKILL.md`, with its data/search scripts and a working CLI. Its design-system search and Next.js guidance were used; recommendations that contradicted the user's scope/direction were discarded. Preserve all of the team's `.agents/` additions. Confirm the installed UI skill's upstream version and licence before the final tools declaration; its local copy has no version/licence metadata.
+
 **Completed:** PRD planning, conceptual contracts, stock/review/approval rules, model/evaluation plan, rule matrix, checklist, official-template drafts, deck/video guide, timeline and team identities. The repository documents, including the ignored private registration notes, have now been translated into English. Existing English template passages, names, contacts, paths, technical identifiers and source links were retained.
 
-**M0 review:** the user requested technical agreement before scaffolding. A recommendation was presented for Next.js/TypeScript on Replit, PostgreSQL with Drizzle, and a Python forecast worker on RunPod, with a persistent supplier simulator. These remain proposals, not approved stack decisions. No application implementation is authorised by the translation request.
+**Remaining M0:** frontend and landing visual direction are now resolved. Database/ORM, Python model/worker contract, Replit/RunPod access, roles, schemas, persistent simulator and workstream owners still need agreement. They were not implemented as part of this stage.
 
-**Not completed:** framework approval, account/credit verification, final assignments, implementation, model spike, application tests, measurements, deployment, final PPT/PDF/video, leader phone number, attendance/workshops, signatures and submission.
+**Not completed:** account/credit verification, final assignments, inventory/forecast/outbox implementation, real model spike, full PRD acceptance, task/accuracy measurements, Replit/deployment checks, final PPT/PDF/video, leader phone number, attendance/workshops, signatures and submission. Browser emulation is not a physical-phone or screen-reader test; those checks were not performed.
 
-**AI used so far:** Codex read context, PRD references and competition sources; assisted with requirements/product review, PRD writing, templates, checklist, handoff, M0 technical recommendations and English translation. The team must adapt and review this work before signing. No runtime model usage is claimed.
+**AI used so far:** Codex assisted requirements/product review, PRD writing, templates, checklist, handoff, M0 recommendations, English translation, landing-page design/code and local verification. Both required UI skills were applied. The team must review/adapt and understand this work before signing the declaration. No runtime model usage is claimed.
 
-**Verification for the translation:** see DOCUMENT_STATUS.md for the checks actually run and their results. Application tests are not applicable because no application exists.
+**Earlier translation verification:** DOCUMENT_STATUS.md records checks from the documentation-only stage. Use the new landing verification report for current UI checks; historical planning/translation checks do not establish full application acceptance.
 
-**Next actions:** agree on M0 technical choices, verify platform access, allocate owners/reviewers and supply visual direction before scaffolding/UI. Do not treat this document as automatic permission for coding, paid services, supplier messages, commits/pushes or publication.
+**Next actions:** the user reviews the landing page. After further authorisation, finish remaining M0 decisions/access checks and begin M1's one-SKU ledger and real RunPod model spike in BUILD_PLAN.md. The page alone does not complete either milestone. Do not treat this handoff as automatic permission for paid services, supplier messages, commits/pushes or publication.
 
 At the next handoff, replace status with actual completed work and verification. Do not copy a planned “complete” status as if it were achieved.
 

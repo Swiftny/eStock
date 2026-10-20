@@ -2,7 +2,7 @@
 
 Version 1.0 | 20 October 2026 | SDC Hackathon 2026, Domain 2 | TooGoodToBeTrue
 
-**Status:** product requirements baseline for team review and adaptation. The user selected eStock and requested complete documentation. The latest instruction requires technical agreement at M0 before application scaffolding. This document does not authorise application implementation, service purchases or real messaging. The English translation request does not change those limits.
+**Status:** product requirements baseline for team review and adaptation. On 21 October the user approved the Next.js/TypeScript/plain-CSS landing-page stage following the stack recommendation. That local page is implemented; the inventory workflow below remains planned. Review the page before further application work. This PRD alone does not authorise service purchases, real messaging, commits, pushes or deployment. See DECISIONS.md for approved choices and scope.
 
 **Product:** a replenishment assistant for SMEs managing physical stock. eStock connects transactions, sales history, inventory, purchasing policies, suppliers, manager approval and receiving records.
 
@@ -566,7 +566,7 @@ Required UX:
 
 ## 12. Architecture and contracts
 
-### 12.1 Required components; stack remains open
+### 12.1 Required components; frontend selected, backend choices open
 
     CSV / forms
         → web application + backend on Replit
@@ -578,7 +578,7 @@ Required UX:
         → simulated supplier / optional WhatsApp / optional Telegram
         → supplier confirmation + receipt + audit
 
-The user has not selected a stack. **M0 recommendation:** one TypeScript web/server application on Replit, persistent PostgreSQL and a Python RunPod worker. The team may choose a familiar framework; record its decision in DECISIONS.md before implementation. The M0 discussion proposed Next.js and Drizzle as specific options; these are not approved choices.
+The user approved Next.js App Router, TypeScript and plain CSS for the landing page on 21 October. **Remaining M0 recommendation:** extend the TypeScript application on Replit with persistent PostgreSQL and a Python RunPod worker. Drizzle and a serverless RunPod queue remain proposals. Database/worker choices and platform access must be agreed and verified before related implementation; frontend approval does not settle them.
 
 Do not build two backends with duplicate business logic. RunPod is only a forecast worker; ledger, policy and approval authority remain in the application backend.
 

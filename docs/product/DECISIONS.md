@@ -1,6 +1,6 @@
 # eStock: decisions and unavailable information
 
-20 October 2026. This document separates user decisions, technical recommendations and facts to supply. No application has been built.
+Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The landing page is implemented locally; the inventory application remains planned.
 
 ## User decisions
 
@@ -17,6 +17,10 @@
 | U-09 | Documentation first; technical agreement before scaffolding | Original documentation scope, reaffirmed by the user's M0 request; application implementation and service purchases are not authorised by the documentation |
 | U-10 | All repository documents must be in English | User instruction on 20 October 2026; preserve meaning, names, contact values, identifiers and links |
 | U-11 | Use both ui-ux-pro-max and antislop for UI/UX work; antislop mode is during | Existing AGENTS.md rule, reaffirmed by the user on 20 October 2026 |
+| U-12 | Start with the landing page after stack approval; pause for review before application work | User instruction on 21 October 2026; backend inventory, RunPod forecasting, authentication and messaging are outside this first stage. Local synthetic approval simulation is allowed; commits, pushes and publication are not authorised |
+| U-13 | Light, minimal, tidy and professional visual direction, with clear typography, generous spacing, limited accents and prominent product previews | User instruction on 21 October 2026; use the actual Attio site as a visual reference and develop an original eStock identity without copying assets, branding or copy |
+| U-14 | English landing-page UI and documentation; synthetic labels and truthful capabilities | User instruction on 21 October 2026; use the supplied hero headline, supporting text and real section destinations; do not present the fixed arithmetic fixture as actual AI inference |
+| U-15 | Next.js App Router, TypeScript and plain CSS for the first landing-page stage | User's 21 October go-ahead following the stack recommendation. This approves frontend scaffolding and the requested local preview; database/ORM, forecast worker, accounts and deployment remain outside this approval |
 
 Language decision record: U-10 was made by the user on 20 October 2026 to make all files readable in English. It changes documentation language, not product scope. The Markdown documents, including ignored private notes, were translated; AGENTS.md, PROJECT_CONTEXT.md, README and this register record the requirement. U-11 reaffirms the existing UI rule without selecting a visual direction or authorising UI implementation.
 
@@ -45,25 +49,41 @@ All four members reported Xiamen University. Registration emails are stored in .
 | R-06 | One primary supplier per SKU | Defer supplier selection and negotiation |
 | R-07 | Persistent outbox/simulator is MUST | Core journey does not depend on activating an external messaging platform |
 | R-08 | WhatsApp SHOULD, Telegram COULD | Follows the user's channel preference without compromising submission |
-| R-09 | TypeScript web/server + PostgreSQL + Python worker | Proposed simple architecture; not a stack already selected by the team |
-| R-10 | English repository documentation and proposed English UI/pitch | Documentation language is now a user decision under U-10; UI/pitch language remains subject to team agreement and any official requirements |
+| R-09 | PostgreSQL + Python forecast worker for the future application | Frontend TypeScript/Next.js is now selected under U-15; database, ORM and worker remain recommendations |
+| R-10 | English pitch | Documentation and landing-page UI are user decisions under U-10/U-14; pitch language remains subject to team agreement and official requirements |
 | R-11 | Internal submission target: 24 October, 20:00 MYT | Buffer before the earlier PH/ORI deadline |
 | R-12 | Phase 2 target: 50% reduction from an assumed 10 minutes per case | Planning figures to replace or label honestly after measurement |
 
-The M0 discussion additionally proposed Next.js App Router, Drizzle migrations and a RunPod serverless queue. These details remain unapproved recommendations. Do not mark OPEN-01 or platform choices closed until the team agrees and relevant access is verified.
+The M0 discussion also proposed Drizzle migrations and a RunPod serverless queue. Those remain unapproved recommendations. Frontend approval does not verify platform access or close the remaining M0 contracts.
+
+## Landing-page implementation choices, 21 October
+
+These are technical/design choices made while carrying out U-12 through U-15, not additional user requirements or implemented roadmap features.
+
+| Choice | Reason and scope |
+| --- | --- |
+| Next.js 16.4.2, React 19.3.1, TypeScript 6.0.3 | Exact installed versions are pinned in package-lock.json. Static page content stays on the server; navigation and the synthetic demo are client components |
+| Plain CSS with shared tokens, text wordmark and original SVG symbols | Small dependency set and reusable building blocks for later application screens |
+| Local Manrope variable font; off-white, charcoal and restrained forest green | Readable stock records, stable tabular numerals and clear manager actions. Actual Attio hero/product/table sections were reviewed; its branding, assets and copy were not imported. Reasons are in DESIGN.md |
+| Biome 2.5.15 for lint/format, plus tsc | Replaced the initially tried ESLint dependency tree after its audit reported unfixed development-tool advisories; the smaller final dependency set installed successfully |
+| Native dialog with explicit Tab wrapping, outcome/reset focus and Escape | Browser checks exposed focus leaving the dialog; the fix was checked with keyboard traversal and focus return |
+| Browser-memory simulation and four selectable synthetic scenarios | Demonstrates manager control and visible failure/data-needed states without implying a persistent outbox, live model, inventory backend or messaging integration |
+
+Actual verification and the antislop Delivery Gate are recorded in [LANDING_PAGE.md](../verification/LANDING_PAGE.md). No commit, push or deployment was performed.
 
 ## Team input needed before related implementation
 
 | ID | Information / decision | Status and action |
 | --- | --- | --- |
-| OPEN-01 | Application framework/language | User/team to confirm; do not create two parallel stacks |
+| OPEN-01 | Application framework/language | Frontend resolved under U-15: Next.js App Router, TypeScript and plain CSS. Database/ORM, application contracts and forecast worker still require agreement before related work |
 | OPEN-02 | Replit Core/project/credit active? | Not provided; check the team portal |
 | OPEN-03 | RunPod account/credit/region/GPU/endpoint | Not provided; verify access and quota before the spike |
 | OPEN-04 | Model/revision/dependency versions | Pin from a successful spike, not guessed versions |
 | OPEN-05 | WhatsApp business account, number, template and permission ready? | Not provided; timebox and use the simulator if unavailable |
 | OPEN-06 | Telegram bot/destination conversation | Optional; must not become a core dependency |
 | OPEN-07 | Workstream owners and actual availability | Not allocated; select at kickoff |
-| OPEN-08 | UI visual/brand direction | PRD specifies interactions; agree final visual direction before UI build |
+| OPEN-08 | UI visual/brand direction | Resolved for the landing page on 21 October under U-13; fine visual details are routine implementation choices |
+| OPEN-09 | Required UI skill locations | Resolved on 21 October: antislop@anti-slop version 3.2.21 is installed and enabled in the Codex plugin cache, verified by CLI JSON and a readable core skill. The repository-local duplicate was removed at the user's request. ui-ux-pro-max is now present at .agents/skills/ui-ux-pro-max/SKILL.md and listed in the refreshed catalog; its search CLI starts successfully. AGENTS.md records both locations |
 
 ## Facts needed before submission
 

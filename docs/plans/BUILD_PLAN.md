@@ -1,6 +1,6 @@
 # eStock: build and delivery plan
 
-Baseline: 20 October 2026. This is a plan, not a completed-work report. The application has not been built. The current instruction is to agree M0 technical choices before scaffolding; the English translation request does not authorise implementation.
+Baseline: 20 October 2026; status updated 21 October. This is the application build plan. The separately authorised landing-page stage is now implemented and verified locally with Next.js, TypeScript and plain CSS. It does not complete M0 or M1. Pause for the user's page review before application development; remaining backend/platform choices still need agreement.
 
 ## Execution principles
 

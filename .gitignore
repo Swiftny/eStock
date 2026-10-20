@@ -22,3 +22,9 @@ __pycache__/
 
 # Private registration contacts and local submission working notes
 .private/
+
+# Next.js output and local verification artifacts
+.next/
+out/
+*.tsbuildinfo
+.artifacts/

@@ -1,0 +1,8 @@
+{
+  "files": { "includes": ["src/**"] },
+  "formatter": { "enabled": true, "indentStyle": "space", "lineWidth": 100 },
+  "linter": { "enabled": true, "rules": { "recommended": true } },
+  "assist": { "enabled": false },
+  "javascript": { "formatter": { "quoteStyle": "double", "jsxQuoteStyle": "double" } },
+  "overrides": [{ "includes": ["**/*.css"], "linter": { "rules": { "style": { "noDescendingSpecificity": "off" } } } }]
+}

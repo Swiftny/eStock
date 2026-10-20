@@ -1,6 +1,6 @@
 # eStock: draft Technical & Tools Declaration
 
-**DRAFT TO COMPLETE FROM ACTUAL USAGE.** Does not claim a completed prototype/model/deployment. Use the [official template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view), then export one PDF: **SDC2026_TooGoodToBeTrue_TechDeclaration.pdf**.
+**DRAFT TO COMPLETE FROM ACTUAL USAGE.** A local landing page is implemented; the inventory prototype, runtime model and deployment remain planned. Use the [official template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view), then export one PDF: **SDC2026_TooGoodToBeTrue_TechDeclaration.pdf**.
 
 Non-applicable categories must say No/None. Do not replace unknown facts with None. Complete before signing.
 
@@ -13,7 +13,7 @@ Non-applicable categories must say No/None. Do not replace unknown facts with No
 | Leader | Marco Ryan Suseno |
 | Email/Phone | .private/TEAM_DETAILS.md; phone not provided |
 | University | Xiamen University; check official spelling against portal |
-| Live Prototype URL | NOT BUILT / ENTER ACTUAL URL |
+| Live Prototype URL | NOT DEPLOYED; local landing preview only |
 | Code Repository | https://github.com/Swiftny/sdc2026-TooGoodToBeTrue-domain2 |
 
 The repository must be public for submission; a correct URL does not itself prove visibility/access.
@@ -22,7 +22,7 @@ The repository must be public for submission; a correct URL does not itself prov
 
 ### 2.1 Architecture Overview: maximum 200 words
 
-Planned architecture draft; update to actual behaviour before submission:
+Current implementation: a Next.js landing page with browser-memory synthetic scenarios and manager decisions. No database, model endpoint or messaging integration is connected. The following architecture is for the planned inventory application; update it to actual behaviour before submission:
 
 <!-- WORDCOUNT:declaration_architecture:200 -->
 eStock will accept team-created synthetic daily sales and inventory events through CSV import and stock-entry forms. A Replit-hosted application will store its ledger, product policies, incoming purchases, recommendations, approvals and activity records in a persistent database.
@@ -38,15 +38,20 @@ Model errors and baseline selection will be visible. Actual deployment services,
 
 | Name & Version | Purpose | Licence | Status |
 | --- | --- | --- | --- |
-| Application framework/language | Web/server | Enter actual licence | NOT SELECTED |
+| Next.js 16.4.2 | Landing-page framework | MIT | USED LOCALLY |
+| React / React DOM 19.3.1 | UI and local preview state | MIT | USED LOCALLY |
+| TypeScript 6.0.3 | Types and compiler | Apache-2.0 | USED LOCALLY |
+| @fontsource-variable/manrope 5.3.0 | Locally served variable font | OFL-1.1; full licence in public/licenses/manrope-OFL.txt | USED LOCALLY |
+| @biomejs/biome 2.5.15 | Lint and formatting | MIT OR Apache-2.0 | USED LOCALLY |
+| @types/node 26.6.5; @types/react and @types/react-dom 19.3.0 | Development types | MIT | USED LOCALLY |
 | Database driver/ORM | Ledger/transactions | Enter actual licence | NOT SELECTED |
 | Python runtime | Forecast worker | Enter actual licence | PLANNED |
 | chronos-forecasting | Pretrained forecast inference | Verify pinned version/licence | PLANNED |
 | PyTorch/dependencies | Model execution | Verify actual versions/licences | PLANNED |
 | RunPod SDK, if used | Worker handler | Verify actual version/licence | PLANNED |
-| UI/chart/testing libraries | Interface/verification | List all actual libraries | NOT SELECTED |
+| Additional component/chart/test library | None added for the landing page | Not applicable | Native controls/SVG, Node assertions and browser checks used |
 
-The list must reflect actual lockfiles/environment, not PRD recommendations. Reading model documentation is not evidence that the model has run.
+Local verification environment: Node.js 24.16.0, npm 11.13.0 and Python 3 for skill search/contrast checks. Runtime dependencies and direct-package licences were read from installed metadata; see package-lock.json and THIRD_PARTY_NOTICES.md. Transitive packages retain their own notices. An initial ESLint/eslint-config-next attempt was removed after development-tool audit advisories; it is absent from the final dependency set. Reading model documentation is not evidence that the model has run.
 
 ## 3. APIs & Cloud Services
 
@@ -93,14 +98,22 @@ Do not treat public/private options in the general template as permission to use
 
 ### 4.3 AI-Assisted Development Tools
 
-**Used generative AI in development/documentation: Yes.** Codex has been used for planning/documentation, M0 recommendations and English translation; runtime model usage remains planned until verified implementation.
+**Used generative AI in development/documentation: Yes.** Codex was used for planning/documentation, M0 recommendations, English translation, landing-page design/code, reference review and local verification. Runtime model usage remains planned.
 
 | Tool & Version | Used For | Extent | Status |
 | --- | --- | --- | --- |
-| Codex; record exact model/version from actual session if available | Brainstorm review, source/rule audit, PRD writing, template drafts, checklist, handoff, M0 recommendations and English translation | Major during planning/documentation | ALREADY USED |
+| Codex; record exact model/version from actual session if available | Brainstorm review, requirements audit, PRD/templates, handoff, M0 recommendations, English translation, landing-page design/code and local verification | Major during planning, documentation and landing implementation | ALREADY USED |
 | Additional development AI | List all code/design/text tools used afterward | Actual minor/moderate/major extent | Do not omit |
 
 Do not invent a development AI model ID when the UI/session does not provide it; state the product and verifiable information.
+
+Landing-page work on 21 October used repository reads, shell/Git inspection, web retrieval and Safari review of the actual [Attio](https://attio.com/) site as the user-requested reference. No Attio assets or text were imported. Codex computer-use tools operated Safari 27.0.1 and Chrome 155.0.8059.85 for local UI checks. No generated raster assets or stock imagery were used.
+
+At the user's request, `antislop@anti-slop` version `3.2.21` from [miqdadbadjuber/anti-slop](https://github.com/miqdadbadjuber/anti-slop), MIT per its plugin manifest, was installed and verified as enabled. Its core and relevant UI, copy, accessibility, mobile and code-comment guidance were read/applied in `during` mode. The bundled contrast checker was run. Delivery Gate evidence is in [LANDING_PAGE.md](../verification/LANDING_PAGE.md).
+
+The repository-provided ui-ux-pro-max skill at `.agents/skills/ui-ux-pro-max/` was read and its Python design-system/Next.js searches were used. The installed copy has no version/licence metadata; confirm its exact upstream provenance and licence before the final signed declaration. Other pre-existing `.agents/` skills were preserved; their presence alone does not mean they were used. The Sites skill's local-project guidance was read; no hosted Sites project or deployment was created.
+
+Clean installation, lint, types, production build, PRD fixture assertions, HTTP checks and browser interaction/visual checks were performed. The verification report states actual results and limitations. They do not establish full inventory acceptance, real AI accuracy, Replit/RunPod usage or human team review.
 
 Team review: maximum 100 words. Use only after actually performed:
 

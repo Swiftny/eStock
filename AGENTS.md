@@ -9,8 +9,8 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 - Read docs/product/prd.md and docs/product/DECISIONS.md after PROJECT_CONTEXT.md. Review docs/COMPLIANCE_MATRIX.md, docs/plans/BUILD_PLAN.md and docs/SUBMISSION_CHECKLIST.md before relevant work.
 - Approved input: team-created synthetic CSV plus outgoing-stock and receiving forms. Workflow: movement → daily analysis/forecast → recommendation → manager approval → supplier outbox/PO → acknowledgement → receiving/audit.
 - Core demo requires a persistent simulated outbox. Real WhatsApp is preferred if feasible; Telegram is optional. Label each integration honestly.
-- Frameworks, active platform credits, final work assignments and visual direction remain open. Proposed technical defaults in the PRD are recommendations.
-- This request authorises documentation and project handoff. **Do not build an application, purchase services, send real messages, commit or push solely because this PRD exists.** Follow subsequent user instructions for implementation or publishing.
+- The user approved Next.js App Router, TypeScript and plain CSS for the landing page on 21 October, with a light, minimal, professional visual direction and Attio as a reference. The local landing page is implemented. Database/worker choices, active platform credits and final work assignments remain open.
+- Stop after the landing page for user review. Inventory backend, real forecasting, authentication and messaging require subsequent authorisation. **Do not build further application features, purchase services, send real messages, commit or push solely because this PRD exists.** No commit, push or deployment publication is authorised by the landing-page request.
 - Names/university are recorded in the context; registration contacts live in ignored .private/TEAM_DETAILS.md. Keep personal contacts outside synthetic demo data and public source.
 
 ## Working approach
@@ -37,11 +37,23 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 - Current official announcements and Terms & Conditions take precedence over this planning summary. Consult the linked sources if requirements change.
 
 <!-- antislop:start -->
-## Required skills for UI work
-
-- Use both `ui-ux-pro-max` and `antislop` throughout UI planning, implementation, changes and review for this project.
-- Read their `SKILL.md` instructions before UI work. Current locations: `~/.agents/skills/ui-ux-pro-max/SKILL.md` and `~/.agents/skills/antislop/SKILL.md`. If these paths change, resolve the skills from the current session's skill catalog.
-- The project's selected `antislop` mode is **during**: apply its rules while working, rather than waiting for a final audit. Do not ask the team to select the mode again unless they request a change. An explicit later user instruction takes precedence.
-- Use `ui-ux-pro-max` for contextual design and UX guidance, accessibility, responsive layout and implementation guidance for the chosen stack. Use `antislop` as the quality filter for visual decisions, content and working interactions; run its Delivery Gate and report evidence before delivering UI.
-- Follow the team's chosen product and design direction. This skill requirement does not select a product, visual style or technology stack, or authorise application implementation before the team supplies a concrete direction.
+## antislop
+For UI work, use both `ui-ux-pro-max` and `antislop`. Read their skill instructions before planning, implementation or review. Resolve installed skill locations from the current session's catalog when available.
+- Core filter: the installed `antislop@anti-slop` plugin. Verified path: `~/.codex/plugins/cache/anti-slop/antislop/3.2.21/skills/antislop/SKILL.md`. The repository-local `.codex` copy was removed at the user's request; use the installed plugin.
+- The project's selected antislop mode is **during**, as explicitly requested by the user. Do not ask the team to select it again unless they request a change. Apply the rules throughout UI work and run the Delivery Gate with actual evidence before delivery.
+- `ui-ux-pro-max` is installed at `.agents/skills/ui-ux-pro-max/SKILL.md`, with its search scripts and data alongside it. It is also listed in the current session skill catalog.
+Before starting, follow the core's "Two Usage Modes" section in strict order: explicit session instruction first, then global preference, then ask. A session instruction always wins. For a resolved mode, say `antislop active: <mode> (session override).` or `antislop active: <mode> (global preference).` once before presenting findings or making edits, using the actual mode and source. Acknowledging the user's request without naming the source does not replace this notice.
+Only an explicit choice of antislop during or after selects a session mode. A request to review, audit, or avoid file edits does not select a mode; read the global preference in that case. Another skill's mode does not select antislop's mode.
+If the mode is unresolved, ask during/after and end the response; wait for the answer before any UI review, planning, or concept. For read-only tasks, put the active-mode notice only at the start of the final answer, never in progress messages. For editing tasks, announce before the first edit and omit it from the final answer.
+To update the installed antislop plugin later: `codex plugin marketplace upgrade anti-slop`.
 <!-- antislop:end -->
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

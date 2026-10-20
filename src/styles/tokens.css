@@ -1,0 +1,25 @@
+:root {
+  color-scheme: light;
+  --font-body: "Manrope Variable", Arial, sans-serif;
+  --paper: #fbfcfa;
+  --white: #ffffff;
+  --ink: #252e2a;
+  --muted: #606b64;
+  --green: #3c624e;
+  --green-dark: #244d38;
+  --green-wash: #edf3ed;
+  --green-soft: #deeadf;
+  --green-line: #cbd8cb;
+  --surface: #f0f2ee;
+  --surface-subtle: #f6f8f4;
+  --line: #e1e5df;
+  --line-strong: #d1d8d0;
+  --control-border: #7a857d;
+  --focus: #285c40;
+  --amber: #795018;
+  --amber-soft: #fbefd8;
+  --red: #9b3c33;
+  --red-soft: #fae9e5;
+  --radius-control: 6px;
+  --radius-sheet: 12px;
+}
