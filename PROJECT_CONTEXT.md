@@ -39,10 +39,10 @@ These blank cells are intentional. Keep them empty until the team provides a dec
 
 ## Current handoff
 
-- Latest review (20 October 2026): inspected local and fetched remote commits, confirmed no shared ancestor and no overlapping filenames, merged both initial histories, and verified the imported README/LICENSE against the remote. GitHub SSH authentication works as Swiftny. The product fields remain blank; no application has been built.
+- Latest review (20 October 2026): GitHub authentication and the initial history merge are complete. Consolidated the temporary README draft into the main README and removed the duplicate file. Confirmed product sections remain blank and the README links to the context, agent guidance, checklist and licence. No application has been built.
 - User direction reconfirmed: keep all undecided product fields blank and do not build an application. Record subsequent team decisions here before implementation.
 - AI assistance to carry into the tools declaration: Codex reviewed the handoff and local repository, summarised requirements/setup and updated this context. No application code or product decisions were generated in this review; the team still needs to review the summary.
-- Completed: local Git setup, origin configuration, SSH authentication, remote fetch, merge of the local and remote initial histories, README/LICENSE verification, Codex instructions, requirements context and submission checklist. A README draft is available for later project documentation.
+- Completed: local Git setup, origin configuration, SSH authentication, remote fetch, merge of the local and remote initial histories, README/LICENSE verification, Codex instructions, requirements context and submission checklist. The repository now has one README.md containing the project introduction and blank product sections; the temporary README_DRAFT.md was consolidated and removed.
 - Not completed: product selection, application implementation, deployment or submission.
 - Next steps: verify teammate repository access and current organiser announcements; agree on the business problem with the team; record that decision and its reason before scaffolding the application. Check Git tracking status when starting work.
 - Rule provenance: the Domain 2 requirements and mandatory platform/submission items below come from linked official documents. The internal Saturday deadline, role split and daily milestones are recommendations. Product fields are team decisions.
