@@ -4,9 +4,11 @@ Updated 21 October 2026. This document separates user decisions, implementation 
 
 ## Team assignments
 
+Startup repair, 21 October: the root `pages/` documentation folder caused Next.js to exit because it detected root Pages Router routes alongside `src/app`. A serial integration task moved the team guides to `docs/team/`, updated links and retained the existing work-area boundaries. This supersedes U-17's original folder location; application routes and dependencies are unchanged.
+
 U-18, user, 21 October: prevent overlapping edits across AI, frontend, backend, demo and system. Add explicit work boundaries, a scope checker and serial shared integration rules. This supersedes U-17's no-file-ownership preference only as needed for conflict prevention. Data remains Maxi's area. Existing code stays in place; no commit, push or remote enforcement was performed.
 
-U-17, user, 21 October: Vitto frontend, Maxi data, William system/backend, Marco AI. Create separate work pages in the root `pages/` folder without file ownership rules. [Team pages](../../pages/README.md) separate tasks and the shared demo. Existing application routes and worker remain in place; training is not added by this documentation change. This supersedes U-08 and earlier unallocated-workstream notes.
+U-17, user, 21 October: Vitto frontend, Maxi data, William system/backend, Marco AI. Create separate work pages in the root `pages/` folder without file ownership rules. [Team pages](../team/README.md) separate tasks and the shared demo. Existing application routes and worker remain in place; training is not added by this documentation change. This supersedes U-08 and earlier unallocated-workstream notes.
 
 ## Current authorised implementation
 

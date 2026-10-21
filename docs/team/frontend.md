@@ -253,7 +253,7 @@ Applies to the frontend refinement and serial colour integration checked above. 
 - R-30 PASS: Attio informs hierarchy/restraint; existing split stock preview and content remain original to eStock.
 - R-31 PASS: major decisions and their purposes are recorded in DESIGN.md.
 
-Scope result: `python3 scripts/check_scope.py frontend --files src/app/page.tsx src/components/site-header.tsx src/styles/refinement.css pages/frontend.md` passes for the four frontend paths. The required full `python3 scripts/check_scope.py frontend` fails because it includes pre-existing team/shared changes and the explicitly coordinated shared colour/documentation integration. These changes were preserved; no full-worktree scope pass is claimed. `git diff --check` passes. README now records the fresh-start limitation and the temporary preview.
+Scope result: `python3 scripts/check_scope.py frontend --files src/app/page.tsx src/components/site-header.tsx src/styles/refinement.css docs/team/frontend.md` passes for the four frontend paths. The required full `python3 scripts/check_scope.py frontend` fails because it includes pre-existing team/shared changes and the explicitly coordinated shared colour/documentation integration. These changes were preserved; no full-worktree scope pass is claimed. `git diff --check` passes. README now records the fresh-start limitation and the temporary preview.
 
 Use the existing lint, typecheck and build checks in the root README for code changes. Record actual browser checks and remaining issues alongside your task. A successful build does not establish usability.
 

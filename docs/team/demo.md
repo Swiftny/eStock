@@ -1,6 +1,6 @@
 # Integrated demo · all members
 
-[Team pages](README.md) · [Pitch and video guide](../docs/submission/PITCH_AND_DEMO.md)
+[Team pages](README.md) · [Pitch and video guide](../submission/PITCH_AND_DEMO.md)
 
 ## Where the demo runs
 

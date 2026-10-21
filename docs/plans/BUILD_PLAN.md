@@ -100,15 +100,15 @@ PH/orientation specify 25 October, 07:59:59 AM; the website/FAQ specify 11:59 PM
 
 ## Assigned workstreams
 
-Confirmed by the user on 21 October 2026. Individual task pages are in [pages/](../../pages/README.md); they separate work without imposing file ownership.
+Confirmed by the user on 21 October 2026. Individual task pages are in [docs/team/](../team/README.md); they separate work without imposing file ownership.
 
 | Member | Workstream | Task page |
 | --- | --- | --- |
-| Vitto | Frontend | [Frontend](../../pages/frontend.md) |
-| Maxi | Data | [Data](../../pages/data.md) |
-| William | System and backend | [Backend](../../pages/backend.md) |
-| Marco | AI inference and evaluation | [AI](../../pages/ai.md) |
-| All members | Demo integration and rehearsal | [Demo](../../pages/demo.md) |
+| Vitto | Frontend | [Frontend](../team/frontend.md) |
+| Maxi | Data | [Data](../team/data.md) |
+| William | System and backend | [Backend](../team/backend.md) |
+| Marco | AI inference and evaluation | [AI](../team/ai.md) |
+| All members | Demo integration and rehearsal | [Demo](../team/demo.md) |
 
 Coordinate shared contracts before edits. Submission documents still require team preparation and leader review; these assignments do not claim the artifacts are finished.
 

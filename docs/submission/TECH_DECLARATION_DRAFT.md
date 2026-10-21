@@ -98,6 +98,8 @@ Do not treat public/private options in the general template as permission to use
 
 ### 4.3 AI-Assisted Development Tools
 
+Startup repair, 21 October: Codex used local shell/Git inspection, the find-docs skill, Context7 CLI and installed Next.js documentation to diagnose the root documentation folder being detected as application routes. It moved the team guides to `docs/team/` and updated links and scope mappings. Standard root dev startup, the existing HTTP smoke checks, production build/TypeScript, moved-document links and explicit scope checks passed. No new dependency, hosted service, runtime model or external publication was used. This resolves the root folder blocker mentioned in earlier development notes below.
+
 **Used generative AI in development/documentation: Yes.** Codex was used for planning/documentation, M0 recommendations, English translation, landing-page design/refinement, persistent backend, rules, adapter/worker, tests, reference inspection and local verification. Runtime neural model usage remains unverified. Codex also assisted the team work pages, assignment updates, parallel-work instructions and local change-scope checker on 21 October using local repository and shell inspection; no runtime model or external service was used for that documentation task.
 
 | Tool & Version | Used For | Extent | Status |
@@ -184,7 +186,7 @@ WhatsApp activation, templates and account readiness are external dependencies. 
 - [ ] Every field complete, word limits checked.
 - [ ] Proof appendix included.
 
-Latest landing refinement, 21 October 2026: the user requested removal of purchase previews and a simpler, bolder text-first page. Codex used the same UI guidance and Playwright to inspect Jack & Jill/Attio references, inspect Vogelhaus text (reference screenshots timed out loading fonts), and verify the local page. No reference assets or text were copied. Only frontend application files changed; the previously documented root runtime-folder blocker remains. Lint, TypeScript and an isolated webpack production build passed; current evidence is in `pages/frontend.md` and `.artifacts/simple-landing/`. The earlier 38-test result was not rerun for this presentation-only follow-up.
+Latest landing refinement, 21 October 2026: the user requested removal of purchase previews and a simpler, bolder text-first page. Codex used the same UI guidance and Playwright to inspect Jack & Jill/Attio references, inspect Vogelhaus text (reference screenshots timed out loading fonts), and verify the local page. No reference assets or text were copied. Only frontend application files changed; the previously documented root runtime-folder blocker remains. Lint, TypeScript and an isolated webpack production build passed; current evidence is in `docs/team/frontend.md` and `.artifacts/simple-landing/`. The earlier 38-test result was not rerun for this presentation-only follow-up.
 
 ## 8. Declaration
 

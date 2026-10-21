@@ -6,13 +6,13 @@
     "src/components/recommendation-demo.tsx",
     "src/lib/demo-fixture.ts",
     "src/styles/refinement.css",
-    "pages/frontend.md"
+    "docs/team/frontend.md"
   ],
   "demo": [
     "src/app/demo/**",
     "src/components/demo-app.tsx",
     "src/styles/workspace.css",
-    "pages/demo.md"
+    "docs/team/demo.md"
   ],
   "data": [
     "db/**",
@@ -23,7 +23,7 @@
     "scripts/database.ts",
     "public/fixtures/**",
     "docs/data/**",
-    "pages/data.md"
+    "docs/team/data.md"
   ],
   "backend": [
     "src/app/api/demo/**",
@@ -32,20 +32,20 @@
     "src/lib/purchasing.ts",
     "tests/workflow.test.ts",
     "tests/purchasing.test.ts",
-    "pages/backend.md"
+    "docs/team/backend.md"
   ],
   "system": [
     "src/app/api/session/**",
     "src/lib/server/session.ts",
     "next.config.ts",
     "scripts/http-smoke.mjs",
-    "pages/system.md"
+    "docs/team/system.md"
   ],
   "ai": [
     "worker/**",
     "src/lib/server/forecast.ts",
     "tests/forecast.test.ts",
     "docs/plans/AI_RUNPOD_PLAN.md",
-    "pages/ai.md"
+    "docs/team/ai.md"
   ]
 }
