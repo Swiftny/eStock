@@ -27,7 +27,7 @@ Complete before parallel development:
 7. Select the fixture and CSV schema. Record the seed/hash; all operational data remains synthetic.
 8. Require the simulator, timebox WhatsApp, and allow Telegram only after MUST work is complete.
 9. Agree visual direction before UI implementation. Follow ui-ux-pro-max and antislop during mode from AGENTS.md.
-10. Choose an owner and reviewer for each workstream. Reported skills are not final assignments.
+10. Use the confirmed assignments below; agree a reviewer for each change.
 
 **M0 complete:** decisions recorded in [DECISIONS.md](../product/DECISIONS.md), diagram/API/schema aligned, and every member can begin without guessing.
 
@@ -98,16 +98,19 @@ All times MYT, UTC+8. This schedule is a team recommendation.
 
 PH/orientation specify 25 October, 07:59:59 AM; the website/FAQ specify 11:59 PM. Use the earlier deadline until official clarification. Reserve Saturday for recording retakes, YouTube processing and PDF uploads; do not spend it on extra features.
 
-## Workstreams, not final named assignments
+## Assigned workstreams
 
-| Workstream | Deliverables | Dependencies |
+Confirmed by the user on 21 October 2026. Individual task pages are in [pages/](../../pages/README.md); they separate work without imposing file ownership.
+
+| Member | Workstream | Task page |
 | --- | --- | --- |
-| A Product/UX/documents | PRD, task flow, usability, proposal, deck/video and evidence index | M0 decisions and actually implemented features |
-| B Application/workflow | Forms, case detail, approval, outbox and status/log UI | Data/API contract |
-| C Database/rules | Ledger, CSV, policy, calculations/projections and transactions | M0 schema |
-| D AI/platform | RunPod, Replit deployment, model evaluation, secrets and proof | Accounts and model contract |
+| Vitto | Frontend | [Frontend](../../pages/frontend.md) |
+| Maxi | Data | [Data](../../pages/data.md) |
+| William | System and backend | [Backend](../../pages/backend.md) |
+| Marco | AI inference and evaluation | [AI](../../pages/ai.md) |
+| All members | Demo integration and rehearsal | [Demo](../../pages/demo.md) |
 
-Reported skills: Marco Ryan Suseno: frontend; Riakudu Vittorios Surjoraharjos: PRD/frontend/UI/UX; William Christiansen: system design; Maximillion Cang: database. The team selects final owners. AI/platform and submission work need clear owners. All members understand the complete workflow.
+Coordinate shared contracts before edits. Submission documents still require team preparation and leader review; these assignments do not claim the artifacts are finished.
 
 ## Git and integration
 

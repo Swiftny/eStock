@@ -155,12 +155,12 @@ table,
 }
 .button-primary {
   color: var(--white);
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--brand);
+  border-color: var(--brand);
 }
 .button-primary:hover {
-  background: var(--green-dark);
-  border-color: var(--green-dark);
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
 }
 .button-primary:active {
   background: var(--green);
@@ -457,8 +457,8 @@ h1 > span:last-child {
   color: var(--amber);
 }
 .status-success {
-  background: var(--green-soft);
-  color: var(--green-dark);
+  background: var(--success-soft);
+  color: var(--success);
 }
 .status-danger {
   background: var(--red-soft);
