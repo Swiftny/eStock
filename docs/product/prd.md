@@ -46,7 +46,7 @@ Do not hide source conflicts. Check Terms & Conditions and authoritative officia
 | OBI | [Orbyte Introduction, Alpha Red workshop](https://drive.google.com/file/d/1xoQj59NZr6D9rwZ_qkQwZaObKEcoXaoO/view) | Foundations, current capabilities and platform direction |
 | SAMPLE | [Sample repository ZIP](https://drive.google.com/file/d/1Atfzhuehpr6zYvM0oenDOzXeNymTHow_/view) | Repository/proof organisation example, not a mandatory stack |
 | WEB | [Portal](https://sdchack.my/) and [FAQ](https://sdchack.my/faq) | Submission access and public announcements |
-| MODEL | [Chronos](https://github.com/amazon-science/chronos-forecasting), [model card](https://huggingface.co/amazon/chronos-bolt-small) | Candidate pretrained model, licence and inference contract |
+| MODEL | [Chronos](https://github.com/amazon-science/chronos-forecasting), [Chronos-2 model card](https://huggingface.co/autogluon/chronos-2), [AutoGluon Chronos-2 guide](https://auto.gluon.ai/stable/tutorials/timeseries/forecasting-chronos.html) | Selected model (U-18), license, fine-tuning and inference contract |
 | WA | [WhatsApp policy](https://business.whatsapp.com/policy), [pricing](https://business.whatsapp.com/products/platform-pricing) | Optional WhatsApp channel and messaging limits |
 
 Sources were read on 20 October 2026. No claim is made that video materials were watched. Private Discord announcements and logged-in portal forms have not been inspected. The final checklist must include both.
@@ -403,9 +403,9 @@ Scheduled and demo/manual runs use the same analysis function. Manual clicks mus
 
 ### 8.1 Model
 
-RECOMMENDED DEFAULT to validate during the technical spike: pretrained **amazon/chronos-bolt-small**, Apache 2.0, for numerical time-series inference on RunPod. Pin model/revision/packages after a successful spike. The team may select another model with reasons, licence evidence, evaluation and updated declaration.
+SELECTED on 21 October 2026 (U-18): **autogluon/chronos-2** (120M parameters, Apache 2.0), fine-tuned with LoRA through AutoGluon 1.6.3 on a RunPod GPU Pod and served from a RunPod Serverless worker. Training pins the base revision from Hugging Face and records it with package versions and the GPU in `run_info.json`. The earlier candidate, amazon/chronos-bolt-small, is superseded.
 
-This model produces numerical forecasts; it is not a chatbot reading receipts or guessing policies. No fine-tuning/from-scratch training in MVP. GPU must perform actual inference, not merely store code or support dashboard screenshots.
+This model produces numerical forecasts; it is not a chatbot reading receipts or guessing policies. No from-scratch training in MVP. Fine-tuning uses only the team's synthetic history, and the fine-tuned model must beat the zero-shot model and both baselines under §8.4 before it is used for a SKU. GPU must perform actual fine-tuning and inference, not merely store code or support dashboard screenshots.
 
 MODEL sources document pretrained models and GPU inference examples. RunPod deployment is a team design, not an official model integration with Orbyte.
 
@@ -430,6 +430,8 @@ Summed daily quantiles do not guarantee a calibrated confidence interval for a m
 ### 8.4 Baselines and result selection
 
 Compare against 28-day mean and 7-day seasonal-naive using only pre-cutoff information. DEFAULT 168-day fixture: final test origin after day 124; hold out days 125–168 as targets. Validation origins after days 58 and 72, with horizon max(30,H)≤44 so validation targets end before day 125. Evaluate all methods on identical dates/horizons.
+
+Implementation (U-19): the same split is expressed as offsets from each series' last day (validation 110 and 96 days before the end, test on the last 44), so longer series such as the 2020–2026 team history use their most recent data.
 
 Per SKU, select lowest pooled validation MAE; ties within 1e-9 choose the simpler baseline, and baseline ties choose the 28-day mean. Freeze selection before final test. Record invalid/censored days and exclusion rules.
 
@@ -640,12 +642,14 @@ Conceptual request:
         "series": [
           {"sku": "SYN-001", "dates": ["..."], "values": [10, 12, 9]}
         ],
-        "model_id": "amazon/chronos-bolt-small",
+        "model_id": "autogluon/chronos-2",
         "model_revision": "<pinned-after-spike>"
       }
     }
 
 Response: request_id, status, model/revision, input_hash, generated_at, runtime_ms, per-SKU dates/p50/quantiles, warnings. The three-value array illustrates schema only; valid requests must still satisfy minimum-history policy.
+
+Implemented in `worker/handler.py` (U-18). Each series carries `dates` and `values`. The response also returns `device` (the GPU name) and, per SKU, `status` (OK or NEEDS_DATA), `source` (MODEL or BASELINE_SELECTED) and `method`. Overall status is OK, PARTIAL, NEEDS_DATA or ERROR. horizon_days must be 1–44, and the worker serves its own loaded model regardless of the request's model_id.
 
 Backend sends only necessary data. RunPod API key is a server secret, never browser-side. Choose async queue/polling or sync endpoint after the spike; UI must not hang without status.
 
