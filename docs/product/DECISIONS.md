@@ -4,6 +4,12 @@ Updated 21 October 2026. This document separates user decisions, implementation 
 
 ## Current authorised implementation
 
+U-17, user, 21 October: proceed with stages 1 and 2 of the agreed MVP implementation plan, backend preparation and stock tracking. The user owns MVP backend implementation and has informed their frontend/demo friend. The friend's name and other final assignments are unavailable. Keep the friend's frontend files intact and use a separate local backend branch. No commit, push or publication was requested.
+
+Verification follow-up, 21 October: the user requested Step 2 tests and push-readiness evidence, with Git commit/push reserved for the user. Added focused inventory tests and an isolated production HTTP harness; 60 Node tests and 24 HTTP scenario groups passed locally. The agent did not stage, commit, push, merge, provision infrastructure or start real inference. See [actual stock verification](../verification/STOCK_TRACKING_2026_10_21.md) and [MVP checkpoints](../plans/MVP_PROGRESS.md).
+
+Stock-stage implementation choices: retain the pulled SQLite/ledger/service; add a dedicated inventory module and product/movement API with client-safe types. Preserve the existing `/api/demo` contract. Use the existing server-issued demo roles, per-product units/precision, atomic movement posting and two levels of duplicate protection. Provide request-based updates and paginated history. Products remain database rows. These choices are local implementation details; deployment durability and production identity remain outstanding. Contracts, ownership and actual checks: [STOCK_TRACKING.md](../engineering/STOCK_TRACKING.md).
+
 U-16, user, 21 October: refine the existing website and implement a persistent backend through stock, recorded-data analysis, manual what-if, forecast adapter, manager approval, simulated supplier outbox, acknowledgement, receiving and audit. This supersedes the landing-only pause in U-12 and extends U-15. Routine visual/backend choices are authorised; no commit, push, external publication, purchase or real supplier message is authorised.
 
 | Implemented choice | Reason / limits |

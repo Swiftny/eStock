@@ -4,6 +4,16 @@ Updated 21 October 2026, MYT. Planning summary, not an official organiser docume
 
 ## Latest decisions
 
+**Current stock-tracking stage, 21 October 2026:** the user approved stages 1 and 2 of the seven-stage MVP plan: backend preparation and stock tracking. The user owns MVP backend work and has informed their friend, who handles frontend/demo work; the friend was not named. Other workstream assignments remain open. The agreed core capability numbers are 1, 2, 3, 4, 8, 13, 14, 16, 19 and 23. This session implements only the preparation/stock stage; future inference, purchasing changes and deployment are not part of this stage.
+
+The latest pull already contained the local persistent workflow described below. Work began at `68643df` on clean `main` tracking `origin/main`, using the HTTPS Swiftny remote, in `/Users/williamc/SDC Hackathon/sdc2026-TooGoodToBeTrue-domain2`. The local branch is `feat/stock-tracking`. Existing SQLite, migrations, shared service/store and `/api/demo` were retained. No new database service, dependency or credentials were needed.
+
+Dedicated `GET /api/products`, `GET /api/movements` and `POST /api/movements` routes now have a stock module in `src/lib/server/inventory/` and client-safe types in `src/lib/inventory/contracts.ts`. They reuse the existing ledger calculation, movement transaction, validation, role checks and duplicate protection. Sale notes now require bounded text when supplied. Replaying an existing stock event does not supersede recommendations again when no ledger change occurred. The frontend owner's pages/components/styles and the original licence were not edited.
+
+The initial handoff contained static checks only. The user subsequently requested Step 2 verification and will handle Git commit/push manually. Fresh checks passed on Node 24.16.0: `npm test` has 60 passing tests (22 new inventory tests); the production HTTP harness has 24 passing scenario groups, including concurrent sales and persistence across a new server process. Lint (32 source files), TypeScript, production build, whitespace and source-preservation checks passed. Both HTTP test processes stopped, their listeners closed and the isolated HTTP database was removed. No browser/screen/computer-control session, real inference, deployment, real message, staging, commit or push was initiated by this task.
+
+Contracts/ownership: [stock tracking agreement](docs/engineering/STOCK_TRACKING.md). Actual evidence: [stock verification](docs/verification/STOCK_TRACKING_2026_10_21.md). Progress: [MVP checkpoints and Step 3 plan](docs/plans/MVP_PROGRESS.md). Stages 1 and 2 are complete locally, giving 2 of 7 accepted stages, approximately 29%. The work is ready for the user to commit/push `feat/stock-tracking` for team review. Later-stage code exists but is not counted as accepted until reviewed in sequence. Real RunPod inference, Replit persistence/proof and connected frontend review remain outstanding. Next: manual Git handoff and frontend review, followed by the separately authorised Step 3. The older `WORKFLOW_2026_10_21.md` referenced below is absent from this checkout; use the new stock report for current endpoint evidence.
+
 **Current implementation handoff, 21 October 2026:** the user explicitly authorised frontend refinement and the persistent backend, forecasting adapter and approval-to-receiving workflow. This supersedes the landing-only pause below. No commit, push, publication, paid infrastructure or real supplier message is authorised. The current implementation is local; platform proof and team review remain outstanding.
 
 The application now has `/demo`, SQLite migrations and deterministic synthetic seed, server-issued demo staff/manager sessions, validated stock and policy forms, explicit day closing, CSV preview/import with reviewed historical revisions, daily/weekly history, purchasing rules, a separate manual what-if view, saved analysis jobs, transactional manager decisions, one PO/outbox per approval, simulated dispatch/retry, explicit synthetic supplier acknowledgement, partial/full/damaged receiving and before/after activity. Stock is derived from an append-only ledger. Quantities use integer thousandths and money uses MYR sen. The database is `data/estock.sqlite` by default and is ignored by Git.
@@ -39,7 +49,7 @@ The user selected **eStock**, a general replenishment assistant for SMEs managin
 | Visual direction | User selected a light, minimal, professional presentation with generous spacing, readable type, limited accents and prominent product previews; Attio is a reference |
 | Model | Candidate: Chronos-Bolt Small; spike, revision and final selection not completed |
 | Accounts/credits | Replit and RunPod status not provided |
-| Final assignments | Not allocated |
+| Final assignments | User owns MVP backend; unnamed friend handles frontend/demo; other assignments remain open |
 | Work status | Refined landing page and persistent application; see the current handoff above and verification report. No deployment or submission |
 | Repository language | English, as requested by the user; proper names and technical identifiers retained |
 
