@@ -1,0 +1,2 @@
+autogluon.timeseries==1.6.3
+runpod==1.12.0
