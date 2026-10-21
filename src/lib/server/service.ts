@@ -43,6 +43,7 @@ import {
   DomainError,
   fail,
   integer,
+  optionalText,
   quantity,
   requireManager,
   text,
@@ -496,7 +497,9 @@ export function executeAction(
       const milli = quantity(input.quantity, Number(row.precision));
       if (input.unit !== row.unit) fail("Quantity unit does not match the product.");
       const reason =
-        type === "SALE" ? String(input.reason || "") : text(input.reason, "Reason", 500);
+        type === "SALE"
+          ? optionalText(input.reason, "Reason", 500)
+          : text(input.reason, "Reason", 500);
       entityId = postMovement({
         productId: id,
         eventKey: text(input.sourceEventId, "Source event ID", 160),
@@ -507,8 +510,13 @@ export function executeAction(
         reason,
         role,
       });
-      invalidate(id);
-      message = "Stock movement saved. Close the day when all records are complete, then analyse.";
+      if (Number(productRow(id).ledger_version) !== Number(row.ledger_version)) {
+        invalidate(id);
+        message =
+          "Stock movement saved. Close the day when all records are complete, then analyse.";
+      } else {
+        message = "This stock event was already saved. No quantity changed.";
+      }
     } else if (action === "closeDay") {
       const day = date(input.date);
       if (day !== metadata("demo_date"))

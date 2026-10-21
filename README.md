@@ -82,6 +82,22 @@ Dates in these imports are `YYYY-MM-DD` business dates. Flags are `true`/`false`
 
 Quantities use integer thousandths internally, with each product's stricter precision enforced. Money uses integer **MYR sen**, reference price **per base unit** and explicit shipping. A blank cost is unknown, not zero, and blocks approval. The ledger is append-only; closed-day physical corrections use manager adjustments on the open day. See the [synthetic data card](docs/data/SYNTHETIC_DATA.md).
 
+## Stock tracking API
+
+Stages 1 and 2 add dedicated stock endpoints on the local `feat/stock-tracking` branch. They reuse the existing SQLite ledger and transaction service. Frontend pages and styling are unchanged in this stage.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/products` | Current physical stock, separate confirmed incoming, units and ledger versions |
+| `GET /api/movements?productId=...&limit=50` | Movement history, newest first, with cursor pagination |
+| `POST /api/movements` | Record a sale, usage, loss, usable return or authorised adjustment |
+
+Use the existing synthetic session cookie. Mutations require JSON and an `Idempotency-Key` header; preserve the same key, source event and input on retries. Supplier receipts still use the purchase-order receiving workflow. The original `/api/demo` interface remains available.
+
+Frontend types, sample requests, validation/error handling, file ownership and stage-specific verification are documented in [the stock tracking agreement](docs/engineering/STOCK_TRACKING.md). Updates are request-based; refresh stock/history after a save. This stage does not add server push or a live POS connection.
+
+Stock verification on Node 24.16.0 passed **60 Node tests** and **24 production HTTP scenario groups**, including permissions, duplicate protection, concurrent sales and stock/history/session persistence across a fresh server process. Run `npm test`, then `npm run build` and `node scripts/verify-stock-tracking.mjs` to reproduce. The HTTP harness uses its own temporary database, stops its server processes and removes that database. It requires permission to listen on localhost. Evidence and limits: [stock verification](docs/verification/STOCK_TRACKING_2026_10_21.md). Progress and the next stage: [MVP checkpoints](docs/plans/MVP_PROGRESS.md).
+
 ## Forecasting and purchasing rules
 
 The server separates demand estimation from purchasing arithmetic. `max(30, lead time + effective review interval)` forecast days are requested. Routine and urgent review timing differ. Confirmed inbound is considered on its actual date; overdue/unconfirmed goods never masquerade as on-hand. Raw need is clamped to zero before pack/MOQ rounding. Daily projections show shortages that a proposed arrival cannot resolve.

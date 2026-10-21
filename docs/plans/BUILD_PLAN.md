@@ -4,6 +4,8 @@ Baseline: 20 October 2026; status updated 21 October. The user subsequently auth
 
 ## Execution principles
 
+**Stock-tracking follow-up, 21 October:** the user approved stages 1 and 2 of the seven-stage MVP implementation sequence discussed in chat and subsequently requested verification. The local `feat/stock-tracking` branch adds dedicated stock endpoints and records frontend/backend ownership on top of the pulled implementation. See [the stock tracking agreement](../engineering/STOCK_TRACKING.md), [60-test/24-HTTP-scenario verification](../verification/STOCK_TRACKING_2026_10_21.md), and [MVP checkpoints](MVP_PROGRESS.md). Stages 1 and 2 are complete locally, approximately 29% by accepted-stage count. The user will handle commit/push manually. This does not establish completion of the real RunPod spike or deployment milestones below.
+
 - One complete workflow: movement → snapshot → forecast → recommendation → approval → outbox/PO → receiving → audit.
 - The main AI task is forecasting. Chatbots and interpretation of supplier replies are roadmap items.
 - Make the product general through configuration; use 3–5 synthetic SKUs and one location for the demo.
