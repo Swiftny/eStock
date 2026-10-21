@@ -13,6 +13,15 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 - On 21 October the user subsequently authorised frontend refinement and a persistent local stock-to-receiving workflow, including forecast adapter/RunPod worker, demo server-side permissions and a SIMULATED supplier outbox. This supersedes the earlier landing-only pause. See the current PROJECT_CONTEXT.md handoff and verification report. **Do not purchase services, send real supplier messages, commit, push or publish externally without further instruction.** Real RunPod/Replit configuration and proof remain outstanding.
 - Names/university are recorded in the context; registration contacts live in ignored .private/TEAM_DETAILS.md. Keep personal contacts outside synthetic demo data and public source.
 
+## Parallel work boundaries
+
+- Before edits, read `pages/integration.md` and select one area from `scripts/work-scopes.json`: frontend, demo, data, backend, system or ai.
+- Edit only that area's paths. Reading other areas is allowed. Report cross-area dependencies instead of silently editing them. Shared-file changes need a separate coordinated integration task with one active editor.
+- Frontend landing and persistent demo UI are separate areas. Demo rehearsal is shared, but only one active task edits demo UI code at a time.
+- Use a separate clone/worktree for simultaneous AI sessions; switching branches inside a shared working directory does not isolate edits. Keep local databases and secrets separate.
+- Do not run repository-wide formatters for a scoped task. Run `python3 scripts/check_scope.py <area>` before handoff; use `--base <integration-ref>` to include branch commits. This checker is opt-in, not GitHub enforcement. Preserve pre-existing out-of-scope changes.
+- Integrate shared contracts and dependencies one task at a time, then verify dependent areas. Existing commit/push/publication restrictions remain in effect.
+
 ## Working approach
 
 - Write all repository documentation and new explanatory text in English. Preserve proper names, contact values, URLs, file paths and technical identifiers. This language requirement does not authorise application scaffolding; agree on M0 technical choices first.

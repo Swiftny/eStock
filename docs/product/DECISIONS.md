@@ -2,6 +2,12 @@
 
 Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The local persistent workflow is implemented; real RunPod inference and Replit deployment remain unverified.
 
+## Team assignments
+
+U-18, user, 21 October: prevent overlapping edits across AI, frontend, backend, demo and system. Add explicit work boundaries, a scope checker and serial shared integration rules. This supersedes U-17's no-file-ownership preference only as needed for conflict prevention. Data remains Maxi's area. Existing code stays in place; no commit, push or remote enforcement was performed.
+
+U-17, user, 21 October: Vitto frontend, Maxi data, William system/backend, Marco AI. Create separate work pages in the root `pages/` folder without file ownership rules. [Team pages](../../pages/README.md) separate tasks and the shared demo. Existing application routes and worker remain in place; training is not added by this documentation change. This supersedes U-08 and earlier unallocated-workstream notes.
+
 ## Current authorised implementation
 
 U-16, user, 21 October: refine the existing website and implement a persistent backend through stock, recorded-data analysis, manual what-if, forecast adapter, manager approval, simulated supplier outbox, acknowledgement, receiving and audit. This supersedes the landing-only pause in U-12 and extends U-15. Routine visual/backend choices are authorised; no commit, push, external publication, purchase or real supplier message is authorised.
@@ -32,7 +38,7 @@ Actual checks are in [the workflow report](../verification/WORKFLOW_2026_10_21.m
 | U-05 | Synthetic CSV and outgoing-stock/receiving forms | Explicit user response |
 | U-06 | Prefer WhatsApp if feasible; Telegram if time permits | Explicit user response; completing both channels is not required |
 | U-07 | Marco Ryan Suseno is leader; four members listed below | Full names and university supplied by the user |
-| U-08 | Final assignments remain open | The user asked that reported skills not become final assignments |
+| U-08 | Historical: final assignments remained open; superseded by U-17 | Initial reported skills were not assignments |
 | U-09 | Documentation first; technical agreement before scaffolding | Original documentation scope, reaffirmed by the user's M0 request; application implementation and service purchases are not authorised by the documentation |
 | U-10 | All repository documents must be in English | User instruction on 20 October 2026; preserve meaning, names, contact values, identifiers and links |
 | U-11 | Use both ui-ux-pro-max and antislop for UI/UX work; antislop mode is during | Existing AGENTS.md rule, reaffirmed by the user on 20 October 2026 |

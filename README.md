@@ -8,6 +8,10 @@ A replenishment assistant for SMEs managing physical stock. Record sales, analys
 
 ## Run locally
 
+**Current checkout limitation, 21 October:** the root `pages/` team-documentation folder conflicts with `src/app` in Next.js 16.4.2, so fresh `npm run dev` and `npm run build` currently fail. The earlier running server still served the app during frontend checks. A separate copy excluding that documentation folder passed a webpack production build and is available locally at [localhost:3002](http://localhost:3002), with a separate synthetic database. This is a temporary verification preview. The system/integration owner must coordinate a documentation-folder move and link/scope updates before the standard commands below can be used in a fresh checkout. See [frontend verification](pages/frontend.md).
+
+The landing page uses a light-blue palette, a bold headline, word entrances and sections that reveal on scroll. Employee/manager panels have strong type and tight spacing. How it works explains recording stock, suggestions for what/when/how much to order, workspace review prompts and manager approval. The AI explanation keeps the current baseline-only demo clearly labelled. The tagline reads “Stock planning for SMEs”. Overview, Your team and How it works navigate to their sections, with hover underlines and no target outline. Hero action labels animate as one piece. Purchase previews and the footer wordmark remain removed. Reduced motion shows content immediately. The latest isolated production preview is [localhost:3006](http://localhost:3006/?v=reorder-copy), with its own synthetic database. Shared blue tokens still style the inventory workspace; green success, amber warnings and error distinctions are preserved. Backend calculations, permissions and persistence code were not changed.
+
 Requires **Node.js 22.18+** with built-in SQLite. This implementation was checked on **Node 22.23.3**. Node emits an experimental SQLite warning on this version. Python 3 is needed only for worker contract tests, not for running the local app.
 
 ```sh
@@ -96,14 +100,18 @@ Use the earlier deadline pending authoritative clarification: **25 October 2026,
 
 ## Team and project documents
 
-| Member | Reported skills | University |
-| --- | --- | --- |
-| Marco Ryan Suseno | Team leader; frontend | Xiamen University |
-| Riakudu Vittorios Surjoraharjos | PRD, frontend, UI/UX | Xiamen University |
-| Maximillion Cang | Database | Xiamen University |
-| William Christiansen | System design | Xiamen University |
+Before parallel edits, read [integration rules](pages/integration.md) and use the scope checker described there. Frontend landing and demo UI have separate edit boundaries; shared files require coordinated integration.
 
-Reported skills are not final assignments. Registration contacts stay in ignored `.private/TEAM_DETAILS.md`.
+Individual work pages: [team index](pages/README.md), [Vitto / frontend](pages/frontend.md), [Maxi / data](pages/data.md), [William / backend and system](pages/backend.md), [Marco / AI](pages/ai.md), and [shared demo](pages/demo.md).
+
+| Member | Assigned work | University |
+| --- | --- | --- |
+| Marco Ryan Suseno | Team leader; AI | Xiamen University |
+| Riakudu Vittorios Surjoraharjos (Vitto) | Frontend | Xiamen University |
+| Maximillion Cang (Maxi) | Data | Xiamen University |
+| William Christiansen | System and backend | Xiamen University |
+
+Assignments confirmed by the user on 21 October 2026. Registration contacts stay in ignored `.private/TEAM_DETAILS.md`.
 
 - [Context and handoff](PROJECT_CONTEXT.md), [PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [build plan](docs/plans/BUILD_PLAN.md).
 - [Implementation plan](docs/plans/IMPLEMENTATION_2026_10_21.md), [visual rationale](DESIGN.md), [actual verification and Delivery Gate](docs/verification/WORKFLOW_2026_10_21.md).
