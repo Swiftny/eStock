@@ -1,6 +1,25 @@
 # eStock: decisions and unavailable information
 
-Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The landing page is implemented locally; the inventory application remains planned.
+Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The local persistent workflow is implemented; real RunPod inference and Replit deployment remain unverified.
+
+## Current authorised implementation
+
+U-16, user, 21 October: refine the existing website and implement a persistent backend through stock, recorded-data analysis, manual what-if, forecast adapter, manager approval, simulated supplier outbox, acknowledgement, receiving and audit. This supersedes the landing-only pause in U-12 and extends U-15. Routine visual/backend choices are authorised; no commit, push, external publication, purchase or real supplier message is authorised.
+
+| Implemented choice | Reason / limits |
+| --- | --- |
+| Built-in Node SQLite, SQL migrations, one local file | Existing stack had no established database. Simple local persistence without an ORM, native addon or new JavaScript dependency. Requires Node 22.18+, one process and durable storage for deployment; hosted database remains necessary if the target lacks a durable disk. Supersedes proposed PostgreSQL/Drizzle for this local milestone. |
+| Integer thousandths and per-product precision; MYR sen per base unit | Reliable ledger arithmetic and explicit price/pack semantics. Costs remain unknown if blank; approval requires complete reference costs. |
+| One synthetic organisation/location and opaque HttpOnly server sessions | Server-side manager/staff permissions are real; role selection is explicitly simulated identity. No production SSO/authentication claim. |
+| Explicit synthetic business date and immutable closed days | History, closing stock, forecast cutoff and approval window stay aligned. Closing triggers analysis; unfinished-day transactions invalidate old approval. Closed physical records are corrected by open-day manager adjustments, not edits/deletion. |
+| Source IDs plus request idempotency and database uniqueness | Replayed sales/receipts cannot post stock twice; one decision creates one approval/PO/outbox. |
+| Reviewed historical CSV correction retains source/SKU/date | Corrections increment revisions, preserve before/after audit and invalidate prior recommendations; aggregate history never changes physical stock. |
+| Active purchase commitment blocks an additional PO | Conservative single-supplier MVP. Expose any remaining demand/timing risk; resolve confirmation, receiving, damage or explicit cancellation first. |
+| Supplier ETA changes hold receiving for review | A different date cannot silently become an approved term. The manager can document cancellation and reanalyse before replacing the commitment. |
+| Local baseline adapter plus configurable RunPod queue worker | Honest local testing without credentials. Pending/completed/failed results and provenance persist. Invalid data/configuration does not silently produce a fallback quantity. Actual GPU and own-account proof remain outstanding. |
+| Split hero, actionable workspace views and native disclosures | One clear daily task; supporting calculations/history/metadata stay accessible. Existing forest green and local Manrope are retained. Motion rationale is in DESIGN.md. |
+
+Actual checks are in [the workflow report](../verification/WORKFLOW_2026_10_21.md). Earlier decisions below are retained as history; their landing-only implementation status is superseded by U-16.
 
 ## User decisions
 

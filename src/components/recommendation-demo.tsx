@@ -58,6 +58,7 @@ export function RecommendationDemo() {
       if (timer.current) clearTimeout(timer.current);
       setScenario("ready");
       setLoading(false);
+      dialog.closest("details")?.setAttribute("open", "");
       dialog.showModal();
     };
     dialog.addEventListener(reviewEvent, openExample);
@@ -198,7 +199,7 @@ export function RecommendationDemo() {
               <p>The demo is switching scenarios. No forecast service is called.</p>
             </div>
           ) : scenario === "ready" ? (
-            <div className="recommendation-content">
+            <div className="recommendation-content" key={decision?.kind || "ready"}>
               <div className="stock-evidence">
                 <div className="product-identity">
                   <span className="product-symbol">
@@ -264,7 +265,7 @@ export function RecommendationDemo() {
               </div>
             </div>
           ) : (
-            <div className="preview-state">
+            <div className="preview-state" key={scenario}>
               <span className="state-mark">
                 <Icon name={scenario === "covered" ? "check" : "records"} />
               </span>
@@ -386,7 +387,7 @@ export function RecommendationDemo() {
                 </h3>
                 <p>
                   {decision.kind === "approved"
-                    ? "The next step in the planned workflow is a supplier request. This local simulation records your decision only."
+                    ? "The persistent demo creates a supplier request after approval. This illustrative example records your decision only."
                     : "The manager's reason stays with the decision. No purchase follows a rejection."}{" "}
                   Available stock remains 45 units.
                 </p>

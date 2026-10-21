@@ -28,3 +28,9 @@ __pycache__/
 out/
 *.tsbuildinfo
 .artifacts/
+
+# Local persistent demo database
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

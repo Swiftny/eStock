@@ -1,0 +1,3 @@
+source_record_id,sku,business_date,quantity_sold,data_complete,stockout_flag
+example-history-001,SYN-003,2026-09-30,4,true,false
+example-history-002,SYN-003,2026-10-01,6,true,false

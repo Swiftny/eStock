@@ -1,4 +1,6 @@
 @import url("../styles/tokens.css");
+@import url("../styles/refinement.css");
+@import url("../styles/workspace.css");
 
 * {
   box-sizing: border-box;

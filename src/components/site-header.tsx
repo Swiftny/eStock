@@ -1,19 +1,40 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DemoLaunchButton } from "./recommendation-demo";
 import { Wordmark } from "./ui";
 
 const links = [
   { href: "#how-it-works", label: "How it works" },
-  { href: "#features", label: "Features" },
-  { href: "#human-control", label: "Human control" },
+  { href: "#features", label: "The recommendation" },
+  { href: "#human-control", label: "Your decision" },
 ];
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState("");
   const menuButton = useRef<HTMLButtonElement>(null);
-
+  useEffect(() => {
+    const scroll = () => setScrolled(window.scrollY > 16);
+    scroll();
+    window.addEventListener("scroll", scroll, { passive: true });
+    if (!("IntersectionObserver" in window))
+      return () => window.removeEventListener("scroll", scroll);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) if (entry.isIntersecting) setActive(`#${entry.target.id}`);
+      },
+      { rootMargin: "-20% 0px -55% 0px" },
+    );
+    for (const link of links) {
+      const target = document.querySelector(link.href);
+      if (target) observer.observe(target);
+    }
+    return () => {
+      window.removeEventListener("scroll", scroll);
+      observer.disconnect();
+    };
+  }, []);
   useEffect(() => {
     if (!menuOpen) return;
     const handleKey = (event: KeyboardEvent) => {
@@ -25,11 +46,10 @@ export function SiteHeader() {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [menuOpen]);
-
   return (
-    <header className="site-header">
+    <header className={`site-header ${scrolled ? "is-scrolled" : ""}`}>
       <div className="header-inner container">
-        {/* biome-ignore lint/a11y/useValidAnchor: This real fragment link also closes the mobile menu. */}
+        {/* biome-ignore lint/a11y/useValidAnchor: Fragment navigation also closes the mobile menu. */}
         <a
           href="#page-top"
           aria-label="eStock home"
@@ -40,15 +60,19 @@ export function SiteHeader() {
         </a>
         <nav className="desktop-nav" aria-label="Main navigation">
           {links.map((link) => (
-            <a key={link.href} href={link.href}>
+            <a
+              key={link.href}
+              href={link.href}
+              aria-current={active === link.href ? "location" : undefined}
+            >
               {link.label}
             </a>
           ))}
         </nav>
         <div className="header-actions">
-          <DemoLaunchButton className="button button-small button-outline">
-            Try the preview
-          </DemoLaunchButton>
+          <a className="button button-small button-primary nav-demo" href="/demo">
+            Open demo
+          </a>
           <button
             ref={menuButton}
             className="menu-toggle button button-outline"
@@ -68,7 +92,17 @@ export function SiteHeader() {
         hidden={!menuOpen}
       >
         {links.map((link) => (
-          <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>
+          <a
+            key={link.href}
+            href={link.href}
+            aria-current={active === link.href ? "location" : undefined}
+            onClick={() => {
+              setMenuOpen(false);
+              requestAnimationFrame(() =>
+                document.querySelector<HTMLElement>(link.href)?.focus({ preventScroll: true }),
+              );
+            }}
+          >
             {link.label}
           </a>
         ))}

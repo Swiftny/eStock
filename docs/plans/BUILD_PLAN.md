@@ -1,6 +1,6 @@
 # eStock: build and delivery plan
 
-Baseline: 20 October 2026; status updated 21 October. This is the application build plan. The separately authorised landing-page stage is now implemented and verified locally with Next.js, TypeScript and plain CSS. It does not complete M0 or M1. Pause for the user's page review before application development; remaining backend/platform choices still need agreement.
+Baseline: 20 October 2026; status updated 21 October. The user subsequently authorised the persistent workflow and frontend refinement. Local database, forms, rules, forecast adapter, approval/outbox/receiving and audit are now implemented. See IMPLEMENTATION_2026_10_21.md and the workflow verification report. M1/M3 are not fully complete: real RunPod inference, fixed evaluation and Replit deployment/proof still require account configuration and actual execution. The earlier landing-only pause is superseded; no publication or Git commit is authorised.
 
 ## Execution principles
 

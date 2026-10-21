@@ -4,6 +4,18 @@ Updated 21 October 2026, MYT. Planning summary, not an official organiser docume
 
 ## Latest decisions
 
+**Current implementation handoff, 21 October 2026:** the user explicitly authorised frontend refinement and the persistent backend, forecasting adapter and approval-to-receiving workflow. This supersedes the landing-only pause below. No commit, push, publication, paid infrastructure or real supplier message is authorised. The current implementation is local; platform proof and team review remain outstanding.
+
+The application now has `/demo`, SQLite migrations and deterministic synthetic seed, server-issued demo staff/manager sessions, validated stock and policy forms, explicit day closing, CSV preview/import with reviewed historical revisions, daily/weekly history, purchasing rules, a separate manual what-if view, saved analysis jobs, transactional manager decisions, one PO/outbox per approval, simulated dispatch/retry, explicit synthetic supplier acknowledgement, partial/full/damaged receiving and before/after activity. Stock is derived from an append-only ledger. Quantities use integer thousandths and money uses MYR sen. The database is `data/estock.sqlite` by default and is ignored by Git.
+
+The default forecast adapter is **MOCK_BASELINE**, calculated from saved complete history. RunPod queue submission/polling, metadata validation, fallback and a CUDA Python Chronos-Bolt worker are implemented, but **no RunPod credentials/endpoint were available and no actual GPU inference or deployment was performed**. Worker dependency ranges/image are deployment candidates; freeze exact resolved packages and model revision after a real spike. Replit needs a durable volume and one app instance, or a hosted database migration; local file persistence is not evidence of autoscale/redeploy durability.
+
+The landing page uses a split hero, compact fixture preview, sticky scroll states and restrained reduced-motion-aware entrances. App screens prioritise actionable rows, with calculations/history/model details behind labelled disclosures. Supplier, quantity, costs, arrival and warnings remain visible during approval. The original in-memory landing example remains separate from persistent `/demo` records.
+
+Inspection began on `main` with the original remote and existing changes in `next-env.d.ts`, `package-lock.json`, and partial backend/contracts/plan files. Those files were inspected and extended without resetting history. The licence is unchanged. Next.js regenerates `next-env.d.ts` for the active run mode. The unavailable plugin skill path was resolved to the session catalog's readable `~/.agents/skills/antislop/SKILL.md`; during mode was announced as a session override.
+
+Actual checks and browser evidence: [workflow verification](docs/verification/WORKFLOW_2026_10_21.md). Tested setup, demo and limitations: [README](README.md). Outstanding work: real Replit/RunPod round trip and account evidence, resolved worker lock/model revision, fixed submission evaluation, human usability/team review, deployment persistence/access, six submission artifacts and authorised meaningful Git commits. Do not call the full competition definition of done complete.
+
 The user selected **eStock**, a general replenishment assistant for SMEs managing physical stock. This supersedes the earlier brainstorming status that required blank problem/solution fields. Previous customer-order tracking and catering directions are not mandatory parts of this MVP.
 
 **Target problem:** owners manually combine sales, stock spreadsheets and supplier chats to decide when/how much to buy and chase approval. This hypothesis fits the Domain 2 brief; it has not been validated through customer research or field measurements.
@@ -22,13 +34,13 @@ The user selected **eStock**, a general replenishment assistant for SMEs managin
 | Recommended fixture | One organisation/location, 3–5 SKUs, one primary supplier per SKU |
 | Recommended policy | Per-SKU lead time, 7/30-day cycle, buffer, pack/MOQ and budget |
 | Channels | Persistent outbox/simulator required; real WhatsApp if feasible; Telegram if time permits |
-| Stack | Approved frontend: Next.js App Router, TypeScript and plain CSS. PostgreSQL/ORM and Python worker remain proposals |
-| Current implementation stage | Landing page completed locally and ready for user review; inventory backend, forecasting, authentication and messaging are outside this stage |
+| Stack | Next.js App Router, TypeScript, plain CSS and built-in Node SQLite; Python RunPod worker implemented but not GPU-verified |
+| Current implementation stage | Persistent local synthetic workflow implemented; real GPU inference, production identity, real messaging and deployment remain unverified/outside this local delivery |
 | Visual direction | User selected a light, minimal, professional presentation with generous spacing, readable type, limited accents and prominent product previews; Attio is a reference |
 | Model | Candidate: Chronos-Bolt Small; spike, revision and final selection not completed |
 | Accounts/credits | Replit and RunPod status not provided |
 | Final assignments | Not allocated |
-| Work status | Documentation and verified local landing page with a synthetic manager-review demo. No inventory application, real inference, deployment or submission |
+| Work status | Refined landing page and persistent application; see the current handoff above and verification report. No deployment or submission |
 | Repository language | English, as requested by the user; proper names and technical identifiers retained |
 
 The PRD contains proposed technical defaults, not claims that the user has selected every option. Record material changes here and in the [decision register](docs/product/DECISIONS.md).
@@ -103,7 +115,7 @@ Written sources, templates, orientation and the Orbyte introduction were read; t
 
 The documents created so far are **guides and drafts**, not those six finished deliverables. No official ten-slide preliminary limit has been verified; the ten-slide outline is a suggestion. Final-round rules are recorded separately in the compliance matrix.
 
-## Current handoff
+## Historical landing-only handoff (superseded by the current implementation handoff above)
 
 **21 October landing-page stage:** after the recommendation of Next.js App Router, TypeScript and plain CSS, the user asked to proceed based on the PRD. That frontend stack was approved for the landing page. The requested page is now implemented and verified locally. Stop for user review before application work. No commits, pushes or deployment publication were performed or authorised.
 

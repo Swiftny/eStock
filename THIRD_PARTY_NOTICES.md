@@ -16,7 +16,13 @@ Versions and licence identifiers below were read from the installed packages on 
 | @types/node | 26.6.5 | MIT |
 | @types/react / @types/react-dom | 19.3.0 | MIT |
 
-## Manrope
+## Local backend and worker candidates
+
+The application uses `node:sqlite`, `node:crypto`, `node:fs` and other Node.js built-ins; no database ORM, native addon, animation, chart or new JavaScript runtime dependency was added. Node.js 22.23.3 was used locally; Node and bundled SQLite retain their upstream licences (Node's MIT licence plus third-party notices; SQLite public-domain dedication). Keep the runtime distribution's notices when packaging it.
+
+`worker/requirements.txt` and Dockerfile name Chronos, RunPod and a PyTorch CUDA image as **deployment candidates**. Those packages/model were not downloaded or executed here. Their exact resolved packages/image digest, licences and model commit must be checked and locked after a real GPU spike; do not declare candidate ranges as installed versions. Chronos upstream is Apache 2.0; preserve its model/library notices if deployed. The repository contains original adapter/worker code, not copied model weights.
+
+## Manrope font
 
 Copyright 2019 The Manrope Project Authors (https://github.com/sharanda/manrope).
 
