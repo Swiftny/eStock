@@ -30,6 +30,7 @@ export type OrderStatus =
   | "DISPATCH_FAILED"
   | "DISPATCH_UNKNOWN";
 export type ForecastSource =
+  | "DEMO_ESTIMATE"
   | "MOCK_BASELINE"
   | "BASELINE_FALLBACK"
   | "BASELINE_SELECTED"
@@ -199,7 +200,7 @@ export interface PurchaseOrder {
   status: OrderStatus;
   expectedDate: string;
   confirmedDate: string | null;
-  estimatedCostSen: number;
+  estimatedCostSen: number | null;
   createdAt: string;
   recommendationId: string;
   damageOpen: boolean;
@@ -223,6 +224,7 @@ export interface Receipt {
   reference: string;
 }
 export interface ActivityEvent {
+  businessDate?: string;
   id: string;
   actor: Role | "system";
   action: string;
@@ -236,6 +238,7 @@ export interface AppState {
   role: Role;
   organisation: { id: string; name: string };
   demoDate: string;
+  demoGeneration: string;
   closedThrough: string;
   suppliers: Supplier[];
   products: Product[];

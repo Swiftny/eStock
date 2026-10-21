@@ -5,6 +5,7 @@ export interface PurchasingInput {
   unit?: string;
   stock: number;
   decisionDate: string;
+  demandStartDate?: string;
   daily: number[];
   policy: Policy;
   inbound: { quantity: number; date: string; confirmed: boolean }[];
@@ -17,6 +18,8 @@ export function calculatePurchase(input: PurchasingInput): PurchaseCalculation {
   const { stock, decisionDate, daily, policy: p, inbound } = input;
   number(stock, "Stock");
   date(decisionDate);
+  const demandStartDate = input.demandStartDate || decisionDate;
+  date(demandStartDate);
   integer(p.leadTimeDays, "Lead time", 1, 14);
   integer(p.reviewIntervalDays, "Review interval", 1, 30);
   number(p.safetyStock, "Safety stock");
@@ -45,7 +48,7 @@ export function calculatePurchase(input: PurchasingInput): PurchaseCalculation {
     number(item.quantity, "Inbound quantity");
     date(item.date);
   }
-  const horizonEnd = addDays(decisionDate, horizonDays - 1);
+  const horizonEnd = addDays(demandStartDate, horizonDays - 1);
   const eligibleInbound = roundQuantity(
     inbound
       .filter((item) => item.confirmed && item.date >= decisionDate && item.date <= horizonEnd)
@@ -68,9 +71,14 @@ export function calculatePurchase(input: PurchasingInput): PurchaseCalculation {
   let stockoutDate: string | null = null;
   const warnings: string[] = [];
   const projections = daily.map((value, index) => {
-    const day = addDays(decisionDate, index);
+    const day = addDays(demandStartDate, index);
     const arriving = inbound
-      .filter((item) => item.confirmed && item.date === day)
+      .filter(
+        (item) =>
+          item.confirmed &&
+          (item.date === day ||
+            (index === 0 && item.date >= decisionDate && item.date < demandStartDate)),
+      )
       .reduce((sum, item) => sum + item.quantity, 0);
     balance = roundQuantity(balance + arriving - value);
     if (balance <= p.safetyStock && !safetyDate) safetyDate = day;
@@ -84,7 +92,7 @@ export function calculatePurchase(input: PurchasingInput): PurchaseCalculation {
     };
   });
   const earlyRisk = projections
-    .slice(0, p.leadTimeDays)
+    .filter((day) => day.date < arrivalDate)
     .some((day) => day.closingStock < p.safetyStock);
   const urgent = projections.slice(0, horizonDays).some((day) => day.withOrder < 0);
   let status: PurchaseCalculation["status"] =
