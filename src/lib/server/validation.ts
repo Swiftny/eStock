@@ -16,6 +16,12 @@ export function text(value: unknown, label: string, max = 200): string {
     fail(`${label} is required and must be ${max} characters or fewer.`);
   return value.trim();
 }
+export function optionalText(value: unknown, label: string, max = 200): string {
+  if (value === undefined) return "";
+  if (typeof value !== "string" || value.trim().length > max)
+    fail(`${label} must be text of ${max} characters or fewer.`);
+  return value.trim();
+}
 export function number(value: unknown, label: string, minimum = 0, maximum = 1_000_000): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value < minimum || value > maximum)
     fail(`${label} must be a number between ${minimum} and ${maximum}.`);
