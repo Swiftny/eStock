@@ -14,4 +14,4 @@ Read [parallel work and integration rules](integration.md) before editing. Code 
 
 These boundaries reduce conflicts but cannot guarantee conflict-free merges. Shared contracts, styles and dependencies are integrated one task at a time. Use a separate clone or worktree for simultaneous AI sessions, not the same working directory.
 
-All task lists below are remaining work, not claims of completion. Read [project context](../PROJECT_CONTEXT.md) for current authorisation and [README](../README.md) for existing run commands. No commit, push, publication, paid service or real supplier message is authorised by these pages.
+All task lists below are remaining work, not claims of completion. Read [project context](../../PROJECT_CONTEXT.md) for current authorisation and [README](../../README.md) for existing run commands. No commit, push, publication, paid service or real supplier message is authorised by these pages.

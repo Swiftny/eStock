@@ -15,7 +15,7 @@ Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work
 
 ## Parallel work boundaries
 
-- Before edits, read `pages/integration.md` and select one area from `scripts/work-scopes.json`: frontend, demo, data, backend, system or ai.
+- Before edits, read `docs/team/integration.md` and select one area from `scripts/work-scopes.json`: frontend, demo, data, backend, system or ai.
 - Edit only that area's paths. Reading other areas is allowed. Report cross-area dependencies instead of silently editing them. Shared-file changes need a separate coordinated integration task with one active editor.
 - Frontend landing and persistent demo UI are separate areas. Demo rehearsal is shared, but only one active task edits demo UI code at a time.
 - Use a separate clone/worktree for simultaneous AI sessions; switching branches inside a shared working directory does not isolate edits. Keep local databases and secrets separate.

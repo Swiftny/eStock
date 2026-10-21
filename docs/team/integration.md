@@ -2,6 +2,8 @@
 
 The user requested conflict prevention on 21 October 2026. These rules supersede the earlier request for task pages without file boundaries. They apply to humans and AI assistants.
 
+Team guides live in `docs/team/`. Do not recreate a root `pages/` folder for documentation: Next.js treats that directory as application routes and fails alongside this project's `src/app` layout. The 21 October startup repair moved these guides and their scope entries together without changing application routes.
+
 ## Separate work areas
 
 | Area | Member | Main files |
@@ -45,4 +47,4 @@ Merge one reviewed task at a time into the current integration branch and run re
 
 ## Starting an AI task
 
-> My area is FRONTEND/DEMO/DATA/BACKEND/SYSTEM/AI. Read AGENTS.md, pages/integration.md and my work page. Inspect Git status. Edit only paths allowed for my area in scripts/work-scopes.json. Read other areas as needed, but report dependent changes instead of editing them. Do not touch shared files or format the whole repository. Preserve existing changes. Run the scope checker and relevant tests; report actual results and blockers. Do not commit, push or publish without authorisation.
+> My area is FRONTEND/DEMO/DATA/BACKEND/SYSTEM/AI. Read AGENTS.md, docs/team/integration.md and my work page. Inspect Git status. Edit only paths allowed for my area in scripts/work-scopes.json. Read other areas as needed, but report dependent changes instead of editing them. Do not touch shared files or format the whole repository. Preserve existing changes. Run the scope checker and relevant tests; report actual results and blockers. Do not commit, push or publish without authorisation.

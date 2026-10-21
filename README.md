@@ -8,7 +8,7 @@ A replenishment assistant for SMEs managing physical stock. Record sales, analys
 
 ## Run locally
 
-**Current checkout limitation, 21 October:** the root `pages/` team-documentation folder conflicts with `src/app` in Next.js 16.4.2, so fresh `npm run dev` and `npm run build` currently fail. The earlier running server still served the app during frontend checks. A separate copy excluding that documentation folder passed a webpack production build and is available locally at [localhost:3002](http://localhost:3002), with a separate synthetic database. This is a temporary verification preview. The system/integration owner must coordinate a documentation-folder move and link/scope updates before the standard commands below can be used in a fresh checkout. See [frontend verification](pages/frontend.md).
+Team documentation lives in [docs/team/](docs/team/README.md). Keep it out of a root `pages/` directory: Next.js treats that name as application routes, which conflicts with this project's `src/app` layout. The documentation was moved and its links and work scopes updated on 21 October to restore normal startup.
 
 The landing page uses a light-blue palette, a bold headline, word entrances and sections that reveal on scroll. Employee/manager panels have strong type and tight spacing. How it works explains recording stock, suggestions for what/when/how much to order, workspace review prompts and manager approval. The AI explanation keeps the current baseline-only demo clearly labelled. The tagline reads “Stock planning for SMEs”. Overview, Your team and How it works navigate to their sections, with hover underlines and no target outline. Hero action labels animate as one piece. Purchase previews and the footer wordmark remain removed. Reduced motion shows content immediately. The latest isolated production preview is [localhost:3006](http://localhost:3006/?v=reorder-copy), with its own synthetic database. Shared blue tokens still style the inventory workspace; green success, amber warnings and error distinctions are preserved. Backend calculations, permissions and persistence code were not changed.
 
@@ -116,9 +116,9 @@ Use the earlier deadline pending authoritative clarification: **25 October 2026,
 
 ## Team and project documents
 
-Before parallel edits, read [integration rules](pages/integration.md) and use the scope checker described there. Frontend landing and demo UI have separate edit boundaries; shared files require coordinated integration.
+Before parallel edits, read [integration rules](docs/team/integration.md) and use the scope checker described there. Frontend landing and demo UI have separate edit boundaries; shared files require coordinated integration.
 
-Individual work pages: [team index](pages/README.md), [Vitto / frontend](pages/frontend.md), [Maxi / data](pages/data.md), [William / backend and system](pages/backend.md), [Marco / AI](pages/ai.md), and [shared demo](pages/demo.md).
+Individual work pages: [team index](docs/team/README.md), [Vitto / frontend](docs/team/frontend.md), [Maxi / data](docs/team/data.md), [William / backend and system](docs/team/backend.md), [Marco / AI](docs/team/ai.md), and [shared demo](docs/team/demo.md).
 
 | Member | Assigned work | University |
 | --- | --- | --- |
