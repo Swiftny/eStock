@@ -20,6 +20,11 @@ import {
   submitForecast,
   validateHistory,
 } from "./forecast.ts";
+import {
+  type CoverageSnapshot,
+  captureCoverageSnapshot,
+  coveragePolicyIdentity,
+} from "./forecasting/snapshot.ts";
 import { importData } from "./imports.ts";
 import { seedDatabase } from "./seed.ts";
 import {
@@ -141,7 +146,7 @@ function startAnalysis(productId: string): string {
   );
   const horizonDays = Math.max(30, p.leadTimeDays + (daysUntilReview || p.reviewIntervalDays));
   const hash = digest({
-    rules: "estock-purchasing-v1",
+    rules: "estock-analysis-v2",
     org: ORG,
     productId,
     ...snap,
@@ -191,7 +196,12 @@ function startAnalysis(productId: string): string {
     productId,
     hash,
     analysis.status,
-    JSON.stringify({ ...request, snapshot: snap }),
+    JSON.stringify({
+      ...request,
+      snapshot: snap,
+      coverage: captureCoverageSnapshot(productId),
+      providerIdentity: forecastConfigIdentity(),
+    }),
     null,
     JSON.stringify(analysis),
   );
@@ -292,6 +302,8 @@ export async function processAnalysis(id: string, poll = false) {
   const input = JSON.parse(String(run.request)) as ForecastRequest & {
     snapshot: ReturnType<typeof snapshotIdentity>;
     submitted?: boolean;
+    providerIdentity?: string;
+    coverage?: CoverageSnapshot;
   };
   if (!poll) {
     if (input.submitted || analysis.jobId) return;
@@ -315,6 +327,8 @@ export async function processAnalysis(id: string, poll = false) {
   let result: Analysis["forecast"];
   let failure: string | null = null;
   try {
+    if (input.providerIdentity && input.providerIdentity !== forecastConfigIdentity())
+      fail("Forecast provider configuration changed. Start a new analysis.", 503, "CONFIGURATION");
     result =
       poll && analysis.jobId
         ? await pollForecast(input, analysis.jobId)
@@ -362,6 +376,14 @@ export async function processAnalysis(id: string, poll = false) {
         return;
       }
       createRecommendation(analysis);
+      if (input.coverage) {
+        input.coverage.policyIdentity = coveragePolicyIdentity(policy(analysis.productId));
+        db.prepare("UPDATE analysis_runs SET request=? WHERE id=? AND org_id=?").run(
+          JSON.stringify(input),
+          id,
+          ORG,
+        );
+      }
       audit(
         "system",
         "Analysis finished",
