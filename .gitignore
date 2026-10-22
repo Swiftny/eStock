@@ -31,3 +31,8 @@ worker/model/
 out/
 *.tsbuildinfo
 .artifacts/
+
+# Local persistent demo database
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

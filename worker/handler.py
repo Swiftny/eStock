@@ -1,151 +1,130 @@
-from datetime import date, datetime, timedelta, timezone
-from pathlib import Path
-import hashlib
-import json
+"""Synthetic numerical forecasting only. Purchasing rules remain in TypeScript."""
 import math
-import time
 import os
+import re
+import time
+from datetime import date, datetime, timedelta, timezone
 
-from autogluon.timeseries import TimeSeriesDataFrame, TimeSeriesPredictor
-import pandas as pd
-import numpy as np
-import runpod
-import torch
-
-
-MODEL_DIR = Path(os.environ.get("MODEL_DIR", "/runpod-volume/estock"))
-
-MINIMUM_HISTORY_DAYS = 28
-
-MAXIMUM_HORIZON_DAYS = 44
-
-BASELINES = ("WindowAverage28", "SeasonalNaive7")
-
-DEFAULT_METHOD = "Chronos2ZeroShot"
-
-runInfo = json.loads((MODEL_DIR / "evidence" / "run_info.json").read_text())
-selection = json.loads((MODEL_DIR / "evidence" / "selection.json").read_text())
-predictor = TimeSeriesPredictor.load(str(MODEL_DIR / "production"))
-deviceName = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+MODEL_ID = "amazon/chronos-bolt-small"
+_PIPELINE = None
 
 
-
-######## VALIDATION ########
-
-def findProblem(series, cutoff):
-    dates = [date.fromisoformat(value) for value in series["dates"]]
-    values = series["values"]
-    if len(dates) != len(values):
-        return "dates and values differ in length"
-
-    if len(values) < MINIMUM_HISTORY_DAYS:
-        return f"needs at least {MINIMUM_HISTORY_DAYS} complete days, got {len(values)}"
-
-    if dates[-1] != cutoff or any(later - earlier != timedelta(days=1) for earlier, later in zip(dates, dates[1:])):
-        return "dates must be consecutive days ending on cutoff_date"
-
-    if not all(isinstance(value, (int, float)) and math.isfinite(value) and value >= 0 for value in values):
-        return "values must be finite and non-negative"
-
-    return None
-
-
-
-######## FORECASTING ########
-
-def baselineForecast(values, method, horizon):
-    if method == "WindowAverage28":
-        return np.full(horizon, values[-28:].mean())
-
-    return np.resize(values[-7:], horizon)
-
-
-def modelForecast(series, method, horizon):
-    context = TimeSeriesDataFrame.from_data_frame(
-        pd.DataFrame(
-            {
-                "item_id": series["sku"],
-                "timestamp": pd.to_datetime(series["dates"]),
-                "target": series["values"]
-            }
-        )
-    )
-    name = next(name for name in predictor.model_names() if name.endswith(method.removeprefix("Chronos2")))
-    predictions = predictor.predict(context, model=name).iloc[:horizon]
-    return {level: predictions[level].to_numpy() for level in ("0.1", "0.5", "0.9")}
+def validate_request(data):
+    if not isinstance(data, dict):
+        raise ValueError("input must be an object")
+    values, dates = data.get("values"), data.get("dates")
+    horizon = data.get("horizonDays")
+    if not isinstance(values, list) or not 28 <= len(values) <= 168:
+        raise ValueError("28–168 complete daily observations required")
+    if not isinstance(dates, list) or len(dates) != len(values):
+        raise ValueError("dates and values must have equal length")
+    if type(horizon) is not int or not 30 <= horizon <= 44:
+        raise ValueError("horizonDays must be 30–44")
+    if any(type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 1000000 for v in values):
+        raise ValueError("values must be finite nonnegative quantities")
+    parsed = [date.fromisoformat(d) for d in dates]
+    if any(parsed[i] != parsed[i - 1] + timedelta(days=1) for i in range(1, len(parsed))):
+        raise ValueError("history must be consecutive; no missing-day zero fill")
+    if parsed[-1].isoformat() != data.get("cutoffDate"):
+        raise ValueError("last observation must equal cutoffDate")
+    flags = data.get("stockoutFlags")
+    if not isinstance(flags, list) or len(flags) != len(values) or any(type(v) is not bool for v in flags):
+        raise ValueError("stockoutFlags must align with history")
+    for key in ("requestId", "productId", "inputHash"):
+        if not isinstance(data.get(key), str) or not 1 <= len(data[key]) <= 200:
+            raise ValueError(f"invalid {key}")
+    revision = data.get("modelRevision", "")
+    if data.get("modelId") != MODEL_ID or not re.fullmatch(r"[a-f0-9]{40}", revision):
+        raise ValueError("fixed model and pinned Hugging Face commit required")
+    if revision != os.environ.get("CHRONOS_MODEL_REVISION"):
+        raise ValueError("request revision differs from deployed worker revision")
+    return data
 
 
-def forecastSeries(series, cutoff, horizon, warnings):
-    sku = series["sku"]
-    problem = findProblem(series, cutoff)
-    if problem:
-        return {"sku": sku, "status": "NEEDS_DATA", "reason": problem}
-
-    method = selection.get(sku)
-    if method is None:
-        method = DEFAULT_METHOD
-        warnings.append(f"{sku}: no validation result; used {DEFAULT_METHOD}")
-
-    dates = [(cutoff + timedelta(days=offset)).isoformat() for offset in range(1, horizon + 1)]
-    if method in BASELINES:
-        p50 = baselineForecast(np.asarray(series["values"], dtype=float), method, horizon)
-        return {
-            "sku": sku,
-            "status": "OK",
-            "source": "BASELINE_SELECTED",
-            "method": method,
-            "dates": dates,
-            "p50": p50.round(3).tolist(),
-            "quantiles": None
-        }
-
-    quantiles = modelForecast(series, method, horizon)
-    if any((values < 0).any() for values in quantiles.values()):
-        warnings.append(f"{sku}: negative forecast values clipped to zero")
-
-    quantiles = {level: values.astype(float).clip(min=0).round(3).tolist() for level, values in quantiles.items()}
-    return {
-        "sku": sku,
-        "status": "OK",
-        "source": "MODEL",
-        "method": method,
-        "dates": dates,
-        "p50": quantiles["0.5"],
-        "quantiles": {"0.1": quantiles["0.1"], "0.9": quantiles["0.9"]}
-    }
+def baseline(values, horizon, method):
+    if method == "mean28":
+        return [sum(values[-28:]) / 28] * horizon
+    return [values[-7 + i % 7] for i in range(horizon)]
 
 
+def metrics(predictions, actual, censored):
+    pairs = [(p, a) for p, a, flag in zip(predictions, actual, censored) if not flag]
+    if not pairs:
+        return {"mae": None, "wape": None, "n": 0}
+    error = sum(abs(p - a) for p, a in pairs)
+    denominator = sum(a for _, a in pairs)
+    return {"mae": error / len(pairs), "wape": error / denominator if denominator else None, "n": len(pairs)}
 
-######## HANDLER ########
+
+def choose_method(scores):
+    # Strict improvement is required; ties prefer mean28, then seasonal7, then model.
+    selected = "mean28"
+    for method in ("seasonal7", "model"):
+        if scores[method] is not None and (scores[selected] is None or scores[method] < scores[selected] - 1e-9):
+            selected = method
+    return selected
+
+
+def evaluate(values, flags, horizon, predict):
+    if len(values) < 168:
+        return {"selected": "mean28", "validation": None, "finalTest": None, "limitation": "Fewer than 168 days: validation selection and final evaluation unavailable. Using the 28-day baseline pending evaluation; GPU model output is retained separately."}
+    validation_pairs = {m: ([], [], []) for m in ("mean28", "seasonal7", "model")}
+    for origin in (58, 72):
+        for method in validation_pairs:
+            predictions = predict(values[:origin], horizon) if method == "model" else baseline(values[:origin], horizon, method)
+            ps, actual, censored = validation_pairs[method]
+            ps.extend(predictions)
+            actual.extend(values[origin:origin + horizon])
+            censored.extend(flags[origin:origin + horizon])
+    validation = {method: metrics(*parts) for method, parts in validation_pairs.items()}
+    selected = choose_method({m: v["mae"] for m, v in validation.items()})
+    final_test = {}
+    for method in validation_pairs:
+        predictions = predict(values[:124], horizon) if method == "model" else baseline(values[:124], horizon, method)
+        final_test[method] = metrics(predictions, values[124:124 + horizon], flags[124:124 + horizon])
+    return {"selected": selected, "validation": validation, "finalTest": final_test, "origins": [58, 72], "finalOrigin": 124, "horizon": horizon, "excluded": "Stockout target days excluded identically for all methods; unknown lost demand is not imputed.", "selection": "Frozen on pooled validation MAE before final test. Ties choose simpler baseline, mean28 first."}
+
 
 def handler(job):
-    startedAt = time.perf_counter()
-    request = job["input"]
-    cutoff = date.fromisoformat(request["cutoff_date"])
-    horizon = request["horizon_days"]
+    global _PIPELINE
+    data = validate_request(job["input"])
+    started = time.perf_counter()
+    import torch
+    from chronos import ChronosBoltPipeline
+    if not torch.cuda.is_available():
+        raise RuntimeError("GPU inference required for this worker; CUDA is unavailable")
+    if _PIPELINE is None:
+        _PIPELINE = ChronosBoltPipeline.from_pretrained(MODEL_ID, revision=data["modelRevision"], device_map="cuda", torch_dtype=torch.float32)
+    clipped = False
+
+    def predict(values, horizon):
+        nonlocal clipped
+        with torch.inference_mode():
+            quantiles, _ = _PIPELINE.predict_quantiles(torch.tensor(values, dtype=torch.float32), prediction_length=horizon, quantile_levels=[0.5])
+        raw = quantiles[0, :, 0].tolist()
+        if any(not math.isfinite(v) or abs(v) > 1000000 for v in raw):
+            raise ValueError("model returned invalid demand")
+        clipped = clipped or any(v < 0 for v in raw)
+        return [max(0.0, v) for v in raw]
+
+    evaluation = evaluate(data["values"], data["stockoutFlags"], data["horizonDays"], predict)
+    model_p50 = predict(data["values"], data["horizonDays"])
+    selected = evaluation["selected"]
+    p50 = model_p50 if selected == "model" else baseline(data["values"], data["horizonDays"], selected)
     warnings = []
-    if not isinstance(horizon, int) or not 1 <= horizon <= MAXIMUM_HORIZON_DAYS:
-        forecasts = []
-        warnings.append(f"horizon_days must be an integer from 1 to {MAXIMUM_HORIZON_DAYS}")
-
-    else:
-        forecasts = [forecastSeries(series, cutoff, horizon, warnings) for series in request["series"]]
-
-    okCount = sum(forecast["status"] == "OK" for forecast in forecasts)
-    status = "ERROR" if not forecasts else "OK" if okCount == len(forecasts) else "PARTIAL" if okCount else "NEEDS_DATA"
-    return {
-        "request_id": request.get("request_id"),
-        "status": status,
-        "model_id": runInfo["base_model"],
-        "model_revision": f"{runInfo['base_revision']}+finetune-{runInfo['run_id']}",
-        "input_hash": hashlib.sha256(json.dumps(request, sort_keys=True).encode("utf-8")).hexdigest(),
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "runtime_ms": round((time.perf_counter() - startedAt) * 1000),
-        "device": deviceName,
-        "forecasts": forecasts,
-        "warnings": warnings
-    }
+    if clipped:
+        warnings.append("Negative model output clipped to zero.")
+    if any(data["stockoutFlags"]):
+        warnings.append("Observed sales may be censored by stockouts; true lost demand is unknown.")
+    if selected != "model" and evaluation["validation"] is not None:
+        warnings.append(f"{selected} baseline selected by validation MAE; purchasing demand is not model output. GPU inference and evaluation are retained.")
+    if evaluation.get("limitation"):
+        warnings.append(evaluation["limitation"])
+    cutoff = date.fromisoformat(data["cutoffDate"])
+    source = "RUNPOD" if selected == "model" else "BASELINE_SELECTED" if evaluation["validation"] is not None else "BASELINE_FALLBACK"
+    return {"status": "COMPLETED", "source": source, "modelId": MODEL_ID, "modelRevision": data["modelRevision"], "inputHash": data["inputHash"], "cutoffDate": data["cutoffDate"], "generatedAt": datetime.now(timezone.utc).isoformat(), "runtimeMs": round((time.perf_counter() - started) * 1000), "dates": [(cutoff + timedelta(days=i + 1)).isoformat() for i in range(data["horizonDays"])], "p50": p50, "modelP50": model_p50, "warnings": warnings, "evaluation": evaluation, "device": torch.cuda.get_device_name(0)}
 
 
 if __name__ == "__main__":
+    import runpod
     runpod.serverless.start({"handler": handler})

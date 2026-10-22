@@ -1,0 +1,408 @@
+.simple-landing .site-header {
+  background: var(--paper);
+  border-color: transparent;
+  transition:
+    background-color 160ms,
+    border-color 160ms;
+}
+.simple-landing .site-header.is-scrolled {
+  background: var(--white);
+  border-color: var(--line);
+}
+.simple-landing .header-inner {
+  min-height: 80px;
+}
+.landing-navigation {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-left: auto;
+}
+.landing-navigation .landing-text-link,
+.hero-workflow-link {
+  position: relative;
+  text-decoration: none;
+}
+.landing-navigation .landing-text-link::after,
+.hero-workflow-link::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--brand);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease-out;
+}
+.landing-navigation .landing-text-link:hover::after,
+.landing-navigation .landing-text-link:focus-visible::after,
+.hero-workflow-link:hover::after,
+.hero-workflow-link:focus-visible::after {
+  transform: scaleX(1);
+}
+.landing-text-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-underline-offset: 5px;
+  transition: color 160ms;
+}
+.landing-text-link:hover {
+  color: var(--brand-dark);
+  text-decoration: underline;
+}
+.landing-navigation .landing-text-link:hover,
+.hero-workflow-link:hover {
+  text-decoration: none;
+}
+.landing-hero {
+  padding-block: clamp(4rem, 8vw, 7.5rem) 6rem;
+  text-align: center;
+}
+.landing-eyebrow {
+  margin-bottom: 1.75rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 550;
+}
+.simple-landing h1 {
+  margin: 0 auto;
+  font-size: clamp(3rem, 6.6vw, 6rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.065em;
+  text-wrap: balance;
+}
+.simple-landing h1 > span {
+  display: block;
+  color: var(--ink);
+}
+.simple-landing h1 > .headline-accent {
+  color: var(--brand);
+}
+.landing-motto {
+  margin-top: 2.25rem;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 2.1vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.animated-word {
+  display: inline-block;
+}
+.landing-hero .animated-word,
+.in-view .animated-word {
+  animation: word-enter 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.simple-landing .reveal-pending {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.simple-landing [data-reveal].in-view {
+  animation: section-enter 500ms ease-out both;
+}
+@keyframes word-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.landing-description {
+  max-width: 34rem;
+  margin: 0.75rem auto 0;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.75rem;
+  margin-top: 2rem;
+}
+.landing-actions .button {
+  padding-inline: 1.5rem;
+}
+.landing-actions > a {
+  animation: control-enter 500ms ease-out both;
+  animation-delay: 380ms;
+}
+@keyframes control-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.landing-workflow {
+  padding-block: 4rem;
+  border-top: 1px solid var(--line-strong);
+}
+.landing-roles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-bottom: 4rem;
+}
+.role-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  padding: clamp(1.5rem, 2.8vw, 2rem);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+}
+.role-card-manager {
+  background: var(--brand-wash);
+  border-color: var(--brand-line);
+}
+.role-card h2 {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+.role-card-manager h2 {
+  color: var(--brand-dark);
+}
+.role-card h3 {
+  margin-top: 0.75rem;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+}
+.role-card > p {
+  max-width: 26rem;
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  font-weight: 550;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.role-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+}
+.role-card li {
+  border-top: 1px solid var(--line-strong);
+  padding-block: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.role-card-manager li {
+  border-color: var(--brand-line);
+}
+.ai-explainer {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: clamp(1.5rem, 2.8vw, 2rem);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--white);
+}
+.ai-explainer h2 {
+  color: var(--brand-dark);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.ai-explainer h3 {
+  margin-top: 0.75rem;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+}
+.ai-explanation {
+  align-self: center;
+}
+.ai-explanation > p {
+  color: var(--ink);
+  font-weight: 550;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.ai-explanation > .ai-demo-note {
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.landing-workflow h2 {
+  max-width: 54rem;
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+}
+.landing-workflow h2 > span {
+  color: var(--brand);
+}
+.workflow-eyebrow {
+  color: var(--brand-dark);
+  font-size: 0.875rem;
+  font-weight: 750;
+  margin-bottom: 1rem;
+}
+.landing-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3rem;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.step-number {
+  color: var(--brand-dark);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+.landing-steps h3 {
+  margin-top: 0.75rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+.landing-steps p {
+  max-width: 20rem;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+}
+.landing-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding-block: 1.75rem;
+  border-top: 1px solid var(--line);
+}
+.landing-footer p {
+  font-size: 0.75rem;
+}
+@media (max-width: 650px) {
+  .ai-explainer {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+  .landing-roles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    padding-bottom: 3rem;
+  }
+  .role-card h3 {
+    margin-top: 0.75rem;
+  }
+  .role-card {
+    aspect-ratio: auto;
+  }
+  .simple-landing .header-inner {
+    min-height: 72px;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    padding-block: 0.5rem;
+  }
+  .landing-navigation {
+    gap: 2rem;
+    justify-content: center;
+    order: 2;
+    width: 100%;
+    margin: 0;
+  }
+  .landing-demo {
+    margin-left: auto;
+  }
+  .landing-navigation .landing-text-link {
+    font-size: 0.75rem;
+  }
+  .landing-demo {
+    padding-inline: 0.75rem;
+  }
+  .landing-hero {
+    padding-block: 4rem;
+  }
+  .simple-landing h1 {
+    font-size: clamp(2.5rem, 10.6vw, 4rem);
+    letter-spacing: -0.06em;
+  }
+  .landing-motto {
+    margin-top: 1.75rem;
+  }
+  .landing-description {
+    max-width: 25rem;
+    font-size: 1rem;
+  }
+  .landing-steps {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+    margin-top: 2rem;
+  }
+  .landing-steps li {
+    padding-left: 1rem;
+    border-left: 2px solid var(--brand-line);
+  }
+  .landing-steps h3 {
+    margin-top: 0.35rem;
+  }
+  .landing-steps p {
+    max-width: 29rem;
+    font-size: 1rem;
+  }
+  .landing-workflow {
+    padding-block: 3rem;
+  }
+  .landing-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .simple-landing .animated-word,
+  .simple-landing .landing-actions > a,
+  .simple-landing [data-reveal].in-view {
+    animation: none;
+  }
+  .simple-landing .reveal-pending {
+    opacity: 1;
+    transform: none;
+  }
+  .simple-landing .site-header,
+  .simple-landing .landing-text-link {
+    transition: none;
+  }
+  .landing-navigation .landing-text-link::after,
+  .hero-workflow-link::after {
+    transition: none;
+  }
+}

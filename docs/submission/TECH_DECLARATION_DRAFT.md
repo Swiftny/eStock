@@ -1,6 +1,6 @@
 # eStock: draft Technical & Tools Declaration
 
-**DRAFT TO COMPLETE FROM ACTUAL USAGE.** A local landing page is implemented; the inventory prototype, runtime model and deployment remain planned. Use the [official template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view), then export one PDF: **SDC2026_TooGoodToBeTrue_TechDeclaration.pdf**.
+**DRAFT TO COMPLETE FROM ACTUAL USAGE.** The local landing page and persistent synthetic inventory workflow are implemented. Default runtime demand uses a labelled local baseline; RunPod GPU inference and Replit deployment remain unverified. Use the [official template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view), then export one PDF: **SDC2026_TooGoodToBeTrue_TechDeclaration.pdf**.
 
 Non-applicable categories must say No/None. Do not replace unknown facts with None. Complete before signing.
 
@@ -13,7 +13,7 @@ Non-applicable categories must say No/None. Do not replace unknown facts with No
 | Leader | Marco Ryan Suseno |
 | Email/Phone | .private/TEAM_DETAILS.md; phone not provided |
 | University | Xiamen University; check official spelling against portal |
-| Live Prototype URL | NOT DEPLOYED; local landing preview only |
+| Live Prototype URL | NOT DEPLOYED; local landing page and persistent /demo workspace |
 | Code Repository | https://github.com/Swiftny/sdc2026-TooGoodToBeTrue-domain2 |
 
 The repository must be public for submission; a correct URL does not itself prove visibility/access.
@@ -22,16 +22,16 @@ The repository must be public for submission; a correct URL does not itself prov
 
 ### 2.1 Architecture Overview: maximum 200 words
 
-Current implementation: a Next.js landing page with browser-memory synthetic scenarios and manager decisions. No database, model endpoint or messaging integration is connected. The following architecture is for the planned inventory application; update it to actual behaviour before submission:
+Current implementation, 21 October. The paragraph below describes actual local behaviour and the unverified external adapter:
 
 <!-- WORDCOUNT:declaration_architecture:200 -->
-eStock will accept team-created synthetic daily sales and inventory events through CSV import and stock-entry forms. A Replit-hosted application will store its ledger, product policies, incoming purchases, recommendations, approvals and activity records in a persistent database.
+eStock uses Next.js, TypeScript and plain CSS. Node's built-in SQLite stores products, purchasing policies, an append-only stock ledger, dated sales history, analysis jobs, recommendations, approvals, purchase orders, simulated messages, receipts and activity. SQL migrations and a transactional synthetic seed run locally. Quantities use integer thousandths; prices use MYR sen.
 
-The application will send only the numerical history and necessary identifiers to a RunPod forecast worker. A pretrained time-series model will return dated demand estimates and model metadata. Server-side deterministic rules will calculate replenishment quantities and identify shortages using supplier lead time, purchasing cycle, safety stock, packaging and confirmed incoming stock.
+Server-issued demo sessions distinguish manager and staff permissions. Validated forms and CSV imports use request/source idempotency. Human day closing defines a consistent history/stock cutoff. A local mock adapter computes a labelled saved-history baseline. Deterministic purchasing rules handle delivery dates, review timing, safety stock, inbound, packs/MOQ and costs. A separate manual what-if calculator writes no operational history.
 
-An authorised manager will review the recommendation before approval creates a purchase request and transactional outbox message. Supplier acknowledgement and receiving will be separate events. The mandatory demo channel will be explicitly simulated; WhatsApp is optional if configured, and Telegram is an optional extension.
+Manager approval atomically creates one PO/outbox without increasing stock. Simulated dispatch, synthetic supplier acknowledgement and physical receiving remain distinct. Receipts add usable stock and retain damaged-goods exceptions and before/after audit.
 
-Model errors and baseline selection will be visible. Actual deployment services, versions, regions, model revision and any additional providers must be recorded after implementation.
+A RunPod queue adapter and Python CUDA Chronos-Bolt worker are implemented, including validation/evaluation and fallback, but actual inference is unverified. Replit deployment and durable deployment storage still require own-account setup and evidence.
 <!-- END_WORDCOUNT -->
 
 ### 2.2 Languages, Frameworks & Libraries
@@ -44,12 +44,12 @@ Model errors and baseline selection will be visible. Actual deployment services,
 | @fontsource-variable/manrope 5.3.0 | Locally served variable font | OFL-1.1; full licence in public/licenses/manrope-OFL.txt | USED LOCALLY |
 | @biomejs/biome 2.5.15 | Lint and formatting | MIT OR Apache-2.0 | USED LOCALLY |
 | @types/node 26.6.5; @types/react and @types/react-dom 19.3.0 | Development types | MIT | USED LOCALLY |
-| Database driver/ORM | Ledger/transactions | Enter actual licence | NOT SELECTED |
-| Python runtime | Forecast worker | Enter actual licence | PLANNED |
+| node:sqlite (Node 22.23.3 built-in), no ORM | SQLite ledger, transactions and persistence | Node MIT and bundled third-party notices; SQLite public-domain dedication | USED LOCALLY |
+| Python 3 | Worker contract/evaluation logic tests and skill searches | PSF and bundled notices | USED LOCALLY; CUDA worker runtime not executed |
 | chronos-forecasting | Pretrained forecast inference | Verify pinned version/licence | PLANNED |
 | PyTorch/dependencies | Model execution | Verify actual versions/licences | PLANNED |
 | RunPod SDK, if used | Worker handler | Verify actual version/licence | PLANNED |
-| Additional component/chart/test library | None added for the landing page | Not applicable | Native controls/SVG, Node assertions and browser checks used |
+| Additional component/chart/animation/test library | None added | Not applicable | Native controls, CSS/IntersectionObserver motion, node:test/assert and Python unittest used |
 
 Local verification environment: Node.js 24.16.0, npm 11.13.0 and Python 3 for skill search/contrast checks. Runtime dependencies and direct-package licences were read from installed metadata; see package-lock.json and THIRD_PARTY_NOTICES.md. Transitive packages retain their own notices. An initial ESLint/eslint-config-next attempt was removed after development-tool audit advisories; it is absent from the final dependency set. Reading model documentation is not evidence that the model has run.
 
@@ -59,7 +59,7 @@ Local verification environment: Node.js 24.16.0, npm 11.13.0 and Python 3 for sk
 
 | API / Provider | Purpose | Access Tier | Status |
 | --- | --- | --- | --- |
-| RunPod inference endpoint | Numerical forecasting | Sponsor credit if redeemed; record actual tier | PLANNED |
+| RunPod queue endpoint | Numerical forecasting | Sponsor credit if redeemed; actual account tier unknown | ADAPTER IMPLEMENTED; mock HTTP contract verified; no real round trip |
 | WhatsApp Cloud API / Meta | Supplier messaging if completed | Record actual pricing/tier | OPTIONAL, NOT ACTIVE |
 | Telegram Bot API | Additional channel if completed | Verify actual terms/tier | OPTIONAL |
 | Other API | Complete if used | Actual tier | Do not leave blank if used |
@@ -71,7 +71,7 @@ No API keys in this table. Mock Orbyte endpoints are team-created contracts, not
 | Service / Provider | Purpose | Plan / Region | Actual proof |
 | --- | --- | --- | --- |
 | Replit | App/backend/deployment | NOT PROVIDED | Live URL/project history |
-| Persistent database provider | Ledger/forecast/workflow | NOT SELECTED | Dashboard/config without secrets |
+| SQLite local file | Ledger/forecast/workflow | Local disk, no paid service | Restart persistence verified; durable hosted storage still unconfigured |
 | RunPod | GPU inference | NOT PROVIDED | Dashboard Pod ID/endpoint, GPU, runtime |
 | GitHub | Source/history | Team repository; actual plan | URL/commit |
 | YouTube | Preliminary pitch/demo | Visibility allows judge access | Video URL |
@@ -91,18 +91,20 @@ The 28-day mean and 7-day seasonal-naive baselines are simple statistical method
 
 | Dataset | Source / URL | Type | Licence | Personal Data |
 | --- | --- | --- | --- | --- |
-| eStock synthetic sales/movements/master/PO fixtures | Repository generator/data card to be created by team | Team-created synthetic | Team explicitly assigns licence | No |
+| eStock synthetic sales/movements/master/PO fixtures | src/lib/server/seed.ts; docs/data/SYNTHETIC_DATA.md | Project-created deterministic synthetic | Repository Apache 2.0 | No |
 | Validation/test fixtures | Documented generator seed/cutoffs | Synthetic | Same, according to team decision | No |
 
 Do not treat public/private options in the general template as permission to use real operational data in Domain 2. No real SME dataset was supplied.
 
 ### 4.3 AI-Assisted Development Tools
 
-**Used generative AI in development/documentation: Yes.** Codex was used for planning/documentation, M0 recommendations, English translation, landing-page design/code, reference review and local verification. Runtime model usage remains planned.
+Startup repair, 21 October: Codex used local shell/Git inspection, the find-docs skill, Context7 CLI and installed Next.js documentation to diagnose the root documentation folder being detected as application routes. It moved the team guides to `docs/team/` and updated links and scope mappings. Standard root dev startup, the existing HTTP smoke checks, production build/TypeScript, moved-document links and explicit scope checks passed. No new dependency, hosted service, runtime model or external publication was used. This resolves the root folder blocker mentioned in earlier development notes below.
+
+**Used generative AI in development/documentation: Yes.** Codex was used for planning/documentation, M0 recommendations, English translation, landing-page design/refinement, persistent backend, rules, adapter/worker, tests, reference inspection and local verification. Runtime neural model usage remains unverified. Codex also assisted the team work pages, assignment updates, parallel-work instructions and local change-scope checker on 21 October using local repository and shell inspection; no runtime model or external service was used for that documentation task.
 
 | Tool & Version | Used For | Extent | Status |
 | --- | --- | --- | --- |
-| Codex; record exact model/version from actual session if available | Brainstorm review, requirements audit, PRD/templates, handoff, M0 recommendations, English translation, landing-page design/code and local verification | Major during planning, documentation and landing implementation | ALREADY USED |
+| OpenAI Codex; exact model identifier not independently verified | Requirements, English documentation, design, frontend, SQLite backend, purchasing rules, worker/adapter, tests and browser verification | Major during planning and implementation; team review still required | USED |
 | Additional development AI | List all code/design/text tools used afterward | Actual minor/moderate/major extent | Do not omit |
 
 Do not invent a development AI model ID when the UI/session does not provide it; state the product and verifiable information.
@@ -115,11 +117,15 @@ The repository-provided ui-ux-pro-max skill at `.agents/skills/ui-ux-pro-max/` w
 
 Clean installation, lint, types, production build, PRD fixture assertions, HTTP checks and browser interaction/visual checks were performed. The verification report states actual results and limitations. They do not establish full inventory acceptance, real AI accuracy, Replit/RunPod usage or human team review.
 
+The persistent-workflow stage used shell/Git inspection, the installed Next.js documentation, Node built-in SQLite/test/assert/crypto/fs, Python unittest, web retrieval of official RunPod and Chronos source documentation, and Codex computer-use tools for Safari/Chrome desktop/mobile checks. No new JavaScript dependency or hosted service was installed. No image generation, sub-agents, external publication or real supplier messaging was used. RunPod configuration was absent; tests used explicit mocked HTTP responses. The unavailable plugin path was replaced by the catalog's readable antislop core at `~/.agents/skills/antislop/SKILL.md`, in during mode. Actual results and limitations are in [WORKFLOW_2026_10_21.md](../verification/WORKFLOW_2026_10_21.md).
+
 Team review: maximum 100 words. Use only after actually performed:
 
 <!-- WORDCOUNT:declaration_review:100 -->
 Registered team members will review and adapt AI-assisted documentation and implementation. They will verify the requirements against official sources, inspect generated code, test stock and purchasing invariants, and reproduce model evaluation. Each member must explain the complete workflow, including forecast limitations, baseline selection, approval, data handling and simulated integrations. The team remains responsible for correctness, originality, security and licensing. This paragraph must be updated to describe review and tests actually completed before signing.
 <!-- END_WORDCOUNT -->
+
+Additional stock-tracking stage, 21 October: Codex inspected the pulled source and local Git state, created the local `feat/stock-tracking` branch, and implemented dedicated stock routes, shared response types, ledger-backed queries, a movement adapter and the frontend handoff. Existing SQLite/service logic was reused; no additional library or cloud resource was installed. The installed Next.js route-handler guide was read. The user subsequently requested runtime verification: 60 Node tests and 24 production HTTP scenario groups passed, including isolated-database server restart and duplicate protection. Tests used Node's built-in test/assert/fs/child_process utilities, native fetch and the existing SQLite dependency. Both HTTP server processes stopped and their temporary database was removed. Evidence and limits are in [STOCK_TRACKING_2026_10_21.md](../verification/STOCK_TRACKING_2026_10_21.md). No browser/computer-control session, real inference, external messaging, staging, commit, push or publication was initiated. Team review remains required.
 
 ## 5. Sponsor-Provided Resources
 
@@ -180,7 +186,11 @@ WhatsApp activation, templates and account readiness are external dependencies. 
 - [ ] Every field complete, word limits checked.
 - [ ] Proof appendix included.
 
+Latest landing refinement, 21 October 2026: the user requested removal of purchase previews and a simpler, bolder text-first page. Codex used the same UI guidance and Playwright to inspect Jack & Jill/Attio references, inspect Vogelhaus text (reference screenshots timed out loading fonts), and verify the local page. No reference assets or text were copied. Only frontend application files changed; the previously documented root runtime-folder blocker remains. Lint, TypeScript and an isolated webpack production build passed; current evidence is in `docs/team/frontend.md` and `.artifacts/simple-landing/`. The earlier 38-test result was not rerun for this presentation-only follow-up.
+
 ## 8. Declaration
+
+Development usage update, 21 October 2026: Codex refined the existing landing-page copy, spacing, navigation labels and shared blue palette. The agent used ui-ux-pro-max local guidance, antislop in during mode, Context7 CLI for Next.js documentation, installed Next.js documentation, shell checks and Playwright for Attio reference inspection and local browser verification. No Attio assets or copy were incorporated. Lint, TypeScript and 38 existing tests passed; the root build has a documented folder-layout blocker, while an isolated application copy passed a webpack production build. Browser screenshots are local evidence, not deployment or RunPod proof. Human team review remains required.
 
 Leader: Marco Ryan Suseno.
 

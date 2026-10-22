@@ -1,2 +1,4 @@
-autogluon.timeseries==1.6.3
-runpod==1.12.0
+# Deployment candidates only. Lock exact resolved versions after a successful GPU spike.
+chronos-forecasting>=2.0,<3
+runpod>=1.7,<2
+# Install an appropriate CUDA PyTorch wheel in the selected RunPod GPU image.

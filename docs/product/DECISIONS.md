@@ -1,6 +1,39 @@
 # eStock: decisions and unavailable information
 
-Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The landing page is implemented locally; the inventory application remains planned.
+Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The local persistent workflow is implemented; real RunPod inference and Replit deployment remain unverified.
+
+## Team assignments
+
+Startup repair, 21 October: the root `pages/` documentation folder caused Next.js to exit because it detected root Pages Router routes alongside `src/app`. A serial integration task moved the team guides to `docs/team/`, updated links and retained the existing work-area boundaries. This supersedes U-17's original folder location; application routes and dependencies are unchanged.
+
+U-18, user, 21 October: prevent overlapping edits across AI, frontend, backend, demo and system. Add explicit work boundaries, a scope checker and serial shared integration rules. This supersedes U-17's no-file-ownership preference only as needed for conflict prevention. Data remains Maxi's area. Existing code stays in place; no commit, push or remote enforcement was performed.
+
+U-17, user, 21 October: Vitto frontend, Maxi data, William system/backend, Marco AI. Create separate work pages in the root `pages/` folder without file ownership rules. [Team pages](../team/README.md) separate tasks and the shared demo. Existing application routes and worker remain in place; training is not added by this documentation change. This supersedes U-08 and earlier unallocated-workstream notes.
+
+## Current authorised implementation
+
+U-17, user, 21 October: proceed with stages 1 and 2 of the agreed MVP implementation plan, backend preparation and stock tracking. The user owns MVP backend implementation and has informed their frontend/demo friend. The friend's name and other final assignments are unavailable. Keep the friend's frontend files intact and use a separate local backend branch. No commit, push or publication was requested.
+
+Verification follow-up, 21 October: the user requested Step 2 tests and push-readiness evidence, with Git commit/push reserved for the user. Added focused inventory tests and an isolated production HTTP harness; 60 Node tests and 24 HTTP scenario groups passed locally. The agent did not stage, commit, push, merge, provision infrastructure or start real inference. See [actual stock verification](../verification/STOCK_TRACKING_2026_10_21.md) and [MVP checkpoints](../plans/MVP_PROGRESS.md).
+
+Stock-stage implementation choices: retain the pulled SQLite/ledger/service; add a dedicated inventory module and product/movement API with client-safe types. Preserve the existing `/api/demo` contract. Use the existing server-issued demo roles, per-product units/precision, atomic movement posting and two levels of duplicate protection. Provide request-based updates and paginated history. Products remain database rows. These choices are local implementation details; deployment durability and production identity remain outstanding. Contracts, ownership and actual checks: [STOCK_TRACKING.md](../engineering/STOCK_TRACKING.md).
+
+U-16, user, 21 October: refine the existing website and implement a persistent backend through stock, recorded-data analysis, manual what-if, forecast adapter, manager approval, simulated supplier outbox, acknowledgement, receiving and audit. This supersedes the landing-only pause in U-12 and extends U-15. Routine visual/backend choices are authorised; no commit, push, external publication, purchase or real supplier message is authorised.
+
+| Implemented choice | Reason / limits |
+| --- | --- |
+| Built-in Node SQLite, SQL migrations, one local file | Existing stack had no established database. Simple local persistence without an ORM, native addon or new JavaScript dependency. Requires Node 22.18+, one process and durable storage for deployment; hosted database remains necessary if the target lacks a durable disk. Supersedes proposed PostgreSQL/Drizzle for this local milestone. |
+| Integer thousandths and per-product precision; MYR sen per base unit | Reliable ledger arithmetic and explicit price/pack semantics. Costs remain unknown if blank; approval requires complete reference costs. |
+| One synthetic organisation/location and opaque HttpOnly server sessions | Server-side manager/staff permissions are real; role selection is explicitly simulated identity. No production SSO/authentication claim. |
+| Explicit synthetic business date and immutable closed days | History, closing stock, forecast cutoff and approval window stay aligned. Closing triggers analysis; unfinished-day transactions invalidate old approval. Closed physical records are corrected by open-day manager adjustments, not edits/deletion. |
+| Source IDs plus request idempotency and database uniqueness | Replayed sales/receipts cannot post stock twice; one decision creates one approval/PO/outbox. |
+| Reviewed historical CSV correction retains source/SKU/date | Corrections increment revisions, preserve before/after audit and invalidate prior recommendations; aggregate history never changes physical stock. |
+| Active purchase commitment blocks an additional PO | Conservative single-supplier MVP. Expose any remaining demand/timing risk; resolve confirmation, receiving, damage or explicit cancellation first. |
+| Supplier ETA changes hold receiving for review | A different date cannot silently become an approved term. The manager can document cancellation and reanalyse before replacing the commitment. |
+| Local baseline adapter plus configurable RunPod queue worker | Honest local testing without credentials. Pending/completed/failed results and provenance persist. Invalid data/configuration does not silently produce a fallback quantity. Actual GPU and own-account proof remain outstanding. |
+| Split hero, actionable workspace views and native disclosures | One clear daily task; supporting calculations/history/metadata stay accessible. Existing forest green and local Manrope are retained. Motion rationale is in DESIGN.md. |
+
+Actual checks are in [the workflow report](../verification/WORKFLOW_2026_10_21.md). Earlier decisions below are retained as history; their landing-only implementation status is superseded by U-16.
 
 ## User decisions
 
@@ -13,7 +46,7 @@ Updated 21 October 2026. This document separates user decisions, implementation 
 | U-05 | Synthetic CSV and outgoing-stock/receiving forms | Explicit user response |
 | U-06 | Prefer WhatsApp if feasible; Telegram if time permits | Explicit user response; completing both channels is not required |
 | U-07 | Marco Ryan Suseno is leader; four members listed below | Full names and university supplied by the user |
-| U-08 | Final assignments remain open | The user asked that reported skills not become final assignments |
+| U-08 | Historical: final assignments remained open; superseded by U-17 | Initial reported skills were not assignments |
 | U-09 | Documentation first; technical agreement before scaffolding | Original documentation scope, reaffirmed by the user's M0 request; application implementation and service purchases are not authorised by the documentation |
 | U-10 | All repository documents must be in English | User instruction on 20 October 2026; preserve meaning, names, contact values, identifiers and links |
 | U-11 | Use both ui-ux-pro-max and antislop for UI/UX work; antislop mode is during | Existing AGENTS.md rule, reaffirmed by the user on 20 October 2026 |
