@@ -80,6 +80,7 @@ export interface Product {
   ledgerVersion: number;
   inboundVersion: number;
   ledgerStartDate: string;
+  purchasingSetupRequired: boolean;
   policy: Policy;
   history: SalesDay[];
   weeks: SalesWeek[];
@@ -126,10 +127,12 @@ export interface ForecastRequest {
   dates: string[];
   values: number[];
   stockoutFlags: boolean[];
+  modelId?: string;
+  modelRevision?: string;
 }
 export interface ForecastResult {
-  requestId?: string;
-  productId?: string;
+  requestId: string;
+  productId: string;
   evaluation?: Record<string, unknown>;
   device?: string;
   modelP50?: number[];

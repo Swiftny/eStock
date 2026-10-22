@@ -1,0 +1,2 @@
+source_record_id,sku,business_date,quantity_sold,data_complete,stockout_flag
+synthetic-example-001,REPLACE-SKU,2026-10-19,2,true,false

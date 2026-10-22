@@ -39,7 +39,7 @@ export default function Home() {
       <LandingMotion />
       <main id="main" tabIndex={-1}>
         <section className="landing-hero container" aria-labelledby="hero-title">
-          <p className="landing-eyebrow">{words("Stock planning for SMEs")}</p>
+          <p className="landing-eyebrow">{words("AI-assisted stock planning")}</p>
           <h1 id="hero-title">
             <span>{words("Know when to reorder.", 80)}</span>
             <span className="headline-accent">{words("Know how much.", 180)}</span>
@@ -53,7 +53,7 @@ export default function Home() {
           </p>
           <div className="landing-actions">
             <a href="/demo" className="button button-primary">
-              Open demo
+              Try it now
             </a>
             <a href="#how-it-works" className="landing-text-link hero-workflow-link">
               How it works
@@ -90,7 +90,7 @@ export default function Home() {
               <br />
               {words("on every order.", 80)}
             </h3>
-            <p>{words("Review the quantity, cost and delivery before approving a purchase.")}</p>
+            <p>{words("Review stock, quantities and delivery dates before approving an order.")}</p>
             <ul>
               <li>{words("Approve, adjust or reject an order")}</li>
               <li>{words("Set buying rules and limits", 60)}</li>
@@ -144,7 +144,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="landing-footer container" data-reveal>
-        <p>{words("Synthetic demo · Simulated supplier messages")}</p>
+        <p>{words("Supplier messages are simulated.")}</p>
         <p>{words("TooGoodToBeTrue · SDC Hackathon 2026")}</p>
       </footer>
     </div>

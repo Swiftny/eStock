@@ -33,6 +33,7 @@ out/
 .artifacts/
 
 # Local persistent demo database
+/data/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm

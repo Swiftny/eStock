@@ -10,13 +10,24 @@
   border-color: var(--line);
 }
 .simple-landing .header-inner {
+  width: min(calc(100% - 2 * clamp(16px, 3vw, 40px)), 1440px);
   min-height: 80px;
 }
 .landing-navigation {
   display: flex;
   align-items: center;
   gap: 2rem;
+  margin-left: 0;
+}
+.landing-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-left: auto;
+  flex-shrink: 0;
+}
+.landing-header-actions .button {
+  min-height: 44px;
 }
 .landing-navigation .landing-text-link,
 .hero-workflow-link {
@@ -310,6 +321,19 @@
 .landing-footer p {
   font-size: 0.75rem;
 }
+@media (max-width: 850px) {
+  .simple-landing .header-inner {
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    padding-block: 0.5rem;
+  }
+  .landing-navigation {
+    justify-content: flex-start;
+    order: 2;
+    width: 100%;
+  }
+}
+
 @media (max-width: 650px) {
   .ai-explainer {
     grid-template-columns: minmax(0, 1fr);
@@ -329,23 +353,24 @@
   .simple-landing .header-inner {
     min-height: 72px;
     flex-wrap: wrap;
-    gap: 0 1rem;
+    gap: 0 0.5rem;
     padding-block: 0.5rem;
   }
   .landing-navigation {
     gap: 2rem;
-    justify-content: center;
+    justify-content: flex-start;
     order: 2;
     width: 100%;
     margin: 0;
   }
-  .landing-demo {
-    margin-left: auto;
+  .landing-header-actions {
+    gap: 8px;
   }
   .landing-navigation .landing-text-link {
     font-size: 0.75rem;
   }
-  .landing-demo {
+  .landing-demo,
+  .landing-signin {
     padding-inline: 0.75rem;
   }
   .landing-hero {

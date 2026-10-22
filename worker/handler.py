@@ -22,6 +22,8 @@ def validate_request(data):
         raise ValueError("horizonDays must be 30–44")
     if any(type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 1000000 for v in values):
         raise ValueError("values must be finite nonnegative quantities")
+    if any(not isinstance(d, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) for d in dates):
+        raise ValueError("dates must be ISO YYYY-MM-DD business dates")
     parsed = [date.fromisoformat(d) for d in dates]
     if any(parsed[i] != parsed[i - 1] + timedelta(days=1) for i in range(1, len(parsed))):
         raise ValueError("history must be consecutive; no missing-day zero fill")
@@ -34,7 +36,7 @@ def validate_request(data):
         if not isinstance(data.get(key), str) or not 1 <= len(data[key]) <= 200:
             raise ValueError(f"invalid {key}")
     revision = data.get("modelRevision", "")
-    if data.get("modelId") != MODEL_ID or not re.fullmatch(r"[a-f0-9]{40}", revision):
+    if data.get("modelId") != MODEL_ID or not isinstance(revision, str) or not re.fullmatch(r"[a-f0-9]{40}", revision):
         raise ValueError("fixed model and pinned Hugging Face commit required")
     if revision != os.environ.get("CHRONOS_MODEL_REVISION"):
         raise ValueError("request revision differs from deployed worker revision")
@@ -101,6 +103,8 @@ def handler(job):
         nonlocal clipped
         with torch.inference_mode():
             quantiles, _ = _PIPELINE.predict_quantiles(torch.tensor(values, dtype=torch.float32), prediction_length=horizon, quantile_levels=[0.5])
+        if tuple(quantiles.shape) != (1, horizon, 1):
+            raise ValueError("model returned an unexpected quantile shape")
         raw = quantiles[0, :, 0].tolist()
         if any(not math.isfinite(v) or abs(v) > 1000000 for v in raw):
             raise ValueError("model returned invalid demand")
@@ -122,7 +126,7 @@ def handler(job):
         warnings.append(evaluation["limitation"])
     cutoff = date.fromisoformat(data["cutoffDate"])
     source = "RUNPOD" if selected == "model" else "BASELINE_SELECTED" if evaluation["validation"] is not None else "BASELINE_FALLBACK"
-    return {"requestId": data["requestId"], "productId": data["productId"], "status": "COMPLETED", "source": source, "modelId": MODEL_ID, "modelRevision": data["modelRevision"], "inputHash": data["inputHash"], "cutoffDate": data["cutoffDate"], "generatedAt": datetime.now(timezone.utc).isoformat(), "runtimeMs": round((time.perf_counter() - started) * 1000), "dates": [(cutoff + timedelta(days=i + 1)).isoformat() for i in range(data["horizonDays"])], "p50": p50, "modelP50": model_p50, "warnings": warnings, "evaluation": evaluation, "device": torch.cuda.get_device_name(0)}
+    return {"status": "COMPLETED", "requestId": data["requestId"], "productId": data["productId"], "source": source, "modelId": MODEL_ID, "modelRevision": data["modelRevision"], "inputHash": data["inputHash"], "cutoffDate": data["cutoffDate"], "generatedAt": datetime.now(timezone.utc).isoformat(), "runtimeMs": round((time.perf_counter() - started) * 1000), "dates": [(cutoff + timedelta(days=i + 1)).isoformat() for i in range(data["horizonDays"])], "p50": p50, "modelP50": model_p50, "warnings": warnings, "evaluation": evaluation, "device": torch.cuda.get_device_name(0)}
 
 
 if __name__ == "__main__":

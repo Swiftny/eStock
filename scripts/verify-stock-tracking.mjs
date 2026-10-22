@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -170,6 +170,21 @@ try {
     manager = await session("manager");
     assert.notEqual(staff, manager);
   });
+
+  await check("normal startup has no inventory, history or orders", async () => {
+    const response = await request("/api/demo");
+    assert.equal(response.status, 200);
+    for (const name of ["products", "movements", "orders", "outbox", "analyses", "receipts", "activity"])
+      assert.equal(response.body[name].length, 0, name);
+  });
+  await stopServer();
+  const fixture = spawnSync(process.execPath, ["--experimental-strip-types", "--input-type=module", "-e", "import { syntheticFixture } from './tests/synthetic-fixture.ts'; syntheticFixture();"], {
+    cwd: root,
+    env: { ...process.env, ESTOCK_DB_PATH: database, FORECAST_MODE: "MOCK" },
+    encoding: "utf8",
+  });
+  assert.equal(fixture.status, 0, fixture.stderr);
+  await startServer();
 
   await check("products return synthetic stock, units and private no-store responses", async () => {
     const response = await request("/api/products");

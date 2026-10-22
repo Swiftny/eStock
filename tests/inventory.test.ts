@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { advanceFixtureTo, isolatedSyntheticFixture } from "./synthetic-fixture.ts";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, mock, test } from "node:test";
 import type { Role } from "../src/lib/contracts.ts";
 import { closeDb, getDb, ORG } from "../src/lib/server/db.ts";
@@ -17,10 +16,9 @@ import { act, executeAction } from "../src/lib/server/service.ts";
 import { state } from "../src/lib/server/store.ts";
 import { DomainError } from "../src/lib/server/validation.ts";
 
-const originalDatabasePath = process.env.ESTOCK_DB_PATH;
-const originalForecastMode = process.env.FORECAST_MODE;
 const cartons = "product-cartons";
 let directory = "";
+let cleanupFixture: () => void;
 let sequence = 0;
 
 function key() {
@@ -63,24 +61,16 @@ function request(body?: string, contentType = "application/json") {
 }
 
 beforeEach(() => {
-  closeDb();
-  directory = mkdtempSync(join(tmpdir(), "estock-inventory-unit-"));
-  process.env.ESTOCK_DB_PATH = join(directory, "records.sqlite");
-  process.env.FORECAST_MODE = "MOCK";
-  inventoryProducts("staff");
+  cleanupFixture = isolatedSyntheticFixture();
+  directory = dirname(process.env.ESTOCK_DB_PATH!);
 });
 
 afterEach(() => {
-  closeDb();
   mock.restoreAll();
-  rmSync(directory, { recursive: true, force: true });
-  if (originalDatabasePath === undefined) delete process.env.ESTOCK_DB_PATH;
-  else process.env.ESTOCK_DB_PATH = originalDatabasePath;
-  if (originalForecastMode === undefined) delete process.env.FORECAST_MODE;
-  else process.env.FORECAST_MODE = originalForecastMode;
+  cleanupFixture();
 });
 
-test("inventory products expose seeded balances, units and synthetic context without costs", () => {
+test("inventory products expose explicit fixture balances, units and synthetic context without costs", () => {
   const result = inventoryProducts("staff");
   assert.equal(result.synthetic, true);
   assert.equal(result.role, "staff");
@@ -94,6 +84,22 @@ test("inventory products expose seeded balances, units and synthetic context wit
     assert.equal("policy" in product, false);
     assert.equal("unitPriceSen" in product, false);
   }
+});
+
+test("normal startup remains empty and employee onboarding survives database reopening", async () => {
+  closeDb();
+  process.env.ESTOCK_DB_PATH = join(directory, "blank.sqlite");
+  const empty = state("staff");
+  for (const key of ["products", "movements", "orders", "outbox", "analyses", "receipts", "activity"] as const)
+    assert.equal(empty[key].length, 0, key);
+  const input = { name: "Synthetic rice", sku: "SYN-RICE", unit: "kg", precision: 3, openingStock: 2.5, openingDate: empty.demoDate };
+  const first = await act("staff", "createProduct", input, "empty-start-create");
+  closeDb();
+  assert.equal(state("staff").products[0].stock, 2.5);
+  await act("staff", "createProduct", input, "empty-start-create");
+  assert.equal(state("staff").products.length, 1);
+  assert.equal(state("staff").movements.length, 1);
+  assert.equal(state("staff").products[0].id, first.entityId);
 });
 
 test("inventory reads preserve stock movements and ledger versions", () => {
@@ -320,6 +326,7 @@ test("confirmed incoming stays separate from stock and only usable receipts add 
     key(),
   );
   assert.equal(inventoryProduct(cartons).confirmedIncoming, order.quantity);
+  await advanceFixtureTo(order.expectedDate);
   await act(
     "staff",
     "receive",
@@ -328,7 +335,7 @@ test("confirmed incoming stays separate from stock and only usable receipts add 
       unit: "units",
       usable: 8,
       damaged: 2,
-      date: "2026-10-21",
+      date: state("manager").demoDate,
       reference: "SYN-RECEIPT",
       sourceEventId: key(),
     },
