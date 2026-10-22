@@ -4,6 +4,8 @@ Baseline: 20 October 2026; status updated 21 October. The user subsequently auth
 
 ## Execution principles
 
+Current integration evidence, 22 October: normal startup stays empty; employees create basic inventory and fractional receipts, managers configure/import/review purchasing, and explicit test fixtures initialise isolated databases. Current verification is [74 Node / 7 Python / 25 HTTP scenarios plus browser and build checks](../verification/INTEGRATION_2026_10_22.md). These results supersede historical totals below. Real RunPod inference and Replit deployment/durability evidence remain incomplete.
+
 **Stock-tracking follow-up, 21 October:** the user approved stages 1 and 2 of the seven-stage MVP implementation sequence discussed in chat and subsequently requested verification. The local `feat/stock-tracking` branch adds dedicated stock endpoints and records frontend/backend ownership on top of the pulled implementation. See [the stock tracking agreement](../engineering/STOCK_TRACKING.md), [60-test/24-HTTP-scenario verification](../verification/STOCK_TRACKING_2026_10_21.md), and [MVP checkpoints](MVP_PROGRESS.md). Stages 1 and 2 are complete locally, approximately 29% by accepted-stage count. The user will handle commit/push manually. This does not establish completion of the real RunPod spike or deployment milestones below.
 
 - One complete workflow: movement → snapshot → forecast → recommendation → approval → outbox/PO → receiving → audit.

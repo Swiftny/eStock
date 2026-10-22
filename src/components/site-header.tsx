@@ -30,9 +30,14 @@ export function SiteHeader() {
             How it works
           </a>
         </nav>
-        <a className="button button-small button-primary landing-demo" href="/demo">
-          Open demo
-        </a>
+        <div className="landing-header-actions">
+          <a className="button button-small button-outline landing-signin" href="/login">
+            Sign in
+          </a>
+          <a className="button button-small button-primary landing-demo" href="/demo">
+            Try it now
+          </a>
+        </div>
       </div>
     </header>
   );

@@ -15,6 +15,7 @@ export function validateHistory(days: SalesDay[], cutoff: string) {
       !day.complete ||
       !Number.isFinite(day.quantity) ||
       day.quantity < 0 ||
+      day.quantity > 1000000 ||
       (i > 0 && addDays(observed[i - 1].date, 1) !== day.date)
     )
       return {
@@ -38,14 +39,19 @@ export function baseline(
   );
 }
 
-export function selectBaseline(values: number[], horizon: number): "mean28" | "seasonal7" {
+export function selectBaseline(
+  values: number[],
+  horizon: number,
+  flags: boolean[] = [],
+): "mean28" | "seasonal7" {
   if (values.length < 168 || horizon > 44) return "mean28";
   const score = (method: "mean28" | "seasonal7") =>
     [58, 72].reduce(
       (sum, origin) =>
         sum +
         baseline(values.slice(0, origin), horizon, method).reduce(
-          (error, value, index) => error + Math.abs(value - values[origin + index]),
+          (error, value, index) =>
+            error + (flags[origin + index] ? 0 : Math.abs(value - values[origin + index])),
           0,
         ),
       0,
@@ -59,9 +65,13 @@ export function baselineResult(
   warning: string,
 ): ForecastResult {
   const method =
-    source === "BASELINE_FALLBACK" ? "mean28" : selectBaseline(request.values, request.horizonDays);
+    source === "BASELINE_FALLBACK"
+      ? "mean28"
+      : selectBaseline(request.values, request.horizonDays, request.stockoutFlags);
   return {
     status: "COMPLETED",
+    requestId: request.requestId,
+    productId: request.productId,
     source,
     modelId: method === "mean28" ? "baseline/28-day-mean" : "baseline/7-day-seasonal-naive",
     modelRevision: "estock-baseline-v1",
@@ -120,11 +130,21 @@ export function validateResult(raw: unknown, request: ForecastRequest): Forecast
   const result = raw as ForecastResult;
   if (
     result.status !== "COMPLETED" ||
+    result.requestId !== request.requestId ||
+    result.productId !== request.productId ||
     !["RUNPOD", "BASELINE_SELECTED", "BASELINE_FALLBACK"].includes(result.source) ||
     result.inputHash !== request.inputHash ||
     result.cutoffDate !== request.cutoffDate ||
-    result.modelRevision !== configuration().revision ||
-    typeof result.modelId !== "string" ||
+    result.modelRevision !== (request.modelRevision || configuration().revision) ||
+    result.modelId !== "amazon/chronos-bolt-small" ||
+    typeof result.device !== "string" ||
+    !result.device.trim() ||
+    !Array.isArray(result.modelP50) ||
+    result.modelP50.length !== request.horizonDays ||
+    result.modelP50.some(
+      (value) =>
+        typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1000000,
+    ) ||
     !Number.isFinite(result.runtimeMs) ||
     result.runtimeMs < 0 ||
     !Number.isFinite(Date.parse(result.generatedAt)) ||
@@ -163,6 +183,12 @@ export async function submitForecast(request: ForecastRequest): Promise<Forecast
       "MOCK adapter: saved-history baseline calculation on this server. No AI inference.",
     );
   const { revision } = configuration();
+  if (request.modelRevision && request.modelRevision !== revision)
+    fail(
+      "Forecast configuration changed before submission. Review the saved run.",
+      503,
+      "CONFIGURATION",
+    );
   const { requestId, productId, cutoffDate, horizonDays, inputHash, dates, values, stockoutFlags } =
     request;
   const job = await provider("run", {
@@ -179,11 +205,22 @@ export async function submitForecast(request: ForecastRequest): Promise<Forecast
       modelRevision: revision,
     },
   });
-  if (job.status === "COMPLETED") return validateResult(job.output, request);
-  if (!job.id || !["IN_QUEUE", "IN_PROGRESS"].includes(job.status))
+  if (job.status === "COMPLETED")
+    return {
+      ...validateResult(job.output, request),
+      ...(typeof job.id === "string" ? { jobId: job.id } : {}),
+    };
+  if (
+    ["IN_QUEUE", "IN_PROGRESS"].includes(job.status) &&
+    (typeof job.id !== "string" || !/^[a-zA-Z0-9_-]{1,200}$/.test(job.id))
+  )
+    fail("Provider returned an invalid job identifier.", 502, "FORECAST_INVALID");
+  if (!["IN_QUEUE", "IN_PROGRESS"].includes(job.status))
     throw new Error("RunPod did not accept the forecast job.");
   return {
     status: "PENDING",
+    requestId: request.requestId,
+    productId: request.productId,
     jobId: job.id,
     source: "RUNPOD",
     modelId: "amazon/chronos-bolt-small",
@@ -204,6 +241,8 @@ export async function pollForecast(
 ): Promise<ForecastResult | null> {
   if (!/^[a-zA-Z0-9_-]+$/.test(jobId)) fail("Invalid provider job identifier.");
   const job = await provider(`status/${jobId}`);
+  if (job.id && job.id !== jobId)
+    fail("Provider job identity does not match the saved job.", 502, "FORECAST_INVALID");
   if (["IN_QUEUE", "IN_PROGRESS"].includes(job.status)) return null;
   if (job.status !== "COMPLETED") throw new Error("RunPod forecast job failed or expired.");
   return { ...validateResult(job.output, request), jobId };

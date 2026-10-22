@@ -4,15 +4,15 @@ A replenishment assistant for SMEs managing physical stock. Record sales, analys
 
 **TooGoodToBeTrue · SDC Hackathon 2026 · Domain 2: Orbyte Smart SME Challenge.** eStock is a team proposal, not an official Orbyte module or a connected Orbyte integration.
 
-**Implemented locally, 21 October 2026:** refined landing page and a persistent synthetic workspace at `/demo`. SQLite stores stock, policies, sales history, analyses, recommendations, decisions, purchase orders, a simulated supplier outbox, receipts and audit. The default forecasting adapter computes a labelled baseline from saved history. Actual RunPod GPU inference and Replit deployment are still unverified.
+**Verified locally, 22 October 2026:** refined landing page and a persistent synthetic workspace at `/demo`. SQLite stores stock, policies, sales history, analyses, recommendations, decisions, purchase orders, a simulated supplier outbox, receipts and audit. The default forecasting adapter computes a labelled baseline from saved history. Actual RunPod GPU inference and Replit deployment are still unverified.
 
 ## Run locally
 
 Team documentation lives in [docs/team/](docs/team/README.md). Keep it out of a root `pages/` directory: Next.js treats that name as application routes, which conflicts with this project's `src/app` layout. The documentation was moved and its links and work scopes updated on 21 October to restore normal startup.
 
-The landing page uses a light-blue palette, a bold headline, word entrances and sections that reveal on scroll. Employee/manager panels have strong type and tight spacing. How it works explains recording stock, suggestions for what/when/how much to order, workspace review prompts and manager approval. The AI explanation keeps the current baseline-only demo clearly labelled. The tagline reads “Stock planning for SMEs”. Overview, Your team and How it works navigate to their sections, with hover underlines and no target outline. Hero action labels animate as one piece. Purchase previews and the footer wordmark remain removed. Reduced motion shows content immediately. The latest isolated production preview is [localhost:3006](http://localhost:3006/?v=reorder-copy), with its own synthetic database. Shared blue tokens still style the inventory workspace; green success, amber warnings and error distinctions are preserved. Backend calculations, permissions and persistence code were not changed.
+The current light-blue landing page links to the persistent workspace with **Try it now** and to `/login` with **Sign in**. The workspace retains its existing minimalist inventory, replenishment, order and activity screens.
 
-Requires **Node.js 22.18+** with built-in SQLite. This implementation was checked on **Node 22.23.3**. Node emits an experimental SQLite warning on this version. Python 3 is needed only for worker contract tests, not for running the local app.
+Requires **Node.js 22.18+** with built-in SQLite. This implementation was checked on **Node 22.23.3**. Node emits an experimental SQLite warning on this version. Python 3 is needed for the full test suites, including the application-to-worker contract check; the local app runs without Python.
 
 ```sh
 npm ci
@@ -21,9 +21,15 @@ npm run db:seed
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000), then **Open demo**. Choose a labelled demo manager or staff session. No cloud credentials are required. Migrations and the seed are also applied on first access; rerunning them preserves existing records.
+Open [localhost:3000](http://localhost:3000), then **Try it now**. A new visitor enters as Manager automatically; use the top-right **Demo role** control to switch to Staff. Existing sessions retain their selected role. If an access code is configured, enter it when prompted. No cloud credentials are required. Migrations and the blank seed are applied on first access; rerunning them preserves existing records. Page refresh does not clear inventory.
 
-The default database is `data/estock.sqlite`, ignored by Git. **Records survive page refresh and application restart.** An optional `.env.local`, based on `.env.example`, can change `ESTOCK_DB_PATH`, gate role selection with `ESTOCK_DEMO_ACCESS_CODE`, or configure the forecast provider. Never commit credentials. To try a separate fresh fixture without deleting data, stop the server and use another database path in `.env.local`, then restart and seed.
+In **Add Item**, SKU is optional. Leave it blank to generate a unique code such as `DEMO-0001`, or enter your own code (up to 40 characters). Staff and managers can both use automatic codes; existing codes are skipped and saved codes survive refresh/restart.
+
+The outlined **Sign in** action opens [`/login`](http://localhost:3000/login). It uses the existing workspace access code and Manager session; leave the field blank if no code is configured. This is local prototype access, not personal-account authentication. The landing header shares the workspace's edge alignment, with navigation left and Sign in/Try it now right. Repeated workspace/synthetic-data labels have been removed from visible chrome; supplier simulation and forecast-source disclosures remain.
+
+UI update, 22 October: the landing tagline is “AI-assisted stock planning”. The current demo limitation remains visible. The original wide demo header is retained, with eStock left and role selection at the upper right. Unit review and replenishment quantities omit RM prices; activity role names stay intact. Approval policy checks still apply. [Verification](docs/verification/UI_2026_10_22.md).
+
+The default database is `data/estock.sqlite`, ignored by Git. **Records survive page refresh and application restart.** An optional `.env.local`, based on `.env.example`, can change `ESTOCK_DB_PATH`, gate role selection with `ESTOCK_DEMO_ACCESS_CODE`, or configure the forecast provider. Never commit credentials. Fresh databases intentionally contain no inventory or transactions. `db:seed` creates only the blank workspace metadata and simulated supplier configuration. Tests explicitly load `tests/synthetic-fixture.ts` into temporary databases; normal startup never imports that helper. To try an isolated workspace without changing existing records, use a fresh absolute `ESTOCK_DB_PATH` and a separate port.
 
 Production locally:
 
@@ -40,51 +46,53 @@ Stop the dev server before starting production on the same port. Both server com
 
 ## Try the complete synthetic journey
 
-1. Open `/demo` as **Manager**. **Needs attention** is the actionable review list; calculations and history are expandable.
-2. Go to **Stock records**, select **Takeaway cartons**, and save a dated sale of 5 units with a synthetic reference. Starting stock is 45 units; it becomes 40. A movement posts once and the form clears after success.
-3. Expand **Close the day and prepare analysis**. Confirm that all products’ sales records, including actual zero-sales days, are complete. Closing advances the explicit demo date and triggers analysis from the closing balance. It never invents unfinished days. Stockout flags can be recorded when closing; a zero closing balance is flagged automatically.
-4. Return to **Needs attention** and **Review purchase**. Inspect the supplier, quantity/unit, estimated cost, packaging, arrival and warnings. The default result is a **mock adapter using a saved-history baseline**, not AI. The app's seed has no pre-existing inbound, so its quantity can differ from the landing page's fixed 60-unit fixture.
-5. Keep the suggested quantity, acknowledge warnings and **Confirm approval**. A change needs a reason and must satisfy packaging, MOQ and the configured approval limit. Rejection also needs a reason. Approval creates exactly one PO and outbox message and leaves physical stock unchanged.
-6. Go to **Purchase orders**, then **Dispatch to simulator**. Expand the **SIMULATED supplier outbox** to inspect the persisted message. Optional failure controls save a simulated dispatch failure; retry keeps the same business reference.
-7. Record a **synthetic supplier acknowledgement**, keeping the approved date and terms. Dispatch is separate from acknowledgement. A changed arrival date places the commitment on hold for manager review; cancel with evidence and reanalyse before replacing it. Late deliveries do not quietly reduce the purchase need.
-8. Record a partial usable receipt with a synthetic evidence reference, then receive the remainder. Only usable goods add stock; usable plus damaged goods reduce PO remaining. Damage opens a manager exception, even if physical receiving is complete. No replacement stock is invented.
-9. Inspect **Stock records** and **Activity**, then refresh or restart. Saved balances, orders, messages, receipts and audit remain. The date is a synthetic demo clock, not your computer's current day.
+Use only synthetic records. To open a separate empty workspace:
 
-Staff can record stock and receive confirmed orders. Manager-only actions are checked on the server, including approval, policy changes, imports, dispatch and synthetic supplier events. Demo role selection simulates identity; it is **not production authentication or Orbyte SSO**. Every demo session shares one synthetic organisation/location.
+```sh
+ESTOCK_DB_PATH=/private/tmp/estock-practice.sqlite FORECAST_MODE=MOCK npm run dev -- --port 3012
+```
 
-## Everyday screens
+Use a different new filename for each empty rehearsal. Existing databases are preserved. **Reset demo deletes that workspace's records**; it is unnecessary for this journey.
 
-- **Needs attention:** product, review timing, suggested order, short reason and next action. Expand calculations, daily projections, complete/partial weekly totals and model metadata when needed.
-- **Stock records:** movement form first; daily closing, purchasing configuration, product creation, CSV and history are separate disclosures. Products have explicit base units and 0–3 quantity decimal places. Unit and precision cannot be changed after creation.
-- **Purchase orders:** dispatch, acknowledgement and receiving follow their actual order state. Existing commitments prevent additional purchase approvals until resolved. Cancellation keeps previous receipts and audit.
-- **What-if:** enter stock, weekly sales, lead time, review interval, safety stock and packaging. This **Manual estimate** uses constant demand, no inbound and review due today. It never writes scenario inputs into operational records or fabricates daily history. Costs remain uncertain when reference price or shipping is unknown.
-- **Activity:** actor, MYT display time, action, explanation and expandable before/after record.
+1. Open `/demo`, select **Staff** using **Demo role**, then **Add Item**. Create Synthetic rice, SKU `SYN-RICE`, unit `kg`, precision **3 decimal places**, starting quantity **5**, and the displayed open date. The item saves with **Purchasing setup required**.
+2. Select **Record sales**, enter **0.125**, and **Save sale**. Stock becomes **4.875 kg**. Refresh to see the saved balance.
+3. Switch to **Manager**, open the item's stock records and expand **Purchasing policy**. Select the simulated supplier, lead time **1**, review **7 days**, safety stock **6**, purchase pack **0.125**, minimum **0.125**, and the current demo date for next review. Leave costs blank to test an unpriced simulated request; save the policy. These are deliberate rehearsal settings, not automatically assigned supplier terms.
+4. Optionally open **Inventory → Import sales history**. Download the template, replace its SKU/date, select a CSV or paste it, then **Preview import**. Fix row errors, review duplicate/correction counts, tick confirmation, then **Confirm history import**. Historical dates must precede the opening date. Importing history never changes physical stock.
+5. Select **End day** only after all sales, including genuine zero-sales days, are complete. It closes the current day and saves analysis; the date stays the same. With this one complete day the result is a **Demo estimate**, based on the recorded 0.125 kg sale, explicitly not AI or a validated forecast. Complete histories of at least 28 days use a baseline in default MOCK mode.
+6. Open **Replenishment → Review suggestion**. Check remaining stock, the labelled sales period where available, coverage, supplier, quantity, order/arrival dates, demand method and warnings. Calculations/model metadata are expandable. Unknown costs are visibly **Unpriced SIMULATED** and the approval limit cannot be checked. Acknowledge warnings, then **Approve & place order**. Quantity changes and rejection require a reason. Approval creates one order/outbox and adds no stock.
+7. In **Purchase orders**, open the order, **Send SIMULATED request**, then record supplier confirmation with the approved arrival date and terms. No external message is sent. A changed ETA holds receiving for manager review.
+8. Select **Next day** after closing; repeat End day/Next day as needed until the confirmed delivery date is open. Switch to **Staff**, open the delivery and receive usable/damaged quantities within the remaining order. Both fields follow the item's precision. Usable stock increases on-hand; usable plus damaged reduces the remaining order. Damage opens a manager exception, with no automatic replacement stock.
+9. Inspect **Inventory** and, as Manager, **Activity**. Refresh or restart using the same database path; stock, history, approvals, receipts and audit remain saved.
 
-The landing page retains its original browser-memory scenario/review demonstration under **Inspect the synthetic 60-unit example**. That example resets on refresh; it does not write stock, POs or messages. `/demo` is the persistent app.
+| Responsibility | Staff / employee | Manager |
+| --- | --- | --- |
+| Basic item, unit/precision and opening stock | Create on the open day | Create |
+| Sales, permitted stock activity and valid PO receiving | Record | Record; reasoned stock adjustments |
+| Supplier terms, packaging, costs and budgets | Cannot change | Configure |
+| Approve/edit/reject purchases; dispatch/acknowledgement; damage review | Cannot perform | Authorised |
+| CSV history import and reviewed corrections | Cannot perform | Authorised |
+
+Server-side permissions enforce these boundaries. Staff cannot inject purchasing fields into item creation. Unique SKUs, one opening balance, source-event protection, request idempotency and audit prevent duplicate stock. Unit/precision stay fixed after creation. Demo role selection simulates identity; it is not production authentication or Orbyte SSO. Every session shares one synthetic organisation.
+
+**Plan ahead** is a separate manual estimate under Replenishment. Its constant-demand inputs never write operational history. It assumes no inbound and a review due today.
 
 ## CSV and data conventions
 
-Download the small example from the import disclosure or [public/fixtures/history-example.csv](public/fixtures/history-example.csv). Preview validates the full batch with row errors; commit revalidates it in one transaction. Identical source IDs are skipped. A historical correction requires the same source ID/SKU/date, an explicit correction option and a manager reason; it increments the revision and retains a before/after audit.
-
-Daily history headers:
+The reachable manager importer is **Inventory → Import sales history**. The [downloadable template](public/fixtures/history-template.csv) lists:
 
 ```csv
 source_record_id,sku,business_date,quantity_sold,data_complete,stockout_flag
 ```
 
-Opening fixture headers:
+Dates are `YYYY-MM-DD`; flags are `true`/`false`. Quantities must be explicit nonnegative decimals in the product's base unit and precision. Optional `unit` must match. The whole batch is revalidated atomically on commit. Identical sources are skipped; changes require the same source ID/SKU/date, reviewed corrections and a reason. Before/after values and revisions remain in audit. Missing days remain unknown. Future dates and aggregate history overlapping `ledger_start_date` are rejected; from that date, ledger SALE movements are canonical.
 
-```csv
-source_event_id,sku,occurred_at,movement_type,quantity,reference,reason
-```
+The manager-only backend opening-import contract remains available for products explicitly created without an opening movement. Its columns are `source_event_id,sku,occurred_at,movement_type,quantity,reference,reason`. It accepts one OPENING_BALANCE on the ledger start date. The current Add Item form records opening stock directly; there is no separate opening-import screen.
 
-Dates in these imports are `YYYY-MM-DD` business dates. Flags are `true`/`false`. Quantities must be explicit decimal values; blank does not mean zero. Optional `unit` must match the product. History must precede `ledger_start_date`; from that date, gross SALE movements are the canonical demand source. History imports never post stock. Opening imports accept only `OPENING_BALANCE` for a product created with **Create this opening balance now** unchecked, on its ledger start date. An existing opening balance cannot be replaced; use a reasoned stock adjustment.
-
-Quantities use integer thousandths internally, with each product's stricter precision enforced. Money uses integer **MYR sen**, reference price **per base unit** and explicit shipping. A blank cost is unknown, not zero, and blocks approval. The ledger is append-only; closed-day physical corrections use manager adjustments on the open day. See the [synthetic data card](docs/data/SYNTHETIC_DATA.md).
+Quantities use integer thousandths and product precision 0–3; countable `units` require precision 0. Reference prices use integer MYR sen per base unit. Blank costs remain unknown. An unpriced request is allowed only for the simulated channel with explicit warning acknowledgement; known costs enforce the approval limit. Closed-day physical records remain immutable; manager adjustments use the open day. See the [data card](docs/data/SYNTHETIC_DATA.md).
 
 ## Stock tracking API
 
-Stages 1 and 2 add dedicated stock endpoints on the local `feat/stock-tracking` branch. They reuse the existing SQLite ledger and transaction service. Frontend pages and styling are unchanged in this stage.
+The dedicated stock endpoints reuse the existing SQLite ledger and transaction service. The `/api/demo` workflow remains supported.
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -96,7 +104,7 @@ Use the existing synthetic session cookie. Mutations require JSON and an `Idempo
 
 Frontend types, sample requests, validation/error handling, file ownership and stage-specific verification are documented in [the stock tracking agreement](docs/engineering/STOCK_TRACKING.md). Updates are request-based; refresh stock/history after a save. This stage does not add server push or a live POS connection.
 
-Stock verification on Node 24.16.0 passed **60 Node tests** and **24 production HTTP scenario groups**, including permissions, duplicate protection, concurrent sales and stock/history/session persistence across a fresh server process. Run `npm test`, then `npm run build` and `node scripts/verify-stock-tracking.mjs` to reproduce. The HTTP harness uses its own temporary database, stops its server processes and removes that database. It requires permission to listen on localhost. Evidence and limits: [stock verification](docs/verification/STOCK_TRACKING_2026_10_21.md). Progress and the next stage: [MVP checkpoints](docs/plans/MVP_PROGRESS.md).
+Current checks on Node **22.23.3**, npm **10.9.9**, Python **3.9.6**: **74 Node tests**, **7 Python worker tests**, **25 production HTTP scenario groups**, lint, typecheck and production build pass. The HTTP harness now verifies empty startup before explicitly loading its synthetic fixture; it cleans up its own servers/database. Run `node scripts/verify-stock-tracking.mjs` after building. Browser verification used only `/private/tmp/estock-integration-browser-20261022.sqlite`. [Current evidence, screenshots and Delivery Gate](docs/verification/INTEGRATION_2026_10_22.md) supersede older totals.
 
 ## Forecasting and purchasing rules
 
@@ -104,7 +112,7 @@ The server separates demand estimation from purchasing arithmetic. `max(30, lead
 
 The fixed **PRD test**, not a model result, uses demand 10/day, lead time 3, review interval 7, safety stock 20, usable stock 45 and confirmed inbound 25 in the horizon. Raw need is 50; packs/MOQ 12 give 60. Moving that inbound to day 12 gives raw 75 and packaged 84.
 
-`FORECAST_MODE=MOCK` is the default. It uses the 28-day mean or seasonal-naive baseline from saved history and exposes its source. Fewer than 28 complete consecutive days or unresolved gaps return **More complete history needed**, with no forecast purchase quantity. A server-side RunPod queue adapter and CUDA Python worker are implemented, with pending/completed/failed jobs, saved results, model/version validation and explicit fallback. **No live GPU inference was performed.** Configuration, dependency-lock and own-account proof steps: [worker/README.md](worker/README.md).
+`FORECAST_MODE=MOCK` is the default. It uses the 28-day mean or seasonal-naive baseline from saved history and exposes its source. One to 27 consecutive complete days ending at the cutoff use **DEMO_ESTIMATE**, an explicitly labelled average of the available days, never a 28-day mean or AI claim. No history, unresolved gaps, incomplete days or missing purchasing setup produce no actionable quantity. RunPod submissions require 28–168 consecutive complete observations. A server-side RunPod queue adapter and CUDA Python worker are implemented, with pending/completed/failed jobs, saved results, model/version validation and explicit fallback. **No live GPU inference was performed.** Configuration, dependency-lock and own-account proof steps: [worker/README.md](worker/README.md).
 
 ## Replit and submission implications
 
@@ -130,7 +138,7 @@ Individual work pages: [team index](docs/team/README.md), [Vitto / frontend](doc
 Assignments confirmed by the user on 21 October 2026. Registration contacts stay in ignored `.private/TEAM_DETAILS.md`.
 
 - [Context and handoff](PROJECT_CONTEXT.md), [PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [build plan](docs/plans/BUILD_PLAN.md).
-- [Implementation plan](docs/plans/IMPLEMENTATION_2026_10_21.md), [visual rationale](DESIGN.md), [actual verification and Delivery Gate](docs/verification/WORKFLOW_2026_10_21.md).
+- [Implementation plan](docs/plans/IMPLEMENTATION_2026_10_21.md), [visual rationale](DESIGN.md), [current verification and Delivery Gate](docs/verification/INTEGRATION_2026_10_22.md).
 - [Compliance matrix](docs/COMPLIANCE_MATRIX.md), [submission checklist](docs/SUBMISSION_CHECKLIST.md), [pitch/demo guide](docs/submission/PITCH_AND_DEMO.md).
 - [Proposal draft](docs/submission/PROPOSAL_DRAFT.md), [tools declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md), [AI handoff](docs/AI_HANDOFF.md).
 

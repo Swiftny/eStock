@@ -1,6 +1,6 @@
 # eStock: Product Requirements Document
 
-Version 1.0 | 20 October 2026 | SDC Hackathon 2026, Domain 2 | TooGoodToBeTrue
+Version 1.1 | 22 October 2026 | SDC Hackathon 2026, Domain 2 | TooGoodToBeTrue
 
 **Status:** product requirements baseline for team review and adaptation. On 21 October the user extended authorisation from the landing page to frontend refinement and the persistent replenishment workflow. The local application now implements that journey with SQLite, labelled baseline analysis and a SIMULATED supplier channel. RunPod GPU inference and Replit deployment/proof remain unverified. This PRD does not authorise service purchases, real messaging, commits, pushes or publication. See DECISIONS.md and the actual verification report.
 
@@ -86,9 +86,10 @@ eStock helps SMEs decide when and how much stock to reorder, explains the decisi
 | Members | Marco Ryan Suseno; Riakudu Vittorios Surjoraharjos; William Christiansen; Maximillion Cang |
 | Reported university | Xiamen University; verify official campus spelling against the portal |
 | Reported skills | Marco: frontend; Vitto: PRD/frontend/UI/UX; William: system design; Maxi: database |
-| Final assignments | Not allocated; skills are not final responsibilities |
+| Final assignments | Vitto frontend; Maxi data; William system/backend; Marco AI, confirmed 21 October |
 | Registration contacts | Provided by the user; keep in .private/TEAM_DETAILS.md for templates, not demo data |
-| Stack, accounts, credits, leader phone | TEAM INPUT REQUIRED |
+| Stack | Next.js/TypeScript/plain CSS, local Node SQLite and Python RunPod candidate; durable deployment still to verify |
+| Accounts, credits, leader phone | TEAM INPUT REQUIRED |
 | Repository language | English, as instructed by the user; preserve names, contacts, links and technical identifiers |
 
 ### 1.3 What general means in the MVP
@@ -115,7 +116,7 @@ Intended reductions: copying records, duplicate purchases, unexplained purchase 
 
 | Persona | Need | Allowed | Not allowed |
 | --- | --- | --- | --- |
-| Stock staff | Record movements quickly | View SKUs/stock, enter sales/usage, record receipt against valid POs | Approve purchases or change policy/budget |
+| Stock staff / employee | Set up inventory and record movements | Create basic items/opening stock; view stock/history; enter sales/usage; receive fractional usable/damaged quantities against valid POs | Approve purchases, import/correct aggregate history, or change supplier terms/policy/budget |
 | Manager/owner | Decide with explanations | Review, change policy, edit quantity with reason, approve/reject, view costs/audit | Silently bypass data validation |
 | System worker | Run authorised analysis | Aggregate, call model, create recommendations/notifications/outbox | Approve purchases itself |
 | Supplier | Receive purchase requests | Receive product, quantity, schedule and order reference | Access internal sales history, stock or other businesses' costs |
@@ -188,13 +189,13 @@ Official preliminary rubric: Innovation 30%, Problem–Solution Fit 25%, Feasibi
 
 ## 5. Main workflow
 
-### 5.1 Manager setup
+### 5.1 Inventory onboarding and manager setup
 
-1. Open a synthetic-labelled demo organisation.
-2. Import history/opening-balance fixtures; review validation before committing.
-3. Configure SKU, primary supplier, lead time, 7/30-day cycle, buffer, pack/MOQ, reference price and cost limit.
-4. Check complete daily sales and consistent units.
-5. Select channel mode; default to demo outbox until real-channel accounts are ready.
+1. Normal startup is empty. An employee or manager creates the basic item (name, unique SKU, base unit, precision, opening quantity) on the open inventory date. Opening stock posts once and is audited.
+2. Employees may record sales immediately. Purchasing configuration remains absent, with **Purchasing setup required**; no actionable recommendation is created until a manager saves supplier terms and policy. Employee input is allowlisted and cannot include purchasing/budget fields.
+3. The manager configures primary supplier, lead time, 7/30-day cycle, safety stock, pack/MOQ, reference costs and approval limit separately.
+4. Optional manager history import is reachable at **Inventory → Import sales history**, with template, file/paste, row errors, duplicate/correction counts, preview and confirmation. Aggregate history never changes stock.
+5. The supplier channel remains SIMULATED. Unknown costs are not zero: an unpriced simulated request requires visible warnings and acknowledgement; its approval limit cannot be checked. Known costs enforce the limit. Real-channel approval with unknown costs is not authorised.
 
 ### 5.2 Movements and analysis
 
@@ -218,7 +219,7 @@ Official preliminary rubric: Innovation 30%, Problem–Solution Fit 25%, Feasibi
 
 ### 5.4 Blocked paths
 
-Incomplete data, forecast failure without valid fallback, missing supplier cost information, stale proposals, invalid quantities, POs already covering demand and arrivals too late must not silently produce purchases.
+Incomplete data, missing purchasing setup, forecast failure without valid fallback, stale proposals, invalid quantities, active commitments and late arrivals must not silently produce purchases. Unknown costs require explicit unpriced SIMULATED warnings and acknowledgement; they cannot be treated as zero or represented as budget-checked.
 
 Allowed outcomes: normal recommendation; urgent review; no restock needed; insufficient data; waiting for supplier; or analysis failed with retry. Each status has a clear next action.
 
@@ -277,7 +278,7 @@ Import rules:
 
 RECOMMENDED DEFAULT: daily snapshots at business-day closing. The demo has an explicit dated clock, so input, closing balance, history and forecast share the same time reference. Approval occurs after closing and before the next day's transactions are posted.
 
-For cutoff day T, decision_date is T+1 and forecasts start on decision_date. Approval is allowed only on decision_date, before that day's movements are posted; expires_at is the start of T+2 in MYT. Check expiry against the server/demo clock even if the ledger has not changed. Recompute analysis and dispatch anchor when the date changes; do not send orders with an old ETA. This is a daily MVP boundary, not unlimited delayed approval support.
+Current local convention: End day closes T and retains the displayed demo date T; analysis uses complete history through T and forecasts start T+1. Manager review/dispatch can occur on the closed demo date, with expiry at the start of the following demo date. Next day explicitly advances the clock; analysis on the new date is allowed before new movements, using the previous cutoff. Check date/version freshness even without new stock activity; do not dispatch using an old ETA. This supersedes the earlier conceptual requirement to advance the date automatically on closing.
 
 Forecast starts after the history cutoff; stock position uses that same cutoff. Do not silently include an unfinished current day as a complete observation.
 
@@ -294,7 +295,7 @@ Intraday remaining-hour analysis, multinational timezones and supplier holiday c
 - Ledger is append-only; corrections use linked reversals/adjustments, not deleted history.
 - Never import an opening balance twice.
 - Receipts must reference an active PO and cannot exceed remaining quantity without manager review.
-- Decrement PO remaining and increment stock in one transaction.
+- In one transaction, decrement PO remaining by usable plus damaged quantities and increment on-hand by usable quantity only. Both employee and manager receiving enforce product precision. Damage opens a manager exception; it creates no automatic replacement stock.
 - Supplier offers or unreceived POs do not increase on-hand.
 - Customer reservations/backorders are outside MVP; do not subtract reserved quantities and then count the same demand twice.
 
@@ -340,7 +341,7 @@ For emergency reviews between scheduled reviews, use remaining days until the ne
 
 A routine review completes when its valid outcome is NO_ORDER_NEEDED or the manager records approval/rejection of the case. PENDING_APPROVAL does not complete a review. On completion, advance next_review_at from its previous schedule anchor by multiples of R to the first date after decision_date. Failed review does not advance the schedule; retry does not advance it twice. Dispatch time does not become a new calendar anchor.
 
-Under this daily convention, the first forecast date is decision_date (offset 1 after cutoff). A new order dispatched on decision_date with L=3 becomes usable at offset 4, not offset 3. Existing inbound uses each PO's confirmed ETA. H=L+R still covers L waiting days and R coverage days afterward. Display daily-balance assumptions without promising an arrival hour.
+The forecast begins the day after its cutoff. Requested arrival is decision_date + L; confirmed inbound uses each PO's dated ETA. End day keeps the demo decision date as described in §6.4. H=L+R controls the demand window; daily projections use explicit dates. Display these assumptions without promising an arrival hour.
 
 If a review is due/overdue, run a routine review with full R, not zero/negative R_effective. An early emergency review uses a positive number of days until the next review. Late acknowledgement/new ETA triggers risk reanalysis; parameter L alone does not guarantee arrival.
 
@@ -422,8 +423,8 @@ Summed daily quantiles do not guarantee a calibrated confidence interval for a m
 ### 8.3 Dataset and quality
 
 - DEFAULT: 168 synthetic history days per SKU for main fixture, fixed seed, declared stable/weekday/trend patterns.
-- Proposed application-policy minimum: 28 complete days; this is not a claim about model architecture minimums.
-- SKUs with fewer than 28 complete days or unresolved gaps return NEEDS_DATA and no automated forecast quantity. Factual stock alerts remain visible. Cold-start manual purchasing outside the main recommendation is roadmap, not a hidden target-stock feature.
+- RunPod application-policy minimum: 28 complete consecutive days ending at the cutoff, at most 168; this is not a claim about model architecture minimums.
+- One to 27 consecutive complete days use DEMO_ESTIMATE: the average of available recorded sales, with the exact evidence period/count and a limited-history warning. This local estimate may produce a manager-review suggestion after purchasing setup, but is not live AI or a validated forecast. It is never divided by 28. No observations, unresolved gaps, incomplete days or absent purchasing setup return NEEDS_DATA with no actionable quantity.
 - A missing date is not zero sales.
 - Stockout days censor observed sales below potential demand; flag them and do not claim recovery of true demand.
 - The model does not automatically know promotions/unusual events absent from history.
@@ -568,7 +569,7 @@ Required UX:
 
 ## 12. Architecture and contracts
 
-### 12.1 Required components; frontend selected, backend choices open
+### 12.1 Current local components and outstanding deployment
 
     CSV / forms
         → web application + backend on Replit
@@ -580,7 +581,7 @@ Required UX:
         → simulated supplier / optional WhatsApp / optional Telegram
         → supplier confirmation + receipt + audit
 
-The user approved Next.js App Router, TypeScript and plain CSS for the landing page on 21 October. **Remaining M0 recommendation:** extend the TypeScript application on Replit with persistent PostgreSQL and a Python RunPod worker. Drizzle and a serverless RunPod queue remain proposals. Database/worker choices and platform access must be agreed and verified before related implementation; frontend approval does not settle them.
+The authorised local implementation extends Next.js App Router/TypeScript/plain CSS with Node SQLite and a Python RunPod queue worker candidate. Replit must provide durable storage and one instance, or use a hosted persistent database. Real Replit/RunPod access, live inference and persistence across redeployment remain unverified.
 
 Do not build two backends with duplicate business logic. RunPod is only a forecast worker; ledger, policy and approval authority remain in the application backend.
 
@@ -609,7 +610,7 @@ Ledger snapshots may be calculated/cached, but cache must not become a second so
 
 ### 12.3 Conceptual API
 
-Paths are team-designed contracts, not actual Orbyte APIs.
+Paths below are conceptual team contracts, not actual Orbyte APIs. The local app uses `/api/demo` actions for onboarding, CSV, analysis, policy, approvals and receiving, `/api/demo/controls` for the demo day, plus the dedicated products/movements routes. See README for implemented entry points.
 
 | Endpoint | Permission | Purpose |
 | --- | --- | --- |
@@ -631,25 +632,30 @@ Errors: validation 400/422, unauthorised 401, forbidden 403, conflict 409, provi
 
 ### 12.4 Forecast worker contract
 
-Conceptual request:
+Implemented queue request (`POST /run`, followed by `GET /status/{jobId}`):
 
-    {
-      "input": {
-        "request_id": "synthetic-unique-id",
-        "cutoff_date": "2026-10-20",
-        "frequency": "D",
-        "horizon_days": 33,
-        "series": [
-          {"sku": "SYN-001", "dates": ["..."], "values": [10, 12, 9]}
-        ],
-        "model_id": "amazon/chronos-bolt-small",
-        "model_revision": "<pinned-after-spike>"
-      }
-    }
+```json
+{
+  "input": {
+    "requestId": "saved-analysis-id",
+    "productId": "opaque-product-id",
+    "cutoffDate": "2026-10-20",
+    "horizonDays": 33,
+    "inputHash": "saved-history-hash",
+    "dates": ["...28–168 consecutive ISO dates..."],
+    "values": ["...matching finite nonnegative numerical quantities..."],
+    "stockoutFlags": ["...matching boolean flags..."],
+    "modelId": "amazon/chronos-bolt-small",
+    "modelRevision": "<40-character commit shared by app and worker>"
+  }
+}
+```
 
-Response: request_id, status, model/revision, input_hash, generated_at, runtime_ms, per-SKU dates/p50/quantiles, warnings. The three-value array illustrates schema only; valid requests must still satisfy minimum-history policy.
+The arrays illustrate schema, not executable data. The actual adapter sends numbers/booleans and excludes contacts, supplier terms and prices. Completed output echoes requestId/productId/inputHash/cutoffDate and includes status, source, modelId/modelRevision, generatedAt, runtimeMs, device, aligned dates, p50, modelP50, warnings and evaluation. Forecast horizon is 30–44 days. Negative finite worker predictions are clipped with a warning; malformed shape/nonfinite values are rejected. Identity, dates, horizon and revision are validated before recommendation creation.
 
-Backend sends only necessary data. RunPod API key is a server secret, never browser-side. Choose async queue/polling or sync endpoint after the spike; UI must not hang without status.
+The saved request retains the submitted model revision. Analysis identity also includes forecast configuration. Data/policy/stock/inbound/date/configuration changes make a pending result stale; a stale result may remain in history but cannot create an actionable recommendation. Pending, completed and failed job records survive restart. Repeated clicks reuse the saved analysis, including failed/unknown submissions, and do not blindly submit another billed job. Configuration/invalid output errors do not silently fall back; an allowed provider outage fallback is labelled BASELINE_FALLBACK.
+
+The Python handler and TypeScript contract pass a local round trip using fake Torch/Chronos dependencies. **No model was downloaded or executed and no GPU inference is proven.** Endpoint, credentials, pinned revision, exact dependency/image lock, resource limits and own-account evidence still require a controlled live spike. See worker/README.md and the current integration verification report.
 
 ## 13. Supplier channels and notifications
 
@@ -730,7 +736,7 @@ Testing focuses on business decisions and failures that can corrupt stock/purcha
 | AT-28 | Same-cutoff ledger correction | New analysis key/result; old approval version rejected |
 | AT-29 | Aggregate CSV overlaps ledger_start_date | Rejected; no double-counted demand |
 | AT-30 | Overdue review/retry | R is not negative; schedule advances once on success |
-| AT-31 | History shorter than 28 days | NEEDS_DATA; no invalid 28-day-mean fallback |
+| AT-31 | History shorter than 28 days | 1–27 consecutive complete days: labelled DEMO_ESTIMATE; zero/gapped/incomplete history: NEEDS_DATA. No invalid 28-day mean or RunPod call |
 | AT-32 | Late supplier acknowledgement | Recalculate ETA/projection; do not retain old assumed date |
 | AT-33 | Time passes expires_at with no new movement | Reject approval; update decision date/ETA |
 | AT-34 | Receipt of 8 usable + 2 damaged against PO 10 | On-hand +8; remaining 0; damage exception stays open |
@@ -809,7 +815,7 @@ If shortlisted, the final round has different deliverables/deadlines. See the co
 
 1. Read documents in §0 order and check Git status before editing.
 2. eStock is selected; earlier customer-order/catering ideas are not mandatory features.
-3. Do not implement just because the PRD exists. The current instruction is to agree technical choices before scaffolding.
+3. Extend the existing authorised application; do not rebuild it. Normal startup remains empty, and tests use explicit temporary synthetic fixtures.
 4. After implementation is authorised, close M0: stack, accounts/credits, model endpoint, channels, demo roles and workstream owners.
 5. Build one vertical slice before extra features.
 6. Use §15 business tests; record actual outcomes, not invented checklist results.

@@ -472,6 +472,11 @@
   font-size: 14px;
   font-weight: 600;
 }
+.demo .dataTable .actor {
+  min-width: 7rem;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
 .dataTable th[scope="row"] {
   min-width: 145px;
   font-weight: 500;

@@ -89,13 +89,27 @@ export function policy(id: string): Policy {
   const row = getDb()
     .prepare("SELECT payload FROM policies WHERE product_id=? AND org_id=?")
     .get(id, ORG);
-  if (!row) fail("Purchasing policy not found.", 404);
+  // An absent policy is an inactive draft, never a saved set of supplier terms.
+  if (!row)
+    return {
+      supplierId: "",
+      leadTimeDays: 0,
+      reviewIntervalDays: 0,
+      safetyStock: 0,
+      packSize: 0,
+      minimumOrder: 0,
+      unitPriceSen: null,
+      shippingSen: null,
+      maxOrderSen: 0,
+      nextReviewDate: metadata("demo_date"),
+      version: 0,
+    };
   return JSON.parse(String(row.payload));
 }
 export function savePolicy(id: string, p: Policy) {
   getDb()
     .prepare(
-      "UPDATE policies SET supplier_id=?,version=?,payload=? WHERE product_id=? AND org_id=?",
+      "INSERT INTO policies(supplier_id,version,payload,product_id,org_id) VALUES(?,?,?,?,?) ON CONFLICT(product_id) DO UPDATE SET supplier_id=excluded.supplier_id,version=excluded.version,payload=excluded.payload",
     )
     .run(p.supplierId, p.version, JSON.stringify(p), id, ORG);
 }
@@ -162,6 +176,7 @@ export function state(role: Role): AppState {
         ledgerVersion: Number(row.ledger_version),
         inboundVersion: Number(row.inbound_version),
         ledgerStartDate: String(row.ledger_start),
+        purchasingSetupRequired: policy(id).version === 0,
         policy: policy(id),
         history: sales,
         weeks: weeklySummary(sales),

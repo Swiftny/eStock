@@ -1,6 +1,21 @@
 # eStock: decisions and unavailable information
 
-Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The local persistent workflow is implemented; real RunPod inference and Replit deployment remain unverified.
+Updated 22 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The local persistent workflow is implemented; real RunPod inference and Replit deployment remain unverified.
+
+## Current integration decisions, 22 October
+
+The user authorised a serial integration across demo, data, backend, AI and shared documentation, preserving the existing application and working tree. These decisions supersede conflicting earlier descriptions below.
+
+- Normal startup and `db:seed` remain empty of inventory/transactions. Explicit deterministic fixtures live in `tests/synthetic-fixture.ts`; each relevant test uses a temporary database, blocked external fetches and restored environment. The production HTTP harness checks empty startup before loading that fixture.
+- Employees can create a basic item and opening stock on the open demo date. The server allowlists fields; supplier terms, packaging, reference costs and budgets remain manager-owned. Missing policy is an inactive draft, labelled **Purchasing setup required**, with no actionable recommendation. Manager configuration is saved separately.
+- Receiving uses product precision for both roles. Usable quantity adds stock; usable plus damaged quantity reduces the order balance atomically. Damage opens a manager exception and never automatically creates a replacement.
+- Manager history import is reachable from Inventory, secondary to daily recording. File/paste, template, preview, row errors, duplicate counts, confirmation and traceable reviewed corrections reuse the existing backend. Aggregate history never changes physical stock.
+- One to 27 consecutive complete days ending at the cutoff can produce **DEMO_ESTIMATE**, an available-days average with explicit limitations. This is not a 28-day mean, validated forecast or live AI. Empty, incomplete or gapped history remains blocked. RunPod requires 28–168 complete consecutive observations.
+- Unpriced requests are permitted only for the simulated supplier channel after explicit warning acknowledgement. Costs remain null; budget compliance cannot be checked. Known reference costs still enforce approval limits. This supersedes older blanket statements that unknown costs always block simulated approval.
+- Saved RunPod requests retain their pinned model revision and identity. Repeated/failed/unknown analysis identities are not blindly resubmitted. Configuration changes invalidate pending purchasing results. Local Python-handler/TypeScript verification uses fake Torch/Chronos dependencies; no actual model/GPU proof is claimed.
+- Retain the light-blue UI. Source/cutoff and approval-critical details stay visible; quantity calculation and model/evaluation metadata use disclosures. The leftover manager-only Add Item dialog guard was found in browser verification and removed.
+
+Current verification and limits: [integration report](../verification/INTEGRATION_2026_10_22.md). Real endpoint credentials/revision/resource limits, a controlled GPU spike, exact worker/image lock, Replit durability and own-account evidence remain external dependencies. No commit, push, publication, paid service or real supplier message is authorised.
 
 ## Team assignments
 
@@ -23,7 +38,7 @@ U-16, user, 21 October: refine the existing website and implement a persistent b
 | Implemented choice | Reason / limits |
 | --- | --- |
 | Built-in Node SQLite, SQL migrations, one local file | Existing stack had no established database. Simple local persistence without an ORM, native addon or new JavaScript dependency. Requires Node 22.18+, one process and durable storage for deployment; hosted database remains necessary if the target lacks a durable disk. Supersedes proposed PostgreSQL/Drizzle for this local milestone. |
-| Integer thousandths and per-product precision; MYR sen per base unit | Reliable ledger arithmetic and explicit price/pack semantics. Costs remain unknown if blank; approval requires complete reference costs. |
+| Integer thousandths and per-product precision; MYR sen per base unit | Reliable ledger arithmetic and explicit price/pack semantics. Blank costs remain unknown; current simulated unpriced approval rules are above. |
 | One synthetic organisation/location and opaque HttpOnly server sessions | Server-side manager/staff permissions are real; role selection is explicitly simulated identity. No production SSO/authentication claim. |
 | Explicit synthetic business date and immutable closed days | History, closing stock, forecast cutoff and approval window stay aligned. Closing triggers analysis; unfinished-day transactions invalidate old approval. Closed physical records are corrected by open-day manager adjustments, not edits/deletion. |
 | Source IDs plus request idempotency and database uniqueness | Replayed sales/receipts cannot post stock twice; one decision creates one approval/PO/outbox. |
