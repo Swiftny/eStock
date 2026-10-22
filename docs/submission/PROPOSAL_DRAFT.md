@@ -123,7 +123,7 @@ Populate from actual implementation:
 
 | Name | Type | Licence |
 | --- | --- | --- |
-| Chronos-Bolt Small, if used | Pretrained model | Apache 2.0; pin revision/model card |
+| Chronos-2 (autogluon/chronos-2), fine-tuned | Pretrained model, LoRA fine-tuned on synthetic data | Apache 2.0; revision recorded in run_info.json |
 | Runtime libraries/frameworks | Code | Actual names/versions/licences from lockfiles |
 | eStock synthetic dataset | Team-created synthetic data | Explicitly assign the team's dataset licence |
 | Other assets/templates | According to usage | Verify ownership/licence |

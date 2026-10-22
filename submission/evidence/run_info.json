@@ -1,0 +1,28 @@
+{
+  "run_id": "20261021T110320Z",
+  "base_model": "autogluon/chronos-2",
+  "base_revision": "60088152a34e242427b44c3100014473a0157d53",
+  "fine_tune": "AutoGluon Chronos2 defaults (LoRA)",
+  "prediction_length": 44,
+  "validation_offsets_from_end": [
+    110,
+    96
+  ],
+  "test_offset_from_end": 44,
+  "data_files": {
+    "sales_history.csv": "1f844e0ef85670899f759e3dfdb1315d7d5324547f02c246cba8fd2e554d80ea",
+    "estock_sales_daily_5sku_2020-01-01_to_2026-01-01.csv": "cde5b8da146517ada8ccdb64d05f23019313a4b87b3b90527f373a6f244f16ed"
+  },
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "versions": {
+    "autogluon.timeseries": "1.6.3",
+    "torch": "2.13.0+cu130"
+  },
+  "fit_seconds": {
+    "validation": 141.1,
+    "test": 132.2,
+    "production": 130.5
+  },
+  "started_at": "2026-10-21T11:03:20+00:00",
+  "finished_at": "2026-10-21T11:10:08+00:00"
+}
