@@ -1,0 +1,51 @@
+{
+  "frontend": [
+    "src/app/page.tsx",
+    "src/components/site-header.tsx",
+    "src/components/landing-motion.tsx",
+    "src/components/recommendation-demo.tsx",
+    "src/lib/demo-fixture.ts",
+    "src/styles/refinement.css",
+    "docs/team/frontend.md"
+  ],
+  "demo": [
+    "src/app/demo/**",
+    "src/components/demo-app.tsx",
+    "src/styles/workspace.css",
+    "docs/team/demo.md"
+  ],
+  "data": [
+    "db/**",
+    "src/lib/server/db.ts",
+    "src/lib/server/store.ts",
+    "src/lib/server/seed.ts",
+    "src/lib/server/imports.ts",
+    "scripts/database.ts",
+    "public/fixtures/**",
+    "docs/data/**",
+    "docs/team/data.md"
+  ],
+  "backend": [
+    "src/app/api/demo/**",
+    "src/lib/server/service.ts",
+    "src/lib/server/validation.ts",
+    "src/lib/purchasing.ts",
+    "tests/workflow.test.ts",
+    "tests/purchasing.test.ts",
+    "docs/team/backend.md"
+  ],
+  "system": [
+    "src/app/api/session/**",
+    "src/lib/server/session.ts",
+    "next.config.ts",
+    "scripts/http-smoke.mjs",
+    "docs/team/system.md"
+  ],
+  "ai": [
+    "worker/**",
+    "src/lib/server/forecast.ts",
+    "tests/forecast.test.ts",
+    "docs/plans/AI_RUNPOD_PLAN.md",
+    "docs/team/ai.md"
+  ]
+}

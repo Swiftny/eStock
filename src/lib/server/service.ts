@@ -3,6 +3,7 @@ import type {
   ActionResult,
   Analysis,
   ForecastRequest,
+  ForecastResult,
   MovementType,
   OutboxMessage,
   Policy,
@@ -26,7 +27,7 @@ import {
   coveragePolicyIdentity,
 } from "./forecasting/snapshot.ts";
 import { importData } from "./imports.ts";
-import { seedDatabase } from "./seed.ts";
+import { DEMO_SEED_VERSION, LEGACY_DEMO_SEED_VERSION, seedDatabase } from "./seed.ts";
 import {
   audit,
   digest,
@@ -122,12 +123,22 @@ function snapshotIdentity(productId: string) {
   };
 }
 
+function requireOpenDay() {
+  if (metadata("closed_through") >= metadata("demo_date"))
+    fail("This day has ended. Select Next day to record new stock activity.", 409, "DAY_ENDED");
+}
+
+function requireDemoGeneration(input: Record<string, unknown>) {
+  if (input.demoGeneration !== (metadata("demo_generation") || metadata("seed_version")))
+    fail("The demo was reset. Refresh before changing its records.", 409, "DEMO_RESET");
+}
+
 function startAnalysis(productId: string): string {
   const db = getDb();
   const row = productRow(productId);
   const p = policy(productId);
   const snap = snapshotIdentity(productId);
-  if (addDays(snap.cutoff, 1) !== snap.decision)
+  if (snap.cutoff !== snap.decision && addDays(snap.cutoff, 1) !== snap.decision)
     fail("Close the current day before analysing.", 409);
   if (
     db
@@ -140,13 +151,29 @@ function startAnalysis(productId: string): string {
       "CLOSE_DAY_FIRST",
     );
   const checked = validateHistory(history(productId), snap.cutoff);
+  const provisional =
+    checked.days.length > 0 &&
+    checked.days.length < 28 &&
+    checked.days.at(-1)?.date === snap.cutoff &&
+    checked.days.every(
+      (day, index, days) =>
+        day.complete &&
+        Number.isFinite(day.quantity) &&
+        day.quantity >= 0 &&
+        (index === 0 || addDays(days[index - 1].date, 1) === day.date),
+    );
+  const usableHistory = checked.valid || provisional;
+  const dataReason =
+    checked.days.length === 0
+      ? "More sales history needed. End a day with complete sales records."
+      : "More sales history needed. Complete the missing sales days before analysis.";
   const daysUntilReview = Math.max(
     0,
     Math.round((Date.parse(p.nextReviewDate) - Date.parse(snap.decision)) / 86400000),
   );
   const horizonDays = Math.max(30, p.leadTimeDays + (daysUntilReview || p.reviewIntervalDays));
   const hash = digest({
-    rules: "estock-analysis-v2",
+    rules: "estock-demo-closing-v2",
     org: ORG,
     productId,
     ...snap,
@@ -180,14 +207,14 @@ function startAnalysis(productId: string): string {
     productId,
     cutoffDate: snap.cutoff,
     decisionDate: snap.decision,
-    status: checked.valid ? "PENDING" : "NEEDS_DATA",
+    status: usableHistory ? "PENDING" : "NEEDS_DATA",
     source: null,
     modelId: null,
     modelRevision: null,
     generatedAt: new Date().toISOString(),
     inputHash: request.inputHash,
     jobId: null,
-    error: checked.valid ? null : checked.reason,
+    error: usableHistory ? null : dataReason,
     forecast: null,
   };
   db.prepare("INSERT INTO analysis_runs VALUES(?,?,?,?,?,?,?,?)").run(
@@ -206,12 +233,12 @@ function startAnalysis(productId: string): string {
     JSON.stringify(analysis),
   );
   invalidate(productId);
-  if (!checked.valid) createRecommendation(analysis, checked.reason);
+  if (!usableHistory) createRecommendation(analysis, dataReason);
   audit(
     "system",
     "Analysis requested",
     productId,
-    `${row.name}: cutoff ${snap.cutoff}. ${checked.valid ? "Pending demand estimate." : checked.reason}`,
+    `${row.name}: cutoff ${snap.cutoff}. ${usableHistory ? "Pending demand estimate." : dataReason}`,
     null,
     { analysisId },
   );
@@ -236,6 +263,7 @@ function createRecommendation(analysis: Analysis, dataReason?: string) {
           unit: String(row.unit),
           stock: stock(analysis.productId),
           decisionDate: analysis.decisionDate,
+          demandStartDate: analysis.forecast.dates[0],
           daily: analysis.forecast.p50,
           policy: p,
           inbound: orders.map((o) => ({
@@ -246,6 +274,12 @@ function createRecommendation(analysis: Analysis, dataReason?: string) {
           hasCommitment: orders.length > 0,
         })
       : null;
+  if (calc)
+    calc.warnings = calc.warnings.map((warning) =>
+      warning === "Reference price or shipping cost is unknown. Complete costs before approval."
+        ? "Unpriced SIMULATED order. Supplier cost is unknown; the approval limit cannot be checked."
+        : warning,
+    );
   const rec: Recommendation = {
     id: uid(),
     productId: analysis.productId,
@@ -268,20 +302,12 @@ function createRecommendation(analysis: Analysis, dataReason?: string) {
   getDb()
     .prepare("INSERT INTO recommendations VALUES(?,?,?,?,?,?,?)")
     .run(rec.id, ORG, rec.productId, version, rec.status, analysis.id, JSON.stringify(rec));
-  if (calc?.status === "NO_ORDER_NEEDED") completeReview(analysis.productId, analysis.decisionDate);
-  const lastNotified = payloads<{ entityId: string; action: string; at: string }>(
-    "activity_events",
-  ).find((event) => event.entityId === rec.productId && event.action === "Manager review needed");
-  const previousRecommendation = payloads<Recommendation>("recommendations").find(
-    (r) => r.productId === rec.productId && r.id !== rec.id,
-  );
-  if (
-    ["PENDING_APPROVAL", "URGENT_REVIEW"].includes(rec.status) &&
-    (!lastNotified ||
-      Date.now() - Date.parse(lastNotified.at) >= 86400000 ||
-      (rec.status === "URGENT_REVIEW" &&
-        previousRecommendation?.calculation?.status !== "URGENT_REVIEW"))
-  )
+  if (calc?.status === "NO_ORDER_NEEDED") {
+    completeReview(analysis.productId, analysis.decisionDate);
+    rec.policyVersion = policy(analysis.productId).version;
+    savePayload("recommendations", rec.id, rec, rec.status);
+  }
+  if (["PENDING_APPROVAL", "URGENT_REVIEW"].includes(rec.status))
     audit(
       "system",
       "Manager review needed",
@@ -291,6 +317,35 @@ function createRecommendation(analysis: Analysis, dataReason?: string) {
       { recommendationId: rec.id, revision: rec.revision },
     );
   return rec;
+}
+
+function demoEstimate(request: ForecastRequest): ForecastResult {
+  const mean = request.values.reduce((sum, value) => sum + value, 0) / request.values.length;
+  return {
+    status: "COMPLETED",
+    source: "DEMO_ESTIMATE",
+    modelId: "demo/recorded-sales-average",
+    modelRevision: "available-days-v1",
+    inputHash: request.inputHash,
+    cutoffDate: request.cutoffDate,
+    generatedAt: new Date().toISOString(),
+    runtimeMs: 0,
+    dates: Array.from({ length: request.horizonDays }, (_, i) =>
+      addDays(request.cutoffDate, i + 1),
+    ),
+    p50: Array(request.horizonDays).fill(Math.round(mean * 1000) / 1000),
+    evaluation: {
+      completeDays: request.values.length,
+      evidenceStartDate: request.dates[0],
+      evidenceEndDate: request.cutoffDate,
+    },
+    warnings: [
+      `Demo estimate: average of ${request.values.length} complete sales ${request.values.length === 1 ? "day" : "days"}. Limited history; not AI inference or a validated forecast.`,
+      ...(request.stockoutFlags.some(Boolean)
+        ? ["Sales on stockout days may understate demand. Lost sales are unknown."]
+        : []),
+    ],
+  };
 }
 
 export async function processAnalysis(id: string, poll = false) {
@@ -330,9 +385,11 @@ export async function processAnalysis(id: string, poll = false) {
     if (input.providerIdentity && input.providerIdentity !== forecastConfigIdentity())
       fail("Forecast provider configuration changed. Start a new analysis.", 503, "CONFIGURATION");
     result =
-      poll && analysis.jobId
-        ? await pollForecast(input, analysis.jobId)
-        : await submitForecast(input);
+      input.values.length < 28
+        ? demoEstimate(input)
+        : poll && analysis.jobId
+          ? await pollForecast(input, analysis.jobId)
+          : await submitForecast(input);
     if (!result) return;
   } catch (error) {
     const invalid =
@@ -401,7 +458,15 @@ export function executeAction(
   action: ActionName,
   input: Record<string, unknown>,
   key: string,
-): { message: string; entityId?: string; preview?: ActionResult["preview"]; processId?: string } {
+): {
+  message: string;
+  entityId?: string;
+  preview?: ActionResult["preview"];
+  processId?: string;
+  analysisIds?: string[];
+  replayed?: boolean;
+  generation?: string;
+} {
   seedDatabase();
   text(key, "Idempotency key", 160);
   if (input.organisationId && input.organisationId !== ORG)
@@ -427,14 +492,22 @@ export function executeAction(
       if (previous.action !== action || previous.input_hash !== inputHash)
         fail("This request key was already used for different input.", 409);
       const result = JSON.parse(String(previous.result));
+      if (
+        result.generation &&
+        result.generation !== (metadata("demo_generation") || metadata("seed_version"))
+      )
+        fail("The demo was reset. This earlier request will not be repeated.", 409, "DEMO_RESET");
       delete result.processId;
-      return result;
+      return { ...result, replayed: true };
     }
+    if (input.demoGeneration !== undefined) requireDemoGeneration(input);
     let message = "Saved.";
     let entityId: string | undefined;
     let preview: ActionResult["preview"];
     let processId: string | undefined;
+    let analysisIds: string[] | undefined;
     if (action === "createProduct") {
+      requireOpenDay();
       const id = uid();
       const sku = text(input.sku, "SKU", 40);
       const name = text(input.name, "Product name", 100);
@@ -473,8 +546,7 @@ export function executeAction(
         });
       audit(role, "Product created", id, `${name}, ${unit}.`, null, p);
       entityId = id;
-      message =
-        "Synthetic product created. Add complete history before recorded-data recommendations.";
+      message = "Item added. Record sales, then select End day for a restock check.";
     } else if (action === "updatePolicy") {
       const id = text(input.productId, "Product");
       const row = productRow(id);
@@ -494,6 +566,7 @@ export function executeAction(
       );
       message = "Purchasing policy saved.";
     } else if (action === "recordMovement") {
+      requireOpenDay();
       const id = text(input.productId, "Product");
       const row = productRow(id);
       const type = input.type as MovementType;
@@ -543,11 +616,32 @@ export function executeAction(
       const day = date(input.date);
       if (day !== metadata("demo_date"))
         fail("This day is already closed or is not the open demo day.", 409);
+      if (metadata("closed_through") >= day)
+        return {
+          message: "This day has already ended. The saved check is unchanged.",
+          replayed: true,
+        };
       if (input.confirmComplete !== true)
         fail(
           "Confirm that sales records for every product are complete, including zero-sales days.",
         );
       for (const row of db.prepare("SELECT * FROM products WHERE org_id=?").all(ORG)) {
+        let balance = Number(
+          db
+            .prepare(
+              "SELECT COALESCE(SUM(delta_milli),0) AS balance FROM stock_movements WHERE org_id=? AND product_id=? AND business_date<?",
+            )
+            .get(ORG, row.id, day)?.balance || 0,
+        );
+        let stockout = false;
+        for (const movement of db
+          .prepare(
+            "SELECT delta_milli,type FROM stock_movements WHERE org_id=? AND product_id=? AND business_date=? ORDER BY rowid",
+          )
+          .all(ORG, row.id, day)) {
+          balance += Number(movement.delta_milli);
+          if (balance === 0 && Number(movement.delta_milli) < 0) stockout = true;
+        }
         db.prepare(
           "INSERT INTO daily_sales VALUES(?,?,?,0,1,?,?, 'ledger',1) ON CONFLICT(org_id,product_id,business_date) DO UPDATE SET complete=1,stockout=excluded.stockout,revision=revision+1",
         ).run(
@@ -555,7 +649,8 @@ export function executeAction(
           String(row.id),
           day,
           Number(
-            stock(String(row.id)) === 0 ||
+            stockout ||
+              stock(String(row.id)) === 0 ||
               input.stockoutProduct === row.id ||
               (Array.isArray(input.stockoutProductIds) &&
                 input.stockoutProductIds.includes(row.id)),
@@ -568,15 +663,17 @@ export function executeAction(
         invalidate(String(row.id));
       }
       setMetadata("closed_through", day);
-      setMetadata("demo_date", addDays(day, 1));
       audit(
         role,
         "Day closed",
         ORG,
-        `${day} marked complete. Demo date advanced to ${addDays(day, 1)}. Zero sales only recorded by this explicit confirmation.`,
+        `${day} marked complete in Asia/Kuala_Lumpur. Missing sales for this day explicitly recorded as zero. Restock check requested; date unchanged.`,
       );
-      message =
-        "Day closed. Saved-history analysis has been triggered. See Needs attention for the results.";
+      analysisIds = db
+        .prepare("SELECT id FROM products WHERE org_id=?")
+        .all(ORG)
+        .map((row) => startAnalysis(String(row.id)));
+      message = "Day ended. Sales and restock checks saved.";
     } else if (action === "analyse") {
       processId = startAnalysis(text(input.productId, "Product"));
       entityId = processId;
@@ -648,10 +745,11 @@ export function executeAction(
           amount !== calc.suggestedQuantity
             ? text(input.reason, "Reason for changed quantity", 500)
             : String(input.reason || "Approved as recommended");
-        if (p.unitPriceSen === null || p.shippingSen === null)
-          fail("Reference price and shipping must be known before approval.");
-        const cost = Math.round(amount * p.unitPriceSen) + p.shippingSen;
-        if (cost > p.maxOrderSen)
+        const cost =
+          p.unitPriceSen === null || p.shippingSen === null
+            ? null
+            : Math.round(amount * p.unitPriceSen) + p.shippingSen;
+        if (cost !== null && cost > p.maxOrderSen)
           fail("Estimated cost exceeds the approval limit. Review the policy first.");
         if (
           (rec.warnings.length || amount < calc.suggestedQuantity) &&
@@ -713,7 +811,7 @@ export function executeAction(
           status: "QUEUED",
           attempts: 0,
           createdAt: order.createdAt,
-          message: `SIMULATED purchase request ${order.reference}\nSupplier: ${supplier?.name}\nProduct: ${row.name} (${row.sku})\nQuantity: ${amount} ${row.unit}, ${amount / p.packSize} packs of ${p.packSize}\nReference unit price: MYR ${(p.unitPriceSen / 100).toFixed(2)}; shipping MYR ${(p.shippingSen / 100).toFixed(2)}\nEstimated total: MYR ${(cost / 100).toFixed(2)}\nRequested arrival: ${order.expectedDate}\nPlease acknowledge quantity, price and delivery. No real supplier message is sent.`,
+          message: `SIMULATED purchase request ${order.reference}\nSupplier: ${supplier?.name}\nProduct: ${row.name} (${row.sku})\nQuantity: ${amount} ${row.unit}, ${amount / p.packSize} packs of ${p.packSize}\n${cost === null ? "UNPRICED: supplier cost is unknown. No budget check or quotation. Price confirmation required." : `Reference unit price: MYR ${((p.unitPriceSen as number) / 100).toFixed(2)}; shipping MYR ${((p.shippingSen as number) / 100).toFixed(2)}\nEstimated total: MYR ${(cost / 100).toFixed(2)}`}\nRequested arrival: ${order.expectedDate}\nPlease acknowledge quantity and delivery${cost === null ? "; price remains unknown in this demo" : ", and reference price"}. No real supplier message is sent.`,
         };
         db.prepare("INSERT INTO outbox_messages VALUES(?,?,?,?,?)").run(
           outbox.id,
@@ -805,13 +903,14 @@ export function executeAction(
           );
         order.confirmedDate = eta;
         if (order.status === "SENT_SIMULATED") order.status = "SUPPLIER_CONFIRMED";
-        message = "Synthetic supplier acknowledgement recorded. Stock has not changed.";
+        message = `SIMULATED supplier confirmation recorded. Stock has not changed.${order.estimatedCostSen === null ? " Price remains unknown." : ""}`;
         if (eta !== order.expectedDate) {
           order.status = "NEEDS_REVIEW";
           message =
             "Supplier arrival differs from the approved request. Receiving is held for manager review. Cancel and reanalyse this commitment before replacing it; stock is unchanged.";
         }
       } else if (action === "receive") {
+        requireOpenDay();
         if (!["SUPPLIER_CONFIRMED", "PARTIALLY_RECEIVED"].includes(order.status))
           fail("Receiving requires a supplier-confirmed active purchase order.", 409);
         const row = productRow(order.productId);
@@ -822,6 +921,8 @@ export function executeAction(
           fail("Total received must be positive and cannot exceed the remaining order.");
         const day = date(input.date);
         if (day !== metadata("demo_date")) fail("Receive goods on the open demo day.");
+        if (!order.confirmedDate || day < order.confirmedDate)
+          fail("Receiving opens on the supplier-confirmed delivery date.", 409, "DELIVERY_NOT_DUE");
         const eventKey = text(input.sourceEventId, "Receipt source event", 160);
         const reference = text(input.reference, "Receipt evidence/reference", 160);
         if (db.prepare("SELECT id FROM receipts WHERE org_id=? AND event_key=?").get(ORG, eventKey))
@@ -912,7 +1013,14 @@ export function executeAction(
             ? "CSV is valid. Review the preview before importing."
             : "CSV has errors. No rows were written.";
     } else fail("Unknown action.", 400);
-    const result = { message, entityId, preview, processId };
+    const result = {
+      message,
+      entityId,
+      preview,
+      processId,
+      analysisIds,
+      generation: metadata("demo_generation") || metadata("seed_version"),
+    };
     db.prepare("INSERT INTO idempotency VALUES(?,?,?,?,?,?)").run(
       ORG,
       key,
@@ -937,18 +1045,215 @@ export async function act(
   input: Record<string, unknown>,
   key: string,
 ): Promise<ActionResult> {
+  seedDatabase();
+  const generation = metadata("demo_generation");
   const result = executeAction(role, action, input, key);
   if (result.processId) await processAnalysis(result.processId, action === "pollAnalysis");
-  if (action === "closeDay") {
-    for (const product of state(role).products) {
-      const analysisId = transaction(() => startAnalysis(product.id));
+  if (result.analysisIds) {
+    for (const analysisId of result.analysisIds) {
+      if (metadata("demo_generation") !== generation) break;
       await processAnalysis(analysisId);
     }
   }
   return {
-    message: result.message,
+    message:
+      metadata("demo_generation") !== generation
+        ? "Demo reset. The workspace is blank."
+        : result.message,
     entityId: result.entityId,
     preview: result.preview,
     state: state(role),
   };
+}
+
+export async function endDemoDay(
+  role: Role,
+  input: Record<string, unknown>,
+): Promise<ActionResult> {
+  seedDatabase();
+  requireDemoGeneration(input);
+  const closingDate = date(input.date);
+  if (closingDate <= metadata("closed_through")) {
+    // Resume an unsubmitted check after an interrupted response, without starting a new run.
+    const generation = metadata("demo_generation");
+    for (const analysis of payloads<Analysis>("analysis_runs")) {
+      if (metadata("demo_generation") !== generation) break;
+      if (
+        analysis.status === "PENDING" &&
+        analysis.cutoffDate === closingDate &&
+        analysis.decisionDate === metadata("demo_date")
+      )
+        await processAnalysis(analysis.id);
+    }
+    return {
+      message: "This day has already ended. The saved check is unchanged.",
+      state: state(role),
+    };
+  }
+  if (closingDate !== metadata("demo_date")) fail("Refresh the demo before ending the day.", 409);
+  if (input.confirmComplete !== true) fail("Confirm that this day's sales are complete.");
+  return act(
+    role,
+    "closeDay",
+    {
+      date: closingDate,
+      confirmComplete: true,
+      stockoutProductIds: Array.isArray(input.stockoutProductIds) ? input.stockoutProductIds : [],
+    },
+    `demo-end-day:${ORG}:${metadata("demo_generation") || DEMO_SEED_VERSION}:${closingDate}`,
+  );
+}
+
+export function nextDemoDay(role: Role, input: Record<string, unknown>): ActionResult {
+  seedDatabase();
+  requireDemoGeneration(input);
+  const from = date(input.date);
+  let message = "This date has already advanced. Demo records are unchanged.";
+  transaction(() => {
+    const current = metadata("demo_date");
+    if (from < current) return;
+    if (from !== current) fail("Refresh the demo before advancing the date.", 409);
+    if (metadata("closed_through") < current)
+      fail("Select End day before Next day.", 409, "DAY_OPEN");
+    const next = addDays(current, 1);
+    // Only the persistent simulator is progressed. These events never add physical stock.
+    for (const order of payloads<PurchaseOrder>("purchase_orders")) {
+      if (order.status !== "APPROVED_PENDING_DISPATCH") continue;
+      const outbox = payloads<OutboxMessage>("outbox_messages").find(
+        (item) => item.orderId === order.id,
+      );
+      const rec = payloads<Recommendation>("recommendations").find(
+        (item) => item.id === order.recommendationId,
+      );
+      if (outbox?.channel !== "SIMULATED") continue;
+      const before = { ...order };
+      if (rec?.decisionDate !== current) {
+        order.status = "NEEDS_REVIEW";
+        outbox.status = "HELD";
+      } else {
+        order.status = "SENT_SIMULATED";
+        outbox.status = "SENT_SIMULATED";
+        outbox.attempts++;
+      }
+      savePayload("outbox_messages", outbox.id, outbox, outbox.status);
+      savePayload("purchase_orders", order.id, order, order.status);
+      audit(
+        "system",
+        "Simulated dispatch",
+        order.productId,
+        `${current}: ${order.reference}. SIMULATED ${outbox.status === "HELD" ? "request held: approved date expired" : "request sent; supplier confirmation is separate"}.`,
+        before,
+        order,
+      );
+    }
+    setMetadata("demo_date", next);
+    audit(
+      role,
+      "Demo date advanced",
+      ORG,
+      `${current} → ${next} · Asia/Kuala_Lumpur. No new end-of-day analysis.`,
+      { date: current },
+      { date: next },
+    );
+    for (const order of payloads<PurchaseOrder>("purchase_orders")) {
+      if (order.status === "SENT_SIMULATED") {
+        const before = { ...order };
+        order.status = order.expectedDate < next ? "NEEDS_REVIEW" : "SUPPLIER_CONFIRMED";
+        if (order.status === "SUPPLIER_CONFIRMED") order.confirmedDate = order.expectedDate;
+        savePayload("purchase_orders", order.id, order, order.status);
+        bumpInbound(order.productId);
+        invalidate(order.productId);
+        audit(
+          "system",
+          "Synthetic supplier acknowledgement",
+          order.productId,
+          `${next}: ${order.reference}. SIMULATED ${order.status === "NEEDS_REVIEW" ? "arrival is overdue; Manager review required" : `supplier confirmed quantity and delivery ${order.confirmedDate}`}. Stock unchanged.${order.estimatedCostSen === null ? " Price remains unknown." : ""}`,
+          before,
+          order,
+        );
+      }
+      if (
+        ["SUPPLIER_CONFIRMED", "PARTIALLY_RECEIVED"].includes(order.status) &&
+        order.confirmedDate &&
+        order.confirmedDate <= next &&
+        order.remaining > 0 &&
+        !getDb()
+          .prepare(
+            "SELECT id FROM activity_events WHERE org_id=? AND entity_id=? AND action='Delivery ready'",
+          )
+          .get(ORG, order.id)
+      ) {
+        audit(
+          "system",
+          "Delivery ready",
+          order.id,
+          `${next}: ${order.reference}. SIMULATED delivery ready. Staff must record the quantity received; stock unchanged.`,
+          null,
+          { orderId: order.id, productId: order.productId, date: next },
+        );
+      }
+    }
+    message = `Demo date: ${next}. Due SIMULATED supplier and delivery events saved.`;
+  });
+  return { message, state: state(role) };
+}
+
+export function resetDemo(role: Role, input: Record<string, unknown>, key: string): ActionResult {
+  seedDatabase();
+  if (input.confirmReset !== true) fail("Confirm Reset demo before continuing.");
+  const requestKey = `demo-reset:${text(key, "Reset request", 128)}`;
+  const inputHash = digest({ confirmReset: true, organisation: ORG });
+  transaction(() => {
+    const db = getDb();
+    if (
+      ORG !== "synthetic-estock" ||
+      ![DEMO_SEED_VERSION, LEGACY_DEMO_SEED_VERSION].includes(metadata("seed_version"))
+    )
+      fail("Reset is available only for the original synthetic demo workspace.", 403);
+    const replay = db
+      .prepare("SELECT action,input_hash FROM idempotency WHERE org_id=? AND key=?")
+      .get(ORG, requestKey);
+    if (replay) {
+      if (replay.action !== "resetDemo" || replay.input_hash !== inputHash)
+        fail("This reset request has different details.", 409);
+      return;
+    }
+    requireDemoGeneration(input);
+    getDb()
+      .prepare(
+        "UPDATE idempotency SET result=json_set(result,'$.generation',?) WHERE org_id=? AND action<>'resetDemo'",
+      )
+      .run(metadata("demo_generation") || metadata("seed_version"), ORG);
+    // Every deletion is restricted to this synthetic organisation; sessions and migrations remain.
+    for (const table of [
+      "receipts",
+      "outbox_messages",
+      "purchase_orders",
+      "approvals",
+      "recommendations",
+      "analysis_runs",
+      "daily_sales",
+      "stock_movements",
+      "policies",
+      "products",
+      "suppliers",
+      "activity_events",
+    ])
+      db.prepare(`DELETE FROM ${table} WHERE org_id=?`).run(ORG);
+    db.prepare(
+      "DELETE FROM metadata WHERE key IN ('seed_version','demo_date','closed_through')",
+    ).run();
+    seedDatabase({ inTransaction: true });
+    setMetadata("demo_generation", uid());
+    // Retain request receipts so delayed retries cannot reapply pre-reset movements or resets.
+    db.prepare("INSERT INTO idempotency VALUES(?,?,?,?,?,?)").run(
+      ORG,
+      requestKey,
+      "resetDemo",
+      inputHash,
+      JSON.stringify({ message: "Demo reset." }),
+      new Date().toISOString(),
+    );
+  });
+  return { message: "Demo reset. The workspace is blank.", state: state(role) };
 }

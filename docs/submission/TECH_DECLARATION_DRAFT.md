@@ -98,7 +98,9 @@ Do not treat public/private options in the general template as permission to use
 
 ### 4.3 AI-Assisted Development Tools
 
-**Used generative AI in development/documentation: Yes.** Codex was used for planning/documentation, M0 recommendations, English translation, landing-page design/refinement, persistent backend, rules, adapter/worker, tests, reference inspection and local verification. Runtime neural model usage remains unverified.
+Startup repair, 21 October: Codex used local shell/Git inspection, the find-docs skill, Context7 CLI and installed Next.js documentation to diagnose the root documentation folder being detected as application routes. It moved the team guides to `docs/team/` and updated links and scope mappings. Standard root dev startup, the existing HTTP smoke checks, production build/TypeScript, moved-document links and explicit scope checks passed. No new dependency, hosted service, runtime model or external publication was used. This resolves the root folder blocker mentioned in earlier development notes below.
+
+**Used generative AI in development/documentation: Yes.** Codex was used for planning/documentation, M0 recommendations, English translation, landing-page design/refinement, persistent backend, rules, adapter/worker, tests, reference inspection and local verification. Runtime neural model usage remains unverified. Codex also assisted the team work pages, assignment updates, parallel-work instructions and local change-scope checker on 21 October using local repository and shell inspection; no runtime model or external service was used for that documentation task.
 
 | Tool & Version | Used For | Extent | Status |
 | --- | --- | --- | --- |
@@ -124,8 +126,6 @@ Registered team members will review and adapt AI-assisted documentation and impl
 <!-- END_WORDCOUNT -->
 
 Additional stock-tracking stage, 21 October: Codex inspected the pulled source and local Git state, created the local `feat/stock-tracking` branch, and implemented dedicated stock routes, shared response types, ledger-backed queries, a movement adapter and the frontend handoff. Existing SQLite/service logic was reused; no additional library or cloud resource was installed. The installed Next.js route-handler guide was read. The user subsequently requested runtime verification: 60 Node tests and 24 production HTTP scenario groups passed, including isolated-database server restart and duplicate protection. Tests used Node's built-in test/assert/fs/child_process utilities, native fetch and the existing SQLite dependency. Both HTTP server processes stopped and their temporary database was removed. Evidence and limits are in [STOCK_TRACKING_2026_10_21.md](../verification/STOCK_TRACKING_2026_10_21.md). No browser/computer-control session, real inference, external messaging, staging, commit, push or publication was initiated. Team review remains required.
-
-Additional forecasting stage, 21 October: after the user's Step 2 commit `2345671`, Codex created `feat/demand-forecasting`, added dedicated saved-forecast/coverage contracts and routes, saved input snapshots, deterministic daily coverage, stale-state handling and stricter worker/provider validation. Installed Next.js route documentation and official RunPod/upstream Chronos source documentation were consulted. Existing Node/Python utilities and Biome were used; no new dependency, hosted resource, sub-agent or frontend change was introduced. Local verification passed 101 Node tests, 7 Python tests, lint/types/build, 24 forecast HTTP scenario groups and 24 stock HTTP regression groups. Tests used synthetic intercepted provider responses and simulated CUDA/pipeline serialization; they are not actual numerical GPU inference. Five successful temporary HTTP servers stopped and temporary HTTP databases were removed. No browser/screen/computer-control session, real message, agent commit/push or publication was initiated. Real RunPod inference/evaluation/account evidence and Replit usage remain unverified. Evidence and limits: [FORECASTING_2026_10_21.md](../verification/FORECASTING_2026_10_21.md).
 
 ## 5. Sponsor-Provided Resources
 
@@ -186,7 +186,11 @@ WhatsApp activation, templates and account readiness are external dependencies. 
 - [ ] Every field complete, word limits checked.
 - [ ] Proof appendix included.
 
+Latest landing refinement, 21 October 2026: the user requested removal of purchase previews and a simpler, bolder text-first page. Codex used the same UI guidance and Playwright to inspect Jack & Jill/Attio references, inspect Vogelhaus text (reference screenshots timed out loading fonts), and verify the local page. No reference assets or text were copied. Only frontend application files changed; the previously documented root runtime-folder blocker remains. Lint, TypeScript and an isolated webpack production build passed; current evidence is in `docs/team/frontend.md` and `.artifacts/simple-landing/`. The earlier 38-test result was not rerun for this presentation-only follow-up.
+
 ## 8. Declaration
+
+Development usage update, 21 October 2026: Codex refined the existing landing-page copy, spacing, navigation labels and shared blue palette. The agent used ui-ux-pro-max local guidance, antislop in during mode, Context7 CLI for Next.js documentation, installed Next.js documentation, shell checks and Playwright for Attio reference inspection and local browser verification. No Attio assets or copy were incorporated. Lint, TypeScript and 38 existing tests passed; the root build has a documented folder-layout blocker, while an isolated application copy passed a webpack production build. Browser screenshots are local evidence, not deployment or RunPod proof. Human team review remains required.
 
 Leader: Marco Ryan Suseno.
 

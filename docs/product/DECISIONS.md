@@ -2,13 +2,15 @@
 
 Updated 21 October 2026. This document separates user decisions, implementation choices, technical recommendations and facts to supply. The local persistent workflow is implemented; real RunPod inference and Replit deployment remain unverified.
 
+## Team assignments
+
+Startup repair, 21 October: the root `pages/` documentation folder caused Next.js to exit because it detected root Pages Router routes alongside `src/app`. A serial integration task moved the team guides to `docs/team/`, updated links and retained the existing work-area boundaries. This supersedes U-17's original folder location; application routes and dependencies are unchanged.
+
+U-18, user, 21 October: prevent overlapping edits across AI, frontend, backend, demo and system. Add explicit work boundaries, a scope checker and serial shared integration rules. This supersedes U-17's no-file-ownership preference only as needed for conflict prevention. Data remains Maxi's area. Existing code stays in place; no commit, push or remote enforcement was performed.
+
+U-17, user, 21 October: Vitto frontend, Maxi data, William system/backend, Marco AI. Create separate work pages in the root `pages/` folder without file ownership rules. [Team pages](../team/README.md) separate tasks and the shared demo. Existing application routes and worker remain in place; training is not added by this documentation change. This supersedes U-08 and earlier unallocated-workstream notes.
+
 ## Current authorised implementation
-
-U-18, user, 21 October: Step 2 is committed; proceed with Step 3 (demand forecasting and stock coverage), verify it and report progress out of 100. The friend's RunPod setup can follow separately. Preserve the friend's frontend designs and existing work. No agent commit/push, merge, publication, paid resources or real messages are authorised.
-
-Step 3 implementation choices: branch from `2345671` into `feat/demand-forecasting`; retain SQLite, the shared analysis service and the existing provider/worker. Add client-safe forecast types and dedicated `/api/analysis-runs` routes without changing `/api/demo` callers. Save stock/safety/incoming inputs for deterministic daily coverage; retain historical forecasts but withhold actionable coverage when inputs become stale. Validate request/product identity, fixed model and revision, hash, horizon, dates and quantities. Include endpoint/model identity in caching and preserve immediately completed provider job IDs. Deploy the updated worker's request/product echoes before real integration. Reuse one bounded JSON reader for stock and forecast mutations. No purchasing formula, frontend design, package or database service changed.
-
-Step 3 local verification and handoff are complete at **80/100**; real RunPod inference and account/result proof remain pending. Local checks passed: 101 Node tests, 7 Python tests, lint/types/build and 24 forecast plus 24 stock HTTP scenario groups. These are synthetic contract/coverage checks, not accuracy or GPU evidence. No new UI review/Delivery Gate claim is made because this stage changes backend/API/docs only. See [FORECASTING.md](../engineering/FORECASTING.md), [actual evidence](../verification/FORECASTING_2026_10_21.md) and [MVP progress](../plans/MVP_PROGRESS.md).
 
 U-17, user, 21 October: proceed with stages 1 and 2 of the agreed MVP implementation plan, backend preparation and stock tracking. The user owns MVP backend implementation and has informed their frontend/demo friend. The friend's name and other final assignments are unavailable. Keep the friend's frontend files intact and use a separate local backend branch. No commit, push or publication was requested.
 
@@ -44,7 +46,7 @@ Actual checks are in [the workflow report](../verification/WORKFLOW_2026_10_21.m
 | U-05 | Synthetic CSV and outgoing-stock/receiving forms | Explicit user response |
 | U-06 | Prefer WhatsApp if feasible; Telegram if time permits | Explicit user response; completing both channels is not required |
 | U-07 | Marco Ryan Suseno is leader; four members listed below | Full names and university supplied by the user |
-| U-08 | Final assignments remain open | The user asked that reported skills not become final assignments |
+| U-08 | Historical: final assignments remained open; superseded by U-17 | Initial reported skills were not assignments |
 | U-09 | Documentation first; technical agreement before scaffolding | Original documentation scope, reaffirmed by the user's M0 request; application implementation and service purchases are not authorised by the documentation |
 | U-10 | All repository documents must be in English | User instruction on 20 October 2026; preserve meaning, names, contact values, identifiers and links |
 | U-11 | Use both ui-ux-pro-max and antislop for UI/UX work; antislop mode is during | Existing AGENTS.md rule, reaffirmed by the user on 20 October 2026 |

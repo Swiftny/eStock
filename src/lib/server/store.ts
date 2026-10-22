@@ -55,6 +55,7 @@ export function audit(
   after: unknown = null,
 ) {
   const event: ActivityEvent = {
+    businessDate: metadata("demo_date"),
     id: uid(),
     actor: role,
     action,
@@ -182,8 +183,9 @@ export function state(role: Role): AppState {
     }));
   return {
     role,
-    organisation: { id: ORG, name: "Cedar Pantry · synthetic SME" },
+    organisation: { id: ORG, name: "Demo workspace" },
     demoDate: metadata("demo_date"),
+    demoGeneration: metadata("demo_generation") || metadata("seed_version"),
     closedThrough: metadata("closed_through"),
     suppliers: db
       .prepare("SELECT id,name,channel FROM suppliers WHERE org_id=?")

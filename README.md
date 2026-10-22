@@ -139,14 +139,18 @@ Use the earlier deadline pending authoritative clarification: **25 October 2026,
 
 ## Team and project documents
 
-| Member | Reported skills | University |
-| --- | --- | --- |
-| Marco Ryan Suseno | Team leader; frontend | Xiamen University |
-| Riakudu Vittorios Surjoraharjos | PRD, frontend, UI/UX | Xiamen University |
-| Maximillion Cang | Database | Xiamen University |
-| William Christiansen | System design | Xiamen University |
+Before parallel edits, read [integration rules](docs/team/integration.md) and use the scope checker described there. Frontend landing and demo UI have separate edit boundaries; shared files require coordinated integration.
 
-Reported skills are not final assignments. Registration contacts stay in ignored `.private/TEAM_DETAILS.md`.
+Individual work pages: [team index](docs/team/README.md), [Vitto / frontend](docs/team/frontend.md), [Maxi / data](docs/team/data.md), [William / backend and system](docs/team/backend.md), [Marco / AI](docs/team/ai.md), and [shared demo](docs/team/demo.md).
+
+| Member | Assigned work | University |
+| --- | --- | --- |
+| Marco Ryan Suseno | Team leader; AI | Xiamen University |
+| Riakudu Vittorios Surjoraharjos (Vitto) | Frontend | Xiamen University |
+| Maximillion Cang (Maxi) | Data | Xiamen University |
+| William Christiansen | System and backend | Xiamen University |
+
+Assignments confirmed by the user on 21 October 2026. Registration contacts stay in ignored `.private/TEAM_DETAILS.md`.
 
 - [Context and handoff](PROJECT_CONTEXT.md), [PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [build plan](docs/plans/BUILD_PLAN.md).
 - [Implementation plan](docs/plans/IMPLEMENTATION_2026_10_21.md), [visual rationale](DESIGN.md), [stock verification](docs/verification/STOCK_TRACKING_2026_10_21.md), [forecast verification](docs/verification/FORECASTING_2026_10_21.md). The older full-workflow report referenced in historical handoffs is absent from this checkout.
