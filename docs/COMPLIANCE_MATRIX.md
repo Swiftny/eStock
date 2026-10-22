@@ -43,7 +43,7 @@ The evidence column describes what must be produced, not what is complete.
 | C-17 | Overtime: 1 point/30 seconds, subject to final rules | PH §6.3.5.6; ORI | Duration margin; do not aim for exactly seven minutes |
 | C-18 | Replit must form part of the solution | PH §9.2 | App/backend in the team's Replit project |
 | C-19 | Replit proof in TechDecl | PH §10.6 | Own live URL, project history link or credit-finished proof |
-| C-20 | GPU training/fine-tuning/inference on RunPod | PH §9.3 | Actual forecast inference on RunPod |
+| C-20 | GPU training/fine-tuning/inference on RunPod | PH §9.3 | LoRA fine-tuning on a RunPod GPU Pod and forecast inference on RunPod Serverless (U-18) |
 | C-21 | RunPod proof in TechDecl | PH §10.7 | Own dashboard: Pod ID or serverless endpoint, GPU type, runtime |
 | C-22 | Respect quotas/resource terms | OH §8.1; TC §5.9 | Usage records; do not assume credits are active/sufficient |
 | C-23 | Repository created after official start | TC §5.5.1–5; ORI | New repository after 19 October, 20:00 MYT; genuine history |
@@ -83,6 +83,7 @@ For significant pre-event assets, record whether organiser approval under OH §8
 | X-06 Capability | OBI/website describe both platform foundations and direction | Do not assume all capabilities/APIs are available; label mocks |
 | X-07 Format | No slide cap, spoken-language rule or upload limits found in reviewed sections | Do not import a ten-slide/five-minute cap from the example PRD; check the portal |
 | X-08 Serverless proof | PH §10.7 substitutes endpoint for Pod ID but still mentions GPU/runtime | Capture available evidence and clarify equivalents if fields are absent |
+| X-09 Orbyte access | D2 §7 (C-09): no live Orbyte dataset/API/sandbox supplied. A sponsor/mentor said verbally on or before 21 October 2026 that using Orbyte is required, via its [workspace registration](https://orbyte-xyz.alphareds.com/register-workspace) | Register a workspace and align eStock with Orbyte workflows (U-16). Keep every Orbyte connection simulated and labeled; do not claim an integration. Obtain written confirmation using the record format below, including whether an API/sandbox exists and whether Orbyte screens may appear in the deck/video |
 
 Clarification record format:
 

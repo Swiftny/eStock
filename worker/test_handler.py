@@ -5,6 +5,9 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import patch
 from datetime import date, timedelta
+from types import SimpleNamespace
+from unittest.mock import patch
+import handler as worker
 from handler import baseline, choose_method, evaluate, metrics, validate_request
 import handler as worker
 

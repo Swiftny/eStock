@@ -108,6 +108,33 @@ Current checks on Node **22.23.3**, npm **10.9.9**, Python **3.9.6**: **74 Node 
 
 ## Forecasting and purchasing rules
 
+### Step 3: forecast and coverage API
+
+Local backend work is complete on `feat/demand-forecasting`, based on the user's Step 2 commit `2345671`. Step 3 is **80/100**: actual RunPod execution/account proof and acceptance remain pending. No frontend design/source or purchasing formula was changed. The frontend owner can use these additive endpoints:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /api/analysis-runs` | Manager starts/reuses a saved run with `{ "productId": "product-cartons" }` |
+| `GET /api/analysis-runs?productId=...&limit=20` | Staff/manager reads latest saved runs |
+| `GET /api/analysis-runs/:id` | Staff/manager reads status, demand, provenance and stock coverage |
+| `POST /api/analysis-runs/:id/poll` | Manager checks a pending provider job with body `{}` |
+
+Use the existing demo session cookie, JSON and an `Idempotency-Key` for mutations. HTTP 202 means pending; HTTP 200 can contain `COMPLETED`, `FAILED` or `NEEDS_DATA`, so inspect the saved status. GET never triggers inference. New coverage uses saved daily demand and eligible dated arrivals; changed inputs make it unavailable until reanalysis. The existing `/demo` still uses its previous contract; connecting the new coverage display is the frontend owner's next integration task.
+
+On a fresh fixture, open `/demo` as manager and analyse **Takeaway cartons** before posting a new-day movement. If movements exist, close the day first. The default remains a labelled baseline. With a manager session, the API above exposes full coverage; the isolated HTTP harness tries these requests without touching your normal database:
+
+```sh
+npm test
+npm run test:worker
+npm run build
+node scripts/verify-forecasting.mjs
+node scripts/verify-stock-tracking.mjs
+```
+
+These checks passed: **101 Node tests**, **7 Python tests**, **24 forecast HTTP scenario groups** and all **24 stock HTTP regression groups**, plus lint/types/build. The harnesses require localhost-listening permission, stop their servers and remove their temporary databases. They submit no real inference. Details, response examples and friend setup: [forecast handoff](docs/engineering/FORECASTING.md), [verification](docs/verification/FORECASTING_2026_10_21.md), [worker setup](worker/README.md).
+
+### Existing replenishment rules
+
 The server separates demand estimation from purchasing arithmetic. `max(30, lead time + effective review interval)` forecast days are requested. Routine and urgent review timing differ. Confirmed inbound is considered on its actual date; overdue/unconfirmed goods never masquerade as on-hand. Raw need is clamped to zero before pack/MOQ rounding. Daily projections show shortages that a proposed arrival cannot resolve.
 
 The fixed **PRD test**, not a model result, uses demand 10/day, lead time 3, review interval 7, safety stock 20, usable stock 45 and confirmed inbound 25 in the horizon. Raw need is 50; packs/MOQ 12 give 60. Moving that inbound to day 12 gives raw 75 and packaged 84.

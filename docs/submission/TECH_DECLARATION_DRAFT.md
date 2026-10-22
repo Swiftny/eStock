@@ -92,7 +92,7 @@ No API keys in this table. Mock Orbyte endpoints are team-created contracts, not
 
 | Model & Version | Source | Usage | Licence/Terms | Status |
 | --- | --- | --- | --- | --- |
-| amazon/chronos-bolt-small; revision not pinned | Amazon, HuggingFace/model card | Pretrained inference; no fine-tuning planned | Apache 2.0; verify artifact | CANDIDATE |
+| autogluon/chronos-2, revision 60088152a34e242427b44c3100014473a0157d53 | Amazon/AutoGluon, Hugging Face model card | LoRA fine-tuning on team synthetic data with AutoGluon 1.6.3 and torch 2.13.0+cu130, then inference | Apache 2.0; verify artifact | USED: run 20261021T110320Z on a RunPod RTX 4090 |
 | Other model | Complete only if actually used | Actual usage | Actual terms | If none, enter None in final version |
 
 The 28-day mean and 7-day seasonal-naive baselines are simple statistical methods, not LLMs. State when runtime recommendations use a baseline.

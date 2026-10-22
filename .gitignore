@@ -23,6 +23,9 @@ __pycache__/
 # Private registration contacts and local submission working notes
 .private/
 
+# Trained model unzipped for the worker image build; kept outside Git
+worker/model/
+
 # Next.js output and local verification artifacts
 .next/
 out/

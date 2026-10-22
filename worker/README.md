@@ -1,6 +1,6 @@
 # RunPod forecasting worker
 
-This worker is implemented but **has not run on RunPod or downloaded/executed Chronos here**. Local Python tests validate its request and evaluation logic without importing Torch or RunPod. A successful mocked HTTP contract test is not a real GPU round trip.
+This worker is implemented but **has not run on RunPod or downloaded/executed Chronos here**. Seven local Python tests validate its request/evaluation logic and serialization; one substitutes simulated CUDA/pipeline modules. No real Torch, CUDA or RunPod package is executed by those tests. A successful mocked HTTP contract test is not a real GPU round trip.
 
 The server uses RunPod's queue API: [`POST /run`, then `GET /status/{jobId}`](https://docs.runpod.io/serverless/endpoints/send-requests). The numerical model interface follows the upstream [Chronos code](https://github.com/amazon-science/chronos-forecasting/blob/main/src/chronos/chronos_bolt.py). No chatbot or training is involved.
 
@@ -28,3 +28,16 @@ With 168 observations, validation origins are after observations 58 and 72. The 
 The app sends the latest 168 days for operational inference. Worker evaluation always slices each origin before predicting; targets never enter that prediction call. Evaluation on a rolling operational window is diagnostic; submission results require a fixed, declared seed/cutoff and retained full evaluation artifact. No real accuracy or savings claim has been established.
 
 A submission interrupted before its provider job ID is saved is marked unknown/failed after a bounded wait. The application does not blindly resubmit that job. Review the provider dashboard before retrying. Concurrent/repeated analysis clicks do not submit additional jobs for the same input identity.
+
+## Friend's remaining Step 3 checkpoint
+
+Account access, credit and a spending limit must be agreed before provisioning or paid inference. No live job was submitted by the local Step 3 work.
+
+1. Build/deploy the updated worker to a queue-based GPU endpoint. Choose a real pinned model commit, configure it on the worker and verify CUDA/package compatibility. The image/dependency ranges remain candidates until this spike succeeds.
+2. Set `RUNPOD_ENDPOINT_ID`, `RUNPOD_API_KEY`, `CHRONOS_MODEL_REVISION` and `FORECAST_MODE=RUNPOD` in the application's server secrets. For the acceptance run, set `FORECAST_ALLOW_FALLBACK=false` so a provider failure remains visible. Restart the app; no frontend redesign is required.
+3. In a synthetic manager session, analyse cartons at a closed cutoff. Use **Check pending analysis** in the existing demo or the dedicated API's poll endpoint with a new request key. GET reads saved state only. Avoid opening new analysis jobs while the first is queued.
+4. Retain the actual completed job ID, endpoint identity, request/product IDs, history hash/cutoff, pinned revision, dated demand, raw `modelP50`, evaluation, GPU/device, runtime and UTC times. Redact credentials and personal information from own-account screenshots. Save completion promptly; asynchronous RunPod results have limited retention under its [official request guide](https://docs.runpod.io/serverless/endpoints/send-requests).
+5. Check coverage against the returned daily series, then restart the application and verify the saved run/coverage persist. If a baseline wins validation, disclose it while retaining actual model inference and evaluation; do not relabel the selected series as AI.
+6. Record the image digest, resolved Python/CUDA/Torch/Chronos/RunPod versions and licences. Update the verification report with actual evidence and obtain team review before marking Step 3 100/100.
+
+New frontend/API types, error states and coverage assumptions: [FORECASTING.md](../docs/engineering/FORECASTING.md). Local evidence and remaining limits: [FORECASTING_2026_10_21.md](../docs/verification/FORECASTING_2026_10_21.md).

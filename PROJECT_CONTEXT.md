@@ -95,11 +95,13 @@ The user selected **eStock**, a general replenishment assistant for SMEs managin
 | Stack | Next.js App Router, TypeScript, plain CSS and built-in Node SQLite; Python RunPod worker implemented but not GPU-verified |
 | Current implementation stage | Persistent local synthetic workflow implemented; real GPU inference, production identity, real messaging and deployment remain unverified/outside this local delivery |
 | Visual direction | User selected a light, minimal, professional presentation with generous spacing, readable type, limited accents and prominent product previews; Attio is a reference |
-| Model | Candidate: Chronos-Bolt Small; spike, revision and final selection not completed |
+| Model | Chronos-2 fine-tuned with AutoGluon on RunPod (U-18); first GPU run completed 21 October on an RTX 4090, Serverless deployment pending |
+| MVP feature scope | U-17: features #1–4, 8, 9, 14, 16, 19 and 23, plus activity log, supplier outbox, demo roles, CSV import and notifications; #11 and #12 last |
 | Accounts/credits | Replit and RunPod status not provided |
 | Final assignments | Vitto: frontend; Maxi: data; William: system/backend; Marco: AI |
 | Work status | Refined landing page and persistent application; see the current handoff above and verification report. No deployment or submission |
 | Repository language | English, as requested by the user; proper names and technical identifiers retained |
+| Orbyte workspace | Verbally required by a sponsor/mentor; register and align eStock with Orbyte workflows, keeping any connection simulated (U-16, X-09). Written confirmation and workspace approval pending |
 
 The PRD contains proposed technical defaults, not claims that the user has selected every option. Record material changes here and in the [decision register](docs/product/DECISIONS.md).
 
@@ -174,6 +176,8 @@ Written sources, templates, orientation and the Orbyte introduction were read; t
 The documents created so far are **guides and drafts**, not those six finished deliverables. No official ten-slide preliminary limit has been verified; the ten-slide outline is a suggestion. Final-round rules are recorded separately in the compliance matrix.
 
 ## Historical landing-only handoff (superseded by the current implementation handoff above)
+
+**21 October AI track:** `data/generate_history.py` writes the synthetic history (840 rows, seed 20261021; see `data/DATA_CARD.md`). The user added the team's 2020–2026 daily history (`SYN-*`, provenance pending), and training uses both datasets (U-19). `training/finetune.py` fine-tunes Chronos-2 three times: without each series' last 110 days, without its last 44 days, and on all data. It scores the fine-tuned model, the zero-shot model and both baselines at the PRD §8.4 origins, selects one method per SKU from validation MAE, and writes `metrics.csv`, `selection.json` and `run_info.json`. `worker/` is the RunPod Serverless handler for the §12.4 contract. Verified so far: the generator is deterministic (same SHA-256 on repeated runs), and the evaluation, selection, tie-break and worker validation logic passed local checks with stand-in models. Run on RunPod (RTX 4090, run `20261021T110320Z`): fine-tuning, evaluation and a local worker test all succeeded. The per-SKU selection's test MAE is 4.0% below the best baseline, and fine-tuning made no pooled difference against zero-shot. Not yet done: the Serverless deployment. Run steps are in [AI_RUNPOD_PLAN.md](docs/plans/AI_RUNPOD_PLAN.md).
 
 **21 October landing-page stage:** after the recommendation of Next.js App Router, TypeScript and plain CSS, the user asked to proceed based on the PRD. That frontend stack was approved for the landing page. The requested page is now implemented and verified locally. Stop for user review before application work. No commits, pushes or deployment publication were performed or authorised.
 
