@@ -122,7 +122,7 @@ def handler(job):
         warnings.append(evaluation["limitation"])
     cutoff = date.fromisoformat(data["cutoffDate"])
     source = "RUNPOD" if selected == "model" else "BASELINE_SELECTED" if evaluation["validation"] is not None else "BASELINE_FALLBACK"
-    return {"status": "COMPLETED", "source": source, "modelId": MODEL_ID, "modelRevision": data["modelRevision"], "inputHash": data["inputHash"], "cutoffDate": data["cutoffDate"], "generatedAt": datetime.now(timezone.utc).isoformat(), "runtimeMs": round((time.perf_counter() - started) * 1000), "dates": [(cutoff + timedelta(days=i + 1)).isoformat() for i in range(data["horizonDays"])], "p50": p50, "modelP50": model_p50, "warnings": warnings, "evaluation": evaluation, "device": torch.cuda.get_device_name(0)}
+    return {"requestId": data["requestId"], "productId": data["productId"], "status": "COMPLETED", "source": source, "modelId": MODEL_ID, "modelRevision": data["modelRevision"], "inputHash": data["inputHash"], "cutoffDate": data["cutoffDate"], "generatedAt": datetime.now(timezone.utc).isoformat(), "runtimeMs": round((time.perf_counter() - started) * 1000), "dates": [(cutoff + timedelta(days=i + 1)).isoformat() for i in range(data["horizonDays"])], "p50": p50, "modelP50": model_p50, "warnings": warnings, "evaluation": evaluation, "device": torch.cuda.get_device_name(0)}
 
 
 if __name__ == "__main__":

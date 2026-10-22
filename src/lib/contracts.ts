@@ -128,6 +128,8 @@ export interface ForecastRequest {
   stockoutFlags: boolean[];
 }
 export interface ForecastResult {
+  requestId?: string;
+  productId?: string;
   evaluation?: Record<string, unknown>;
   device?: string;
   modelP50?: number[];
