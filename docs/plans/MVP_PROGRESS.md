@@ -38,6 +38,8 @@ Configure `RUNPOD_ENDPOINT_ID`, `RUNPOD_API_KEY`, `CHRONOS_MODEL_REVISION` and `
 
 ### 3B. Prepare one product's complete history
 
+Complete locally: seeded cartons/coffee and short-history lids were exercised, with gaps, zero demand and the 44-day maximum horizon checked.
+
 Use a known synthetic SKU and its complete daily SALE totals. Preserve the business cutoff, product unit, history completeness, stockout flags and input hash. Missing days remain missing until reviewed; adjustments, damage and internal use do not become customer demand. Use the PRD's closing snapshot so physical stock and sales inputs refer to the same cutoff.
 
 The current contract validates 28 to 168 complete consecutive dated observations. It requests the configured horizon needed by the purchasing policy. Start with one product, then check the other seeded data/insufficient-history cases.
