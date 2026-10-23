@@ -292,30 +292,34 @@ function analysisSnapshot(product: Product, app: AppState) {
     calculation,
     shortageDate,
     suggestion: !orderOpen && !intraday ? reviewableSuggestion(product, app) : null,
-    label: pending
-      ? "Analysis pending"
-      : intraday
-        ? "Close day first"
-        : orderOpen
-          ? "Order in progress"
-          : needsData
-            ? "More sales history needed"
-            : stale
-              ? "Analyse again"
-              : latest?.status === "FAILED"
-                ? "Analysis failed"
-                : rec
-                  ? status(rec.status)
-                  : "Ready for analysis",
-    note: needsData
-      ? "End a day with complete sales records."
-      : latest?.status === "FAILED"
-        ? "Try analysis again."
-        : rec?.status === "REJECTED"
-          ? rec.decisionReason || ""
-          : shortageDate
-            ? `Shortfall expected ${day(shortageDate)}.`
-            : "",
+    label: product.purchasingSetupRequired
+      ? "Purchasing setup required"
+      : pending
+        ? "Analysis pending"
+        : intraday
+          ? "Close day first"
+          : orderOpen
+            ? "Order in progress"
+            : needsData
+              ? "More sales history needed"
+              : stale
+                ? "Analyse again"
+                : latest?.status === "FAILED"
+                  ? "Analysis failed"
+                  : rec
+                    ? status(rec.status)
+                    : "Ready for analysis",
+    note: product.purchasingSetupRequired
+      ? "Open inventory to save supplier terms and purchasing policy."
+      : needsData
+        ? "End a day with complete sales records."
+        : latest?.status === "FAILED"
+          ? "Try analysis again."
+          : rec?.status === "REJECTED"
+            ? rec.decisionReason || ""
+            : shortageDate
+              ? `Shortfall expected ${day(shortageDate)}.`
+              : "",
   };
 }
 
@@ -381,72 +385,75 @@ function ForecastEvidence({
           sales; limited history, no AI inference.
         </p>
       )}
-      {analysis?.modelId && forecast?.source !== "DEMO_ESTIMATE" && (
-        <p>
-          Method / model: {analysis.modelId}
-          {analysis.modelRevision ? ` · ${analysis.modelRevision}` : ""}
-        </p>
-      )}
-      {forecast && (
-        <p>
-          Saved{" "}
-          {new Date(forecast.generatedAt).toLocaleString("en-MY", {
-            timeZone: "Asia/Kuala_Lumpur",
-          })}{" "}
-          MYT{forecast.runtimeMs > 0 ? ` · ${fmt(forecast.runtimeMs)} ms` : ""}
-          {forecast.device ? ` · ${forecast.device}` : ""}
-        </p>
-      )}
-      {scores.length > 0 && (
-        <>
-          <h3>Saved final evaluation</h3>
-          <DataTable label="Saved model and baseline final evaluation">
-            <thead>
-              <tr>
-                <th scope="col">Method</th>
-                <th scope="col">Average error ({unit})</th>
-                <th scope="col">Error %</th>
-                <th scope="col">Days</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scores.map(([name, value]) => {
-                const score = value as Record<string, unknown>;
-                return (
-                  <tr key={name}>
-                    <th scope="row" data-label="Method">
-                      {name === "mean28"
-                        ? "28-day average"
-                        : name === "seasonal7"
-                          ? "7-day repeat"
-                          : name === "model"
-                            ? "Model"
-                            : name}
-                    </th>
-                    <td data-label={`Average error (${unit})`}>
-                      {typeof score.mae === "number" && Number.isFinite(score.mae)
-                        ? fmt(score.mae)
-                        : "Unavailable"}
-                    </td>
-                    <td data-label="Error %">
-                      {typeof score.wape === "number" && Number.isFinite(score.wape)
-                        ? `${fmt(score.wape * 100)}%`
-                        : "Unavailable"}
-                    </td>
-                    <td data-label="Days">
-                      {typeof score.n === "number" && Number.isFinite(score.n)
-                        ? fmt(score.n)
-                        : "Unavailable"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </DataTable>
-          {typeof evaluation?.selection === "string" && <p>{evaluation.selection}</p>}
-          {typeof evaluation?.excluded === "string" && <p>{evaluation.excluded}</p>}
-        </>
-      )}
+      <details>
+        <summary>Method and saved evaluation</summary>
+        {analysis?.modelId && forecast?.source !== "DEMO_ESTIMATE" && (
+          <p>
+            Method / model: {analysis.modelId}
+            {analysis.modelRevision ? ` · ${analysis.modelRevision}` : ""}
+          </p>
+        )}
+        {forecast && (
+          <p>
+            Saved{" "}
+            {new Date(forecast.generatedAt).toLocaleString("en-MY", {
+              timeZone: "Asia/Kuala_Lumpur",
+            })}{" "}
+            MYT{forecast.runtimeMs > 0 ? ` · ${fmt(forecast.runtimeMs)} ms` : ""}
+            {forecast.device ? ` · ${forecast.device}` : ""}
+          </p>
+        )}
+        {scores.length > 0 && (
+          <>
+            <h3>Saved final evaluation</h3>
+            <DataTable label="Saved model and baseline final evaluation">
+              <thead>
+                <tr>
+                  <th scope="col">Method</th>
+                  <th scope="col">Average error ({unit})</th>
+                  <th scope="col">Error %</th>
+                  <th scope="col">Days</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scores.map(([name, value]) => {
+                  const score = value as Record<string, unknown>;
+                  return (
+                    <tr key={name}>
+                      <th scope="row" data-label="Method">
+                        {name === "mean28"
+                          ? "28-day average"
+                          : name === "seasonal7"
+                            ? "7-day repeat"
+                            : name === "model"
+                              ? "Model"
+                              : name}
+                      </th>
+                      <td data-label={`Average error (${unit})`}>
+                        {typeof score.mae === "number" && Number.isFinite(score.mae)
+                          ? fmt(score.mae)
+                          : "Unavailable"}
+                      </td>
+                      <td data-label="Error %">
+                        {typeof score.wape === "number" && Number.isFinite(score.wape)
+                          ? `${fmt(score.wape * 100)}%`
+                          : "Unavailable"}
+                      </td>
+                      <td data-label="Days">
+                        {typeof score.n === "number" && Number.isFinite(score.n)
+                          ? fmt(score.n)
+                          : "Unavailable"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </DataTable>
+            {typeof evaluation?.selection === "string" && <p>{evaluation.selection}</p>}
+            {typeof evaluation?.excluded === "string" && <p>{evaluation.excluded}</p>}
+          </>
+        )}
+      </details>
     </section>
   );
 }
@@ -953,12 +960,15 @@ function Review({
             </ul>
           )}
           {rec.calculation && (
-            <p className="subtle">
-              To cover {rec.calculation.horizonDays} days: {fmt(rec.calculation.demand)} demand +{" "}
-              {fmt(rec.calculation.safetyStock)} buffer − {fmt(rec.calculation.usableStock)} in
-              stock − {fmt(rec.calculation.eligibleInbound)} confirmed incoming in time ={" "}
-              {fmt(rec.calculation.rawQuantity)} {product.unit} needed before pack rounding.
-            </p>
+            <details>
+              <summary>Quantity calculation</summary>
+              <p className="subtle">
+                To cover {rec.calculation.horizonDays} days: {fmt(rec.calculation.demand)} demand +{" "}
+                {fmt(rec.calculation.safetyStock)} buffer − {fmt(rec.calculation.usableStock)} in
+                stock − {fmt(rec.calculation.eligibleInbound)} confirmed incoming in time ={" "}
+                {fmt(rec.calculation.rawQuantity)} {product.unit} needed before pack rounding.
+              </p>
+            </details>
           )}
           <ForecastEvidence analysis={analysis} rec={rec} unit={product.unit} />
           <p className="subtle">
@@ -980,7 +990,7 @@ function Review({
             {!rejecting && (
               <div className={styles.decisionSummary}>
                 <strong>
-                  {validAmount ? fmt(Number(amount)) : "—"} {product.unit}
+                  {validAmount ? fmt(Number(amount)) : "N/A"} {product.unit}
                 </strong>
                 <p>Order {day(rec.calculation?.orderDate || null)}</p>
                 <p>Expected delivery {day(rec.calculation?.arrivalDate || null)}</p>
@@ -1111,8 +1121,9 @@ function AddItemDialog({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<Element | null>(null);
-  const attempt = useRef<{ signature: string; key: string; sku: string } | null>(null);
+  const attempt = useRef<{ signature: string; key: string } | null>(null);
   const [unit, setUnit] = useState("units");
+  const [precision, setPrecision] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -1127,9 +1138,8 @@ function AddItemDialog({
     };
   }, []);
   useEffect(() => {
-    if (!dayEnded && !pending)
-      dialog.current?.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
-  }, [dayEnded, pending]);
+    if (!dayEnded) dialog.current?.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+  }, [dayEnded]);
   return (
     <dialog
       ref={dialog}
@@ -1187,7 +1197,7 @@ function AddItemDialog({
             const signature = JSON.stringify(fields);
             if (attempt.current?.signature !== signature) {
               const key = crypto.randomUUID();
-              attempt.current = { signature, key, sku: `DEMO-${key.slice(0, 8).toUpperCase()}` };
+              attempt.current = { signature, key };
             }
             setPending(true);
             setError("");
@@ -1197,17 +1207,7 @@ function AddItemDialog({
                 {
                   ...fields,
                   unit: unit.trim() || "units",
-                  sku: attempt.current.sku,
-                  precision: unit.trim() === "units" ? 0 : 3,
-                  supplierId: app.suppliers[0]?.id,
-                  reviewIntervalDays: 7,
-                  safetyStock: 20,
-                  packSize: 12,
-                  minimumOrder: 12,
-                  unitPriceSen: null,
-                  shippingSen: null,
-                  maxOrderSen: 200000,
-                  nextReviewDate: app.demoDate,
+                  precision,
                 },
                 attempt.current.key,
               );
@@ -1222,6 +1222,12 @@ function AddItemDialog({
         >
           <fieldset disabled={pending}>
             <Field label="Item name" name="name" />
+            <Field
+              label="SKU (optional)"
+              name="sku"
+              required={false}
+              help="Leave blank to generate a unique demo code, e.g. DEMO-0001. Manual codes can use up to 40 characters."
+            />
             <div className="form-grid">
               <Field
                 label="Starting quantity"
@@ -1229,31 +1235,50 @@ function AddItemDialog({
                 type="number"
                 value={0}
                 min={0}
-                step={unit.trim() === "units" ? 1 : 0.001}
+                step={10 ** -precision}
               />
               <label className="field">
                 Unit
                 <input
                   name="unit"
                   value={unit}
-                  onChange={(event) => setUnit(event.target.value)}
+                  onChange={(event) => {
+                    setUnit(event.target.value);
+                    if (event.target.value.trim().toLowerCase() === "units") setPrecision(0);
+                  }}
                   maxLength={24}
                   required
                 />
               </label>
             </div>
+            <label className="field">
+              Quantity precision
+              <select
+                value={precision}
+                onChange={(event) => setPrecision(Number(event.target.value))}
+              >
+                <option value={0}>Whole units</option>
+                {unit.trim().toLowerCase() !== "units" && (
+                  <>
+                    <option value={1}>1 decimal place</option>
+                    <option value={2}>2 decimal places</option>
+                    <option value={3}>3 decimal places</option>
+                  </>
+                )}
+              </select>
+            </label>
             <Field
-              label="Supplier lead time (days)"
-              name="leadTimeDays"
-              type="number"
-              min={1}
-              max={14}
-              value={3}
-              help="Days from placing an order to delivery."
+              label="Opening date"
+              name="openingDate"
+              type="date"
+              value={app.demoDate}
+              min={app.demoDate}
+              max={app.demoDate}
+              help="Opening stock is recorded on the open inventory day."
             />
             <p className="subtle">
-              Demo supplier · SIMULATED. Defaults: 7-day review, {fmt(20)} {unit || "units"} buffer
-              and {fmt(12)} {unit || "units"} packs. Change these in Purchasing policy.
+              Purchasing setup required after saving. A manager configures supplier terms and buying
+              rules separately. You can record sales immediately.
             </p>
             {error && (
               <p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>
@@ -1267,6 +1292,208 @@ function AddItemDialog({
         </form>
       )}
     </dialog>
+  );
+}
+
+function HistoryImport({ app, run }: { app: AppState; run: RunAction }) {
+  const [csv, setCsv] = useState("");
+  const [preview, setPreview] = useState<ActionResult["preview"]>();
+  const [confirmed, setConfirmed] = useState(false);
+  const [corrections, setCorrections] = useState(false);
+  const [reason, setReason] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const feedback = useRef<HTMLDivElement>(null);
+  const attempt = useRef<{ signature: string; key: string } | null>(null);
+  const input = { type: "history", csv, allowCorrections: corrections, correctionReason: reason };
+  function changed() {
+    setPreview(undefined);
+    setConfirmed(false);
+    setMessage("");
+    setError("");
+  }
+  async function send(commit: boolean) {
+    if (pending) return;
+    if (commit && (!preview?.valid || !confirmed)) return;
+    setPending(true);
+    setError("");
+    setMessage("");
+    const signature = JSON.stringify(input);
+    if (attempt.current?.signature !== signature)
+      attempt.current = { signature, key: crypto.randomUUID() };
+    try {
+      const result = await run(
+        commit ? "commitImport" : "previewImport",
+        input,
+        commit ? attempt.current.key : crypto.randomUUID(),
+        true,
+      );
+      setPreview(result.preview);
+      if (commit) {
+        setMessage(result.message);
+        setConfirmed(false);
+        attempt.current = null;
+      }
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Could not import history. Check the CSV and try again.",
+      );
+    } finally {
+      setPending(false);
+      requestAnimationFrame(() => feedback.current?.focus());
+    }
+  }
+  return (
+    <details className="workspace-details">
+      <summary>Import sales history</summary>
+      <p>
+        Manager import of synthetic daily sales before each item's ledger start date. This does not
+        change physical stock. Missing days remain unknown.
+      </p>
+      <p className="subtle">
+        Required columns: source_record_id, sku, business_date, quantity_sold, data_complete,
+        stockout_flag. Quantities use the item's base unit and precision. Use true or false for both
+        flags. Maximum 1,000 rows.
+      </p>
+      <a href="/fixtures/history-template.csv" download>
+        Download CSV template
+      </a>
+      <p className="subtle">
+        Replace the example SKU and date with your inventory's SKU and a date before its opening
+        date ({app.products[0]?.ledgerStartDate}). Keep source IDs stable when reimporting.
+      </p>
+      <form
+        className="app-form"
+        aria-busy={pending}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void send(false);
+        }}
+      >
+        <fieldset disabled={pending}>
+          <label className="field">
+            CSV file
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                changed();
+                if (!file) return;
+                if (file.size > 500000) {
+                  setError("Choose a CSV file smaller than 500 KB.");
+                  return;
+                }
+                try {
+                  setCsv(await file.text());
+                } catch {
+                  setError("Could not read this file. Paste the CSV below instead.");
+                }
+              }}
+            />
+          </label>
+          <label className="field">
+            CSV content
+            <textarea
+              rows={7}
+              value={csv}
+              required
+              maxLength={500000}
+              onChange={(event) => {
+                setCsv(event.target.value);
+                changed();
+              }}
+            />
+          </label>
+          <details>
+            <summary>Correct previously imported history</summary>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={corrections}
+                onChange={(event) => {
+                  setCorrections(event.target.checked);
+                  changed();
+                }}
+              />{" "}
+              Enable reviewed corrections
+            </label>
+            {corrections && (
+              <label className="field">
+                Correction reason
+                <input
+                  value={reason}
+                  required
+                  maxLength={500}
+                  onChange={(event) => {
+                    setReason(event.target.value);
+                    changed();
+                  }}
+                />
+              </label>
+            )}
+            <p className="subtle">
+              Corrections retain the original source ID, SKU and date. The previous values and
+              reason remain in the audit log.
+            </p>
+          </details>
+          <button type="submit" className="button button-outline">
+            {pending ? "Checking…" : "Preview import"}
+          </button>
+        </fieldset>
+      </form>
+      <div ref={feedback} tabIndex={-1}>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p className="form-success" role="status">
+            {message}
+          </p>
+        )}
+        {preview && (
+          <>
+            <p role="status">
+              {preview.rows} rows checked. {preview.duplicates} duplicate rows skipped.{" "}
+              {preview.corrections} corrections. {preview.errors.length} errors.
+            </p>
+            {preview.errors.length > 0 && (
+              <ul role="alert">
+                {preview.errors.map((item) => (
+                  <li key={item.row}>
+                    Row {item.row}: {item.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {preview.valid && (
+              <>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={confirmed}
+                    disabled={pending}
+                    onChange={(event) => setConfirmed(event.target.checked)}
+                  />{" "}
+                  I reviewed these synthetic records and confirm this import.
+                </label>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  disabled={!confirmed || pending}
+                  onClick={() => void send(true)}
+                >
+                  {pending ? "Importing…" : "Confirm history import"}
+                </button>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </details>
   );
 }
 
@@ -1659,27 +1886,45 @@ export function DemoApp() {
   const [orderProductId, setOrderProductId] = useState<string | null>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const [loginRole, setLoginRole] = useState<Role>("manager");
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const r = await fetch("/api/demo", { cache: "no-store" });
-      const data = await r.json();
+      let r = await fetch("/api/demo", { cache: "no-store", signal });
       if (r.status === 401) {
-        setNeedsSession(true);
-        return;
+        const session = await fetch("/api/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "manager" }),
+          signal,
+        });
+        if (signal?.aborted) return;
+        if (session.status === 403) {
+          setNeedsSession(true);
+          return;
+        }
+        if (!session.ok) {
+          const result = await session.json();
+          throw new Error(result.error || "Could not open the demo.");
+        }
+        r = await fetch("/api/demo", { cache: "no-store", signal });
       }
+      const data = await r.json();
+      if (signal?.aborted) return;
       if (!r.ok) throw new Error(data.error);
       setApp(data);
       setNeedsSession(false);
       setError("");
     } catch (e) {
+      if (signal?.aborted) return;
       setError(e instanceof Error ? e.message : "Could not load stock records.");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
   useEffect(() => {
-    void refresh();
+    const controller = new AbortController();
+    void refresh(controller.signal);
+    return () => controller.abort();
   }, [refresh]);
   useEffect(() => {
     const scroll = () => setHeaderScrolled(window.scrollY > 16);
@@ -2019,19 +2264,14 @@ export function DemoApp() {
           {needsSession ? (
             <main id="app-main" className="session-panel" tabIndex={-1}>
               <h1>Open inventory</h1>
-              <p>Choose a demo role to use saved stock records.</p>
+              <p>Enter the demo access code and choose a role to use saved stock records.</p>
               <p className={styles.demoLabel}>Synthetic data · Demo sign-in</p>
               <form key={loginRole} className="app-form" onSubmit={login} aria-busy={busy}>
                 <Select label="Demo role" name="role" value={loginRole}>
                   <option value="manager">Manager · review and approve</option>
                   <option value="staff">Stock staff · record and receive</option>
                 </Select>
-                <Field
-                  label="Access code (optional)"
-                  name="accessCode"
-                  type="password"
-                  required={false}
-                />
+                <Field label="Access code" name="accessCode" type="password" />
                 {error && (
                   <p className="form-error" role="alert">
                     {error}
@@ -2158,19 +2398,16 @@ export function DemoApp() {
                     <section className={styles.blankInventory}>
                       <h2>No items yet</h2>
                       <p>
-                        {app.role === "manager"
-                          ? "Add an item and its starting stock."
-                          : "The Manager can add the first item."}
+                        Add an item and its starting stock. Use synthetic records for this
+                        workspace.
                       </p>
-                      {app.role === "manager" && (
-                        <button
-                          type="button"
-                          className="button button-primary"
-                          onClick={() => setAddItemOpen(true)}
-                        >
-                          Add Item
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className="button button-primary"
+                        onClick={() => setAddItemOpen(true)}
+                      >
+                        Add Item
+                      </button>
                     </section>
                   </>
                 )}
@@ -2216,7 +2453,7 @@ export function DemoApp() {
         </div>
       </ViewTransition>
       {resetOpen && <ResetDemoDialog reset={restoreDemo} close={() => setResetOpen(false)} />}
-      {addItemOpen && app?.role === "manager" && !needsSession && (
+      {addItemOpen && app && !needsSession && (
         <AddItemDialog
           app={app}
           run={run}
@@ -2457,14 +2694,14 @@ function ReplenishmentView({
                       {fmt(item.stock)} / {fmt(item.confirmedIncoming)}
                     </td>
                     <td data-label={`7-day demand (${item.unit})`} className={styles.numeric}>
-                      {calc ? fmt(calc.weeklyDemand) : "—"}
+                      {calc ? fmt(calc.weeklyDemand) : "N/A"}
                     </td>
                     <td data-label="Days of stock">
                       {calc
                         ? calc.coverageDays === null
                           ? "No forecast demand"
                           : `${fmt(calc.coverageDays)} days`
-                        : "—"}
+                        : "N/A"}
                     </td>
                     <td data-label="Status">
                       <StatusLabel
@@ -2495,7 +2732,7 @@ function ReplenishmentView({
                           Next review<small>{day(calc.orderDate)}</small>
                         </>
                       ) : (
-                        "—"
+                        "N/A"
                       )}
                     </td>
                     <td data-label={`Order quantity (${item.unit})`} className={styles.numeric}>
@@ -2637,7 +2874,9 @@ function ActivityView({ app }: { app: AppState }) {
             <th scope="col">Product</th>
             <th scope="col">Time · MYT</th>
             <th scope="col">Event</th>
-            <th scope="col">Role</th>
+            <th scope="col" className={styles.actor}>
+              Role
+            </th>
             <th scope="col">Outcome</th>
             <th scope="col">
               <span className="sr-only">Audit details</span>
@@ -2684,7 +2923,7 @@ function ActivityView({ app }: { app: AppState }) {
                         ? "Supplier request · SIMULATED"
                         : event.action}
                 </td>
-                <td data-label="Role">
+                <td data-label="Role" className={styles.actor}>
                   {event.actor === "manager"
                     ? "Manager"
                     : event.actor === "staff"
@@ -2836,15 +3075,13 @@ function InventoryView({
           <h1>Inventory</h1>
         </div>
         <div className="form-actions">
-          {app.role === "manager" && (
-            <button type="button" className="button button-primary" onClick={addItem}>
-              Add Item
-            </button>
-          )}
+          <button type="button" className="button button-primary" onClick={addItem}>
+            Add Item
+          </button>
           {(app.role === "staff" || suggestions.length > 0) && (
             <button
               type="button"
-              className={`button ${app.role === "staff" ? "button-primary" : "button-outline"}`}
+              className="button button-outline"
               onClick={(event) => {
                 const first = suggestions[0];
                 const suggestion = first && reviewableSuggestion(first, app);
@@ -2863,6 +3100,7 @@ function InventoryView({
           )}
         </div>
       </div>
+      {app.role === "manager" && <HistoryImport app={app} run={run} />}
       <div className={styles.toolbar}>
         <label className={styles.searchField}>
           Search products
@@ -2928,7 +3166,9 @@ function InventoryView({
                 <td data-label="Supplier">
                   {app.suppliers.find((supplier) => supplier.id === item.policy.supplierId)?.name ||
                     "Not assigned"}
-                  <small>{item.policy.leadTimeDays}-day delivery</small>
+                  {!item.purchasingSetupRequired && (
+                    <small>{item.policy.leadTimeDays}-day delivery</small>
+                  )}
                 </td>
                 <td data-label={`In stock (${item.unit})`} className={styles.numeric}>
                   {fmt(item.stock)}
@@ -2941,16 +3181,18 @@ function InventoryView({
                     ? calc.coverageDays === null
                       ? "No forecast demand"
                       : `${fmt(calc.coverageDays)} days`
-                    : "—"}
+                    : "N/A"}
                   {calc && <small>Stock only · {source(snapshot.rec?.source || null)}</small>}
                 </td>
                 <td data-label="Status">
                   <StatusLabel attention={item.stock <= item.policy.safetyStock}>
-                    {item.stock === 0
-                      ? "Out of stock"
-                      : item.stock <= item.policy.safetyStock
-                        ? "Low stock"
-                        : "In stock"}
+                    {item.purchasingSetupRequired
+                      ? "Purchasing setup required"
+                      : item.stock === 0
+                        ? "Out of stock"
+                        : item.stock <= item.policy.safetyStock
+                          ? "Low stock"
+                          : "In stock"}
                   </StatusLabel>
                   {item.confirmedIncoming > 0 && <small>Delivery confirmed</small>}
                 </td>
@@ -2996,9 +3238,15 @@ function InventoryView({
                 {product.sku} · {product.unit}
               </p>
               <p>
-                {app.suppliers.find((supplier) => supplier.id === product.policy.supplierId)
-                  ?.name || "No supplier assigned"}{" "}
-                · {product.policy.leadTimeDays}-day delivery
+                {product.purchasingSetupRequired ? (
+                  "Purchasing setup required. A manager must save the purchasing policy."
+                ) : (
+                  <>
+                    {app.suppliers.find((supplier) => supplier.id === product.policy.supplierId)
+                      ?.name || "No supplier assigned"}{" "}
+                    · {product.policy.leadTimeDays}-day delivery
+                  </>
+                )}
               </p>
             </div>
             <button
@@ -3051,14 +3299,50 @@ function InventoryView({
                 fixed={{
                   productId: product.id,
                   expectedVersion: product.policy.version,
-                  unitPriceSen: product.policy.unitPriceSen,
-                  shippingSen: product.policy.shippingSen,
-                  maxOrderSen: product.policy.maxOrderSen,
-                  nextReviewDate: product.policy.nextReviewDate,
                 }}
                 submit="Save purchasing policy"
               >
-                <PolicyFields p={product.policy} state={app} precision={product.precision} />
+                <PolicyFields
+                  p={product.purchasingSetupRequired ? undefined : product.policy}
+                  state={app}
+                  precision={product.precision}
+                />
+                <Field
+                  label="Next review date"
+                  name="nextReviewDate"
+                  type="date"
+                  value={product.policy.nextReviewDate}
+                />
+                <details>
+                  <summary>Reference costs and approval limit</summary>
+                  <p className="subtle">
+                    Leave costs blank if unknown. An unpriced simulated request cannot be checked
+                    against the approval limit.
+                  </p>
+                  <Field
+                    label="Reference unit cost (sen)"
+                    name="unitPriceSen"
+                    type="number"
+                    required={false}
+                    min={0}
+                    value={product.policy.unitPriceSen ?? ""}
+                  />
+                  <Field
+                    label="Shipping cost (sen)"
+                    name="shippingSen"
+                    type="number"
+                    required={false}
+                    min={0}
+                    value={product.policy.shippingSen ?? ""}
+                  />
+                  <Field
+                    label="Approval limit (sen)"
+                    name="maxOrderSen"
+                    type="number"
+                    min={1}
+                    value={product.policy.maxOrderSen || 200000}
+                  />
+                </details>
               </ActionForm>
             </details>
           )}
@@ -3368,18 +3652,21 @@ function OrderRow({ order, app, run }: { order: PurchaseOrder; app: AppState; ru
   const receiptHelpId = useId();
   const received = Math.round((Number(usable) + Number(damaged)) * 1000);
   const remaining = Math.round(order.remaining * 1000);
-  const wholeQuantities = Number.isInteger(Number(usable)) && Number.isInteger(Number(damaged));
+  const validPrecision = [usable, damaged].every((value) => {
+    const scaled = Number(value) * 10 ** (product?.precision ?? 0);
+    return Number.isFinite(scaled) && Math.abs(scaled - Math.round(scaled)) <= 1e-7;
+  });
   const validReceipt =
     usable !== "" &&
     damaged !== "" &&
     Number(usable) >= 0 &&
     Number(damaged) >= 0 &&
-    (app.role !== "staff" || wholeQuantities) &&
+    validPrecision &&
     Number.isFinite(received) &&
     received > 0 &&
     received <= remaining;
   if (!product) return null;
-  const receiptStep = app.role === "staff" ? 1 : 10 ** -product.precision;
+  const receiptStep = 10 ** -product.precision;
   return (
     <article className="order-sheet">
       <StatusLabel
@@ -3551,17 +3838,15 @@ function OrderRow({ order, app, run }: { order: PurchaseOrder; app: AppState; ru
                 </div>
               </details>
               <p id={receiptHelpId} className="subtle" role="status">
-                {app.role === "staff" && !wholeQuantities
-                  ? "Enter whole quantities, such as 1, 2 or 3."
-                  : app.role === "staff" && order.remaining < 1
-                    ? "A fractional balance remains. The Manager can record this receipt."
-                    : usable === ""
-                      ? `Enter the quantity received. Up to ${fmt(order.remaining)} ${order.unit} remain on this order.`
-                      : !validReceipt
-                        ? "Enter a positive total within the quantity remaining on this order."
-                        : received === remaining
-                          ? `Matches the remaining order: ${fmt(received / 1000)} ${order.unit}.`
-                          : `Partial delivery: ${fmt(received / 1000)} of ${fmt(order.remaining)} ${order.unit}. The rest stays outstanding.`}
+                {!validPrecision
+                  ? `Use at most ${product.precision} decimal places for ${product.unit}.`
+                  : usable === ""
+                    ? `Enter the quantity received. Up to ${fmt(order.remaining)} ${order.unit} remain on this order.`
+                    : !validReceipt
+                      ? "Enter a positive total within the quantity remaining on this order."
+                      : received === remaining
+                        ? `Matches the remaining order: ${fmt(received / 1000)} ${order.unit}.`
+                        : `Partial delivery: ${fmt(received / 1000)} of ${fmt(order.remaining)} ${order.unit}. The rest stays outstanding.`}
               </p>
               <p className="subtle">
                 Only usable goods increase stock. Damaged goods reduce the order balance and need

@@ -21,6 +21,11 @@ import {
   submitForecast,
   validateHistory,
 } from "./forecast.ts";
+import {
+  type CoverageSnapshot,
+  captureCoverageSnapshot,
+  coveragePolicyIdentity,
+} from "./forecasting/snapshot.ts";
 import { importData } from "./imports.ts";
 import { DEMO_SEED_VERSION, LEGACY_DEMO_SEED_VERSION, seedDatabase } from "./seed.ts";
 import {
@@ -115,6 +120,7 @@ function snapshotIdentity(productId: string) {
     policy: p.version,
     cutoff: metadata("closed_through"),
     decision: metadata("demo_date"),
+    forecastConfig: forecastConfigIdentity(),
   };
 }
 
@@ -157,11 +163,13 @@ function startAnalysis(productId: string): string {
         day.quantity >= 0 &&
         (index === 0 || addDays(days[index - 1].date, 1) === day.date),
     );
-  const usableHistory = checked.valid || provisional;
+  const usableHistory = p.version > 0 && (checked.valid || provisional);
   const dataReason =
-    checked.days.length === 0
-      ? "More sales history needed. End a day with complete sales records."
-      : "More sales history needed. Complete the missing sales days before analysis.";
+    p.version === 0
+      ? "Purchasing setup required. A manager must save supplier terms and purchasing policy before a recommendation can be made."
+      : checked.days.length === 0
+        ? "More sales history needed. End a day with complete sales records."
+        : "More sales history needed. Complete the missing sales days before analysis.";
   const daysUntilReview = Math.max(
     0,
     Math.round((Date.parse(p.nextReviewDate) - Date.parse(snap.decision)) / 86400000),
@@ -179,13 +187,8 @@ function startAnalysis(productId: string): string {
   const existing = db
     .prepare("SELECT id,status FROM analysis_runs WHERE org_id=? AND identity_hash=?")
     .get(ORG, hash);
-  if (existing && existing.status !== "FAILED") return String(existing.id);
-  if (existing)
-    db.prepare("UPDATE analysis_runs SET identity_hash=? WHERE id=? AND org_id=?").run(
-      `${hash}:failed:${existing.id}`,
-      String(existing.id),
-      ORG,
-    );
+  // Failed/unknown submissions also retain their identity: never blindly resubmit a billed job.
+  if (existing) return String(existing.id);
   const analysisId = uid();
   const request: ForecastRequest = {
     requestId: analysisId,
@@ -196,6 +199,12 @@ function startAnalysis(productId: string): string {
     dates: checked.days.map((d) => d.date),
     values: checked.days.map((d) => d.quantity),
     stockoutFlags: checked.days.map((d) => d.stockout),
+    ...(process.env.FORECAST_MODE === "RUNPOD"
+      ? {
+          modelId: "amazon/chronos-bolt-small",
+          modelRevision: process.env.CHRONOS_MODEL_REVISION || "",
+        }
+      : {}),
   };
   const analysis: Analysis = {
     id: analysisId,
@@ -218,7 +227,12 @@ function startAnalysis(productId: string): string {
     productId,
     hash,
     analysis.status,
-    JSON.stringify({ ...request, snapshot: snap }),
+    JSON.stringify({
+      ...request,
+      snapshot: snap,
+      coverage: captureCoverageSnapshot(productId),
+      providerIdentity: forecastConfigIdentity(),
+    }),
     null,
     JSON.stringify(analysis),
   );
@@ -313,6 +327,8 @@ function demoEstimate(request: ForecastRequest): ForecastResult {
   const mean = request.values.reduce((sum, value) => sum + value, 0) / request.values.length;
   return {
     status: "COMPLETED",
+    requestId: request.requestId,
+    productId: request.productId,
     source: "DEMO_ESTIMATE",
     modelId: "demo/recorded-sales-average",
     modelRevision: "available-days-v1",
@@ -347,6 +363,8 @@ export async function processAnalysis(id: string, poll = false) {
   const input = JSON.parse(String(run.request)) as ForecastRequest & {
     snapshot: ReturnType<typeof snapshotIdentity>;
     submitted?: boolean;
+    providerIdentity?: string;
+    coverage?: CoverageSnapshot;
   };
   if (!poll) {
     if (input.submitted || analysis.jobId) return;
@@ -370,6 +388,21 @@ export async function processAnalysis(id: string, poll = false) {
   let result: Analysis["forecast"];
   let failure: string | null = null;
   try {
+    const providerIdentity = forecastConfigIdentity();
+    // A revision change may still retrieve the saved job from the same endpoint.
+    // Its pinned result is retained as stale evidence, never a fresh recommendation.
+    const samePollingEndpoint =
+      poll &&
+      analysis.jobId &&
+      input.providerIdentity?.startsWith("RUNPOD:") &&
+      providerIdentity.startsWith("RUNPOD:") &&
+      input.providerIdentity.split(":")[1] === providerIdentity.split(":")[1];
+    if (
+      input.providerIdentity &&
+      input.providerIdentity !== providerIdentity &&
+      !samePollingEndpoint
+    )
+      fail("Forecast provider configuration changed. Start a new analysis.", 503, "CONFIGURATION");
     result =
       input.values.length < 28
         ? demoEstimate(input)
@@ -419,6 +452,14 @@ export async function processAnalysis(id: string, poll = false) {
         return;
       }
       createRecommendation(analysis);
+      if (input.coverage) {
+        input.coverage.policyIdentity = coveragePolicyIdentity(policy(analysis.productId));
+        db.prepare("UPDATE analysis_runs SET request=? WHERE id=? AND org_id=?").run(
+          JSON.stringify(input),
+          id,
+          ORG,
+        );
+      }
       audit(
         "system",
         "Analysis finished",
@@ -450,7 +491,6 @@ export function executeAction(
   if (input.organisationId && input.organisationId !== ORG)
     fail("Organisation access denied.", 403);
   const managers: ActionName[] = [
-    "createProduct",
     "updatePolicy",
     "approve",
     "reject",
@@ -486,12 +526,41 @@ export function executeAction(
     let analysisIds: string[] | undefined;
     if (action === "createProduct") {
       requireOpenDay();
+      if (role === "staff") {
+        const basic = new Set([
+          "name",
+          "sku",
+          "unit",
+          "precision",
+          "openingStock",
+          "openingDate",
+          "demoGeneration",
+        ]);
+        if (Object.keys(input).some((field) => !basic.has(field)))
+          fail(
+            "Employees can create inventory and opening stock only. Purchasing policy requires a manager.",
+            403,
+            "FORBIDDEN",
+          );
+      }
       const id = uid();
-      const sku = text(input.sku, "SKU", 40);
+      let sku = optionalText(input.sku, "SKU", 40);
+      if (!sku) {
+        const existing = db.prepare("SELECT id FROM products WHERE org_id=? AND sku=?");
+        let sequence = 1;
+        do {
+          sku = `DEMO-${String(sequence++).padStart(4, "0")}`;
+        } while (existing.get(ORG, sku));
+      }
       const name = text(input.name, "Product name", 100);
       const unit = text(input.unit, "Unit", 24);
       const precision = integer(input.precision, "Quantity precision", 0, 3);
-      const p = readPolicy(input, precision);
+      if (unit.toLowerCase() === "units" && precision !== 0)
+        fail("Countable units require quantity precision 0.");
+      const openingDate = date(input.openingDate ?? metadata("demo_date"), "Opening date");
+      if (openingDate !== metadata("demo_date"))
+        fail("Opening date must be the open demo day. Import earlier sales separately.");
+      const p = input.supplierId === undefined ? null : readPolicy(input, precision);
       const opening = quantity(input.openingStock, precision, "Opening stock", true);
       if (db.prepare("SELECT id FROM products WHERE org_id=? AND sku=?").get(ORG, sku))
         fail("This SKU already exists.", 409);
@@ -502,29 +571,32 @@ export function executeAction(
         name,
         unit,
         precision,
-        metadata("demo_date"),
+        openingDate,
       );
-      db.prepare("INSERT INTO policies VALUES(?,?,?,?,?)").run(
-        id,
-        ORG,
-        p.supplierId,
-        1,
-        JSON.stringify(p),
-      );
+      if (p)
+        db.prepare("INSERT INTO policies VALUES(?,?,?,?,?)").run(
+          id,
+          ORG,
+          p.supplierId,
+          1,
+          JSON.stringify(p),
+        );
       if (input.createOpening !== false)
         postMovement({
           productId: id,
           eventKey: `opening:${id}`,
           type: "OPENING_BALANCE",
           milli: opening,
-          date: metadata("demo_date"),
+          date: openingDate,
           reference: "Product setup",
           reason: "Initial synthetic stock",
           role,
         });
       audit(role, "Product created", id, `${name}, ${unit}.`, null, p);
       entityId = id;
-      message = "Item added. Record sales, then select End day for a restock check.";
+      message = p
+        ? "Item added. Record sales, then select End day for a restock check."
+        : "Item added. Purchasing setup required before restock recommendations.";
     } else if (action === "updatePolicy") {
       const id = text(input.productId, "Product");
       const row = productRow(id);

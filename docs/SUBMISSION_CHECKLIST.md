@@ -1,178 +1,101 @@
-# eStock: complete submission checklist
+# eStock: submission checklist
 
-20 October 2026 | TooGoodToBeTrue | Domain 2 | All boxes remain unverified unless supported by actual evidence.
+Updated 23 October 2026 for document-assisted inventory. **Unchecked means unverified. Documentation drafts do not establish readiness.** Current task authorises documentation only; no runtime/Git/publication/account actions below may be performed from this checklist.
 
-**Internal target:** Saturday, 24 October 2026, 20:00 MYT. PH/orientation set 25 October, 07:59:59 AM; website/FAQ say 11:59 PM. Use the earlier deadline until official clarification. See COMPLIANCE_MATRIX.md for sources and all conflicts.
+[Compliance and conflicts](COMPLIANCE_MATRIX.md) · [source verification](submission/SOURCE_VERIFICATION_2026_10_23.md) · [PRD](product/prd.md)
 
-The internal PRD is product/prd.md. Internal files do not replace official PDF templates. Names other than the two official PDFs below are team conventions, not claimed organiser filename restrictions.
+Internal target **24 October 2026, 20:00 MYT**. PH/earlier orientation: **25 October 2026, 07:59:59 AM MYT**; public website/FAQ: **25 October 2026, 11:59 PM MYT**. Use earlier cutoff until authoritative written clarification. Freeze judged source/live build/materials after applicable deadline.
 
-## 1. Six preliminary deliverables
+## 1. All six preliminary deliverables
 
-| No. | Artifact | Required file/URL | Complete when |
+| No. | Deliverable | Final file/link | Current readiness |
 | --- | --- | --- | --- |
-| 1 | Official-template proposal PDF | submission/SDC2026_TooGoodToBeTrue_Preliminary.pdf | All fields complete, word limits correct, signed/dated |
-| 2 | Pitch deck | submission/eStock_Pitch_Deck.pptx; additional preview PDF | Opens correctly; problem/solution/technical/impact content matches video |
-| 3 | Working prototype | Live Replit/deployment URL and access guide | Tested in a fresh session; core journey and UI work |
-| 4 | Technical & Tools Declaration | submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf | All actual resources/proof included; signed/dated |
-| 5 | GitHub source | Correct public repository URL | Source matches demo; Apache LICENSE; committee access |
-| 6 | Pitch/demo video | YouTube URL; optional local master submission/eStock_Pitch_Demo.mp4 | 5–7 minutes, accessible, shows prototype |
+| 1 | Official-template proposal PDF | `SDC2026_TooGoodToBeTrue_Preliminary.pdf` | Updated Markdown draft only; official PDF/signature not produced here |
+| 2 | Pitch deck | Team convention: `eStock_Pitch_Deck.pptx`, backup PDF | New narrative plan only; no aligned deck verified |
+| 3 | Accessible working prototype | Working URL or accessible build plus instructions | Legacy local app exists; new document-intake journey unimplemented |
+| 4 | Technical & Tools Declaration with actual evidence | `SDC2026_TooGoodToBeTrue_TechDeclaration.pdf` | Draft updated; proof completeness/signature/export pending |
+| 5 | Public GitHub source, Apache 2.0 and committee access | Correct submitted repo URL | Repository/LICENSE exist; public/judge/committee access not verified here |
+| 6 | 5–7-minute YouTube pitch/demo | Judge-accessible YouTube URL | New script plan only; no aligned video verified |
 
-No explicit preliminary deck extension requirement was found in reviewed sources. The team chooses PPTX for editing/opening and a backup PDF. No official ten-slide cap is verified; the pitch guide's ten-slide outline is a team recommendation.
+All six are required (PH §6.3.5). A static mockup/video does not replace interactive prototype access. No official preliminary slide cap was verified; PPTX/backup PDF and six-minute video target are team choices. Final-round .pptx/10-minute pitch requirements are separate in the matrix.
 
-## 2. Official proposal
+## 2. Official proposal and truthful fields
 
-- [ ] Use the [PT template](https://drive.google.com/file/d/1jNjuMJfhMYjo3qQw_PmmeGM-INEwuleo/view), not just an export of the long PRD.
-- [ ] Team, Domain 2, SDG 8, eStock, leader, contact, university, four members.
-- [ ] Problem Context ≤250 words.
-- [ ] Proposed AI Solution ≤300 words.
-- [ ] Conceptual Tech Stack: framework/API/DB/cloud, block diagram, sponsor usage.
-- [ ] Design-Thinking/Deployment ≤200 words.
-- [ ] Exact SDG subtargets 8.2/8.3.
-- [ ] Numeric baseline, core KPI, percentage Phase 2 target; distinguish assumptions from results.
-- [ ] GenAI/Database/Cloud checklist for all members completed truthfully; source conflict clarified.
-- [ ] Prior-owned/pre-existing work yes/no with explanation if needed.
-- [ ] For significant pre-event assets, record applicability of OH §8.2.1 organiser approval, status and written reference/date if required. Clarify uncertainty before marking complete; distinguish ordinary supporting libraries.
-- [ ] Third-party code/data/models and licences.
-- [ ] Employment/internship IP conflicts yes/no using each member's facts.
-- [ ] All members review/adapt the narrative and can explain it.
-- [ ] Actual leader signature and date.
-- [ ] Export one PDF with the official name; open it to check clipping, fonts and page breaks.
-
-Source draft: submission/PROPOSAL_DRAFT.md relative to docs/. This is not yet an official PDF or signed document.
+- [ ] Transfer [proposal draft](submission/PROPOSAL_DRAFT.md) into the [official template](https://drive.google.com/file/d/1jNjuMJfhMYjo3qQw_PmmeGM-INEwuleo/view), export/open PDF and inspect layout.
+- [ ] Correct eStock/team/Domain 2/SDG 8.2/8.3, four names/Xiamen University and leader contacts from private records.
+- [ ] Problem ≤250, solution ≤300, design/deployment ≤200 words after final edits.
+- [ ] Architecture distinguishes legacy code from target PostgreSQL/Gemini and actual Replit role/proof.
+- [ ] Numeric baseline/KPI/Phase 2 percentage are measured or explicitly assumptions/targets; no invented OCR accuracy/savings/interviews/pilot.
+- [ ] All-member GenAI/Database/Cloud workshop checklist answered truthfully; resolve X-02 attendance/tasks/replay rules.
+- [ ] Prior-owned work, third-party resources/licences and employment/internship IP answered from team facts.
+- [ ] Significant pre-event assets: verify OH §8.2.1 applicability/approval status and written reference; do not assume declaration alone resolves it.
+- [ ] Team reviews/adapts/explains content; leader provides actual signature/date after review.
 
 ## 3. Technical & Tools Declaration
 
-- [ ] Use the [TD template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view).
-- [ ] Team/leader/contact/university/live URL/repository URL.
-- [ ] Architecture ≤200 words.
-- [ ] Languages/frameworks/libraries: names, actual versions, purpose, licences.
-- [ ] External APIs: provider/purpose/free-paid-sponsor tier; no keys.
-- [ ] Hosting/storage/DB/auth/compute: provider, actual plan and region.
-- [ ] Runtime model: ID, pinned revision, pretrained/fine-tuned/trained, source and terms.
-- [ ] Dataset: generator/version/seed/synthetic/no personal records, source/licence.
-- [ ] AI-assisted development: actual Codex/model/tool, purpose and extent.
-- [ ] Team review/testing explanation ≤100 words.
-- [ ] Sponsor resources: Replit/RunPod credit/platform and mentoring if actually used.
-- [ ] Essential/replaceable explanation ≤100 words.
-- [ ] Privacy/data handling ≤150 words.
-- [ ] Risks/limitations ≤150 words.
-- [ ] Licence/security/access/declaration checklist completed truthfully.
-- [ ] Non-applicable categories marked No/None; unknowns are not disguised as None.
-- [ ] Replit/RunPod proof included in this PDF.
-- [ ] Leader signature and date.
-- [ ] Correctly named PDF exported and inspected.
+- [ ] Transfer [declaration draft](submission/TECH_DECLARATION_DRAFT.md) into [official template](https://drive.google.com/file/d/1LBXfXrFblX-dHanSP8jhUOMGfGGxY2ew/view); complete all categories, then inspect exported PDF.
+- [ ] Architecture ≤200, team review ≤100, replaceability ≤100, privacy ≤150, limitations ≤150 words.
+- [ ] List actual languages/frameworks/libraries/model IDs/versions/licences and cloud plans/regions/tiers from evidence, not guesses.
+- [ ] Separate planned Gemini/PostgreSQL from actual historical Next.js/SQLite/RunPod/training/development-tool usage.
+- [ ] Include historical RunPod run `20261021T110320Z`, metrics/selection/run metadata, actual packages/model revision and own-account proof; do not erase it after pivot.
+- [ ] Resolve historical team-history dataset generator/seed/author provenance before claiming synthetic compliance.
+- [ ] Declare actual AI development assistance, extent, current documentation-source reads and team responsibility.
+- [ ] No blank categories; No/None only if truly inapplicable. Unknown account/tier/proof is not None.
+- [ ] Accurate image handling, provider terms/tier/retention and account/session/telemetry data after implementation; no Gemini zero-retention claim.
+- [ ] No secrets/private contacts/payment details in source/history/logs/proof/video. Leader signature/date are genuine.
 
-Source draft: docs/submission/TECH_DECLARATION_DRAFT.md. Do not declare planned resources as already used.
+## 4. Platform evidence and unresolved requirements
 
-## 4. Replit and RunPod proof
+- [ ] Replit actually forms part of solution (PH §9.2), with own-account/project evidence (§10.6): live deployment URL, project/history link or credit-finished proof. Spending all credit is not required.
+- [ ] Verify actual hosted persistence across refresh/restart/redeploy and judge access; local SQLite persistence does not prove deployment durability.
+- [ ] Obtain written clarification X-03: PH §9.3 GPU-conditional RunPod versus older sample general Required wording, given hosted-Gemini target. Do not invent exemption or add GPU features solely to close a checkbox.
+- [ ] For actual historical RunPod use, include own dashboard Pod ID/GPU/runtime; Serverless endpoint substitutes Pod ID if used (PH §10.7). Complete account/runtime/proof review and redact secrets.
+- [ ] Do not claim a connected app/Serverless round trip or OCR from historical training alone.
+- [ ] Preserve separate X-09 verbal Orbyte workspace issue; confirm written expectation/access/screenshot permission. No live API/sandbox/integration claimed.
 
-- [ ] Replit actually forms part of the solution in the team's account/project.
-- [ ] Include at least one PH §10.6 proof: live URL, project history link or credit-finished proof; exhausting credit is not required.
-- [ ] Model actually performs inference on RunPod; merely storing code/model is insufficient.
-- [ ] Own-account dashboard shows Pod ID, GPU type and runtime.
-- [ ] For serverless, endpoint URL replaces Pod ID; clarify GPU/runtime/equivalent evidence if the display differs.
-- [ ] Actual model request/result, revision, data hash and timestamp stored as supporting evidence.
-- [ ] Redact API keys/payment details/tokens. Do not fabricate screenshots.
-- [ ] Include proof in TechDecl; additional standalone PDFs may follow the sample if chosen.
+Historical proof files exist under `submission/evidence/`; existence alone is not final proof completeness. Current sample ZIP fetch failed (404), so its older wording remains historical/unresolved. No new cloud action is authorised.
 
-Recommended team paths:
+## 5. New prototype acceptance: future work
 
-    submission/REPLIT PROOF OF USE.pdf
-    submission/RUNPOD PROOF OF USE.pdf
-    submission/evidence/forecast-evaluation.csv
-    submission/evidence/forecast-evaluation.md
-    submission/evidence/acceptance-results.md
-    submission/evidence/demo-access-check.md
+- [ ] Entire competition catalogue/suppliers/documents/images/evaluation records team-created synthetic.
+- [ ] Manager/shared Staff roles, direct backend denial including full-History/draft reads, honest shared-account attribution.
+- [ ] Empty startup, generated product ID, one base unit/Opening, no mandatory SKU; Opening 0 clarification.
+- [ ] Inventory/search and Low stock at 0/4, not 5.
+- [ ] Positive integer Take/Return, no negative stock under concurrent Take, persistent retry identity.
+- [ ] Manager backend image extraction, validated allowlisted non-monetary output, clear missing/unreadable-field correction.
+- [ ] Official-name/confirmed-alias matching, ambiguous alias/variant choice, unknown-product creation without double-counted Opening plus Intake.
+- [ ] Manual carton/base-unit conversion; preserve raw versus approved fields.
+- [ ] Draft/Approved/Discarded persistence; closure/discard changes no stock; Approved immutable.
+- [ ] Actual-receipt confirmation; order-only/advance invoice does not automatically add stock.
+- [ ] Atomic all-line approval/rollback and concurrent/repeated approval/edit protection; one draft affects stock once.
+- [ ] Preserve Document date and server Approved at, MYT presentation, no ledger backdating.
+- [ ] No permanent application images in DB/disk/object/browser/log/telemetry/cache; reopened draft needs re-upload. Authored synthetic assets distinguished.
+- [ ] Provider failure changes no stock; mock/replay output never described as live OCR; embedded document instructions ignored as authority.
+- [ ] Manager History reconciles Opening/Intake/Take/Return and immutable approval snapshots.
+- [ ] Phone/desktop/keyboard/loading/error/conflict usability checked with actual evidence and required UI Delivery Gate.
+- [ ] Deployment/access/persistence verified on actual approved environment.
 
-These files have not been created by the PRD work. Actual evidence can only be produced after implementation/testing.
+FR-16 similar-document warnings are **P1**, separately tracked after core; do not present single-draft approval protection as global duplicate-upload prevention. PRD AC-01–26 are acceptance specifications, not passing test results.
 
-## 5. Prototype and data
+## 6. Source, history and team readiness
 
-- [ ] Operational/evaluation dataset is team-created synthetic data, clearly labelled.
-- [ ] CSV and outgoing-stock/receiving forms.
-- [ ] Consistent stock ledger, canonical sales, daily cutoff and units.
-- [ ] Inference/model source/fallback visible.
-- [ ] Quantity accounts for lead time, cycle, buffer and dated inbound.
-- [ ] Pending unconfirmed POs prevent duplicate purchasing.
-- [ ] Manager notification and approval.
-- [ ] Staff cannot approve by calling the endpoint directly.
-- [ ] Stale/duplicate approvals handled.
-- [ ] Clear outbox/PO outcomes; do not claim a mock channel is real WhatsApp.
-- [ ] Supplier acknowledgement differs from message delivery.
-- [ ] Working partial/full receiving and audit.
-- [ ] Demonstrable errors/missing data/late inbound/rejection/fallback.
-- [ ] No real payments/statutory filing/advice.
-- [ ] No dependency on live Orbyte APIs; all mock contracts labelled.
-- [ ] Deployment/database persist after restart/redeploy.
-- [ ] Access guide/demo reset usable by judges without developer login.
+- [ ] Preserve original Apache 2.0 LICENSE and upstream notices; genuine continuous commits, no fabrication/backdating/rewrites.
+- [ ] Confirm repository creation/start compliance; add officially designated committee accounts and make source public before submission as required; test access fresh.
+- [ ] README/source/prototype/proposal/deck/video/declaration describe same actual build and distinguish legacy/target features.
+- [ ] Credentials/.env/private contacts/runtime data remain excluded from public source/packages; no edits required now.
+- [ ] All four members match portal; Marco leader; contacts/phone/university spelling confirmed privately.
+- [ ] All members joined Discord, attended required reveal and checked latest official announcements; workshops answered from facts.
+- [ ] Private Discord/portal/forms/credits/tutorial recordings checked by team; this documentation update did not verify them.
+- [ ] Everyone can explain extraction versus matching, actual receipt, permissions, units, ledger, retries, privacy, historical tools and limitations.
 
-## 6. GitHub and repository
+## 7. Deck/video/upload/freeze
 
-- [ ] Correct repository, created after 19 October, 20:00 MYT per TC/ORI.
-- [ ] Genuine history and meaningful development commits; no backdating/force rewrite/sample .git.
-- [ ] Root Apache 2.0 LICENSE preserved; upstream notices available.
-- [ ] README includes problem, solution, team/domain/SDG, implemented features, setup, model, demo, limitations and all links.
-- [ ] .env.example contains placeholders only; .gitignore excludes secrets/cache/private contacts.
-- [ ] No credentials in source, history, logs, screenshots or video.
-- [ ] Committee usernames taken from official instructions and given access before deadline.
-- [ ] Private during development; public before submission and accessible during judging.
-- [ ] Source/deployment/documents opened incognito.
-- [ ] Record judged release commit/tag and deployment snapshot URL.
-- [ ] Freeze source, deployment and materials after deadline unless authorised.
+- [ ] Follow [pitch/demo guide](submission/PITCH_AND_DEMO.md); use actual-build screenshots only and label roadmap/mock/replay.
+- [ ] YouTube final duration 5–7 minutes, accessible after processing; six-minute target. Check final uploaded version and clear audio/readable demo.
+- [ ] Show trigger → connected data → rules/AI → authorised approval → visible Inventory/History, plus one exception.
+- [ ] No invented OCR accuracy/savings/deployment, hidden secrets or unlabelled mocks. Historical forecast metrics are not new-product impact evidence.
+- [ ] All six artifacts, official PDF filenames/limits/signatures and links verified in a fresh session.
+- [ ] Portal field/file/size rules checked; one official submission through sdchack.my; retain confirmation/time.
+- [ ] Record matching build/commit/deployment snapshot and submitted URLs; freeze after applicable deadline unless officially authorised.
 
-## 7. Deck and video
-
-- [ ] Outline/script follow docs/submission/PITCH_AND_DEMO.md.
-- [ ] Editable PPTX opens on another machine; backup PDF available.
-- [ ] Readable text/screenshots; no fabricated features/figures.
-- [ ] Total video 5–7 minutes; six-minute target.
-- [ ] Demo shows trigger → connected data → forecast/rules → approval → outcome/log.
-- [ ] Show real RunPod inference, simulated channels and synthetic labels.
-- [ ] Show one exception and uncertainty limits.
-- [ ] Explain benefit/SDG, source/provenance, risk/fallback and Orbyte reuse.
-- [ ] Narrative matches prototype, proposal, declaration and README.
-- [ ] No API keys/private emails/payment details in the recording.
-- [ ] Judges can open YouTube URL; upload/processing complete.
-- [ ] Clear audio, readable cursor/window and duration checked after export.
-- [ ] Local recording/backup stored; does not replace mandatory prototype link.
-
-## 8. Team readiness and official updates
-
-- [ ] Four members match portal; Marco is leader; phone/contact/university details match.
-- [ ] All members joined Discord and checked official announcements.
-- [ ] Reveal attendance and workshop checklist verified.
-- [ ] All AI/framework/model/data/sponsor/prior-work usage declared.
-- [ ] Every member can explain model, baselines, quantity rules, database, approval and mocks.
-- [ ] Check domain-specific synthetic-only rule; general templates do not authorise real data.
-- [ ] Retain any written clarification of morning vs evening deadline.
-- [ ] Check submission/GitHub tutorials and portal fields; file sizes/types comply.
-- [ ] No undocumented mystery dependency on prototype/demo accounts.
-
-## 9. Final upload gate
-
-- [ ] All six items final and aligned.
-- [ ] Two official PDF names and word counts correct.
-- [ ] Check every link/file/video/deck/prototype/proof in a fresh session.
-- [ ] Accurate signatures/dates/declarations.
-- [ ] Submit through sdchack.my before the internal target.
-- [ ] Retain receipt/screenshot/portal confirmation timestamp.
-- [ ] Recheck submitted links, not just clipboard values.
-- [ ] Record Git commit/deployment version matching the video.
-- [ ] Freeze after deadline; changes only under official instruction.
-
-## 10. Owner and final-link tracker
-
-Complete when the team assigns work; names have not been allocated at the PRD stage.
-
-| Item | Owner | Target | Actual status/link |
-| --- | --- | --- | --- |
-| Official proposal PDF | NOT ALLOCATED | Friday draft; Saturday final | Not created |
-| Technical & Tools Declaration and proof | NOT ALLOCATED | Inventory from Tuesday; Saturday final | Not created |
-| PPTX and backup PDF | NOT ALLOCATED | Friday draft; final before recording | Not created |
-| Prototype and access guide | NOT ALLOCATED | Full workflow Thursday; stable Friday | Not created |
-| GitHub, committee access and licence | NOT ALLOCATED | Throughout development; check before submission | Repository exists; submission readiness unverified |
-| Video and YouTube | NOT ALLOCATED | Friday rehearsal; Saturday upload | Not created |
-| Portal submission/confirmation | NOT ALLOCATED | Saturday, 24 October, 20:00 MYT | Not submitted |
-| Workshops/announcements/metadata | NOT ALLOCATED | Check Tuesday and again before submission | Unverified |
-
-For each incomplete checkbox, record owner, blocker and next action. Do not let AI mark a checkbox complete without evidence.
+Artifact owners/presenter/operator/reviewer/upload roles still need team confirmation; workstream assignments alone do not allocate every submission artifact. For every incomplete item, record owner, blocker and next action. Do not tick from documentation alone.

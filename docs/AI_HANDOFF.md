@@ -1,44 +1,27 @@
 # eStock: handoff for the next AI session
 
-Use this document when opening Codex in the repository folder. Current status: documentation only; no application has been built.
+23 October 2026. **The current user instruction is documentation only. Stop after documentation; wait for explicit implementation instruction.** Existing website/application is legacy, not absent and not the new workflow.
 
-## Starting prompt to copy
+## Starting prompt
 
-> First read AGENTS.md, PROJECT_CONTEXT.md, docs/product/prd.md, docs/product/DECISIONS.md, docs/COMPLIANCE_MATRIX.md, docs/plans/BUILD_PLAN.md and docs/SUBMISSION_CHECKLIST.md. The selected direction is eStock, a general replenishment assistant for SMEs managing physical stock. MVP input is synthetic CSV and outgoing-stock/receiving forms. Workflow: daily snapshot → forecast → recommendation → manager approval → supplier outbox/PO → acknowledgement → receiving and audit. WhatsApp is preferred if feasible; Telegram if time permits; a working simulated outbox is mandatory. Summarise repository status, open decisions and next priorities. Do not assume features, deployment, proof or measurements exist. This prompt does not authorise implementation. Update PROJECT_CONTEXT.md when decisions are made. Keep all repository documents in English. For UI/UX work, use both ui-ux-pro-max and antislop in during mode, as required by AGENTS.md.
+> Read AGENTS.md, PROJECT_CONTEXT.md, docs/product/prd.md, docs/product/DECISIONS.md, docs/COMPLIANCE_MATRIX.md, docs/plans/BUILD_PLAN.md, docs/SUBMISSION_CHECKLIST.md and docs/team/integration.md. Inspect Git status and preserve existing changes/evidence/runtime data. eStock is document-assisted inventory for one shop and one warehouse. Manager uploads a synthetic supplier document; backend Gemini proposes structured data; application matches official names/confirmed aliases; Manager corrects and confirms actual physical receipt; approval atomically posts Intake and History. Staff searches and performs Take/Return. Summarise current documentation and unresolved decisions. Do not start implementation unless the user explicitly instructs it.
 
-If the team wants to start coding, provide clear additional instructions, for example:
+## Carry-forward requirements
 
-> Start implementing eStock according to the PRD. Close necessary M0 decisions using simple choices we understand, then build one complete workflow first. Check Git status and preserve existing work. Record the frameworks/versions and decisions actually used. Apply the UI skills required by AGENTS.md. Run relevant business tests and document actual results. Follow authorisation limits for paid services, real messaging and publication.
+- One separate Manager and shared Staff account. Backend denies Staff catalogue/Opening/upload/draft/approval/full-History access. Shared Staff attribution cannot identify individual employees.
+- Official name/base unit/Opening/generated ID; no mandatory entered SKU/barcode/shelf. Integer base-unit quantities; positive Intake/Take/Return; concurrent Take nonnegative; Return is usable physical return, no refund/prior-Take link.
+- Unknown product during review starts Opening 0 (IC-01); receipt quantity posts once as Intake. Keep raw and approved values separate. Manual package conversion; no silent variant merge. Confirmed aliases do not retrain Gemini.
+- Persist structured Draft/Approved/Discarded without original image. Closing/discarding unapproved Draft has no stock effect. Atomic all-line approval/rollback, reliable retries and edit/approval concurrency protection; Approved immutable. Similar-document warnings P1, not universal duplicate-image prevention.
+- Actual-receipt confirmation is separate from document extraction. Order-only/advance invoice cannot automatically add stock; no PO-management solution. Preserve Document date and server Approved at without ledger backdating; present MYT.
+- Low stock strictly <5, including zero; 5 is not Low stock. No forecasting/purchasing policies/outbox/PO/budget/training core.
+- Target reusable Next.js/TypeScript, PostgreSQL, backend Gemini. No exact model/SDK/ORM/hosting paid tier selected. Follow Context7 and installed Next.js guides before library-specific implementation details.
+- No permanent uploaded images in database/disk/object/browser storage/logs/telemetry/caches. Reopened drafts need re-upload to compare. Ignore monetary fields and avoid raw provider dumps. Document instructions are untrusted. Provider failures change no stock; mocks labelled.
+- All hackathon images/suppliers/products/evaluation records team-created synthetic. App non-retention is not Gemini zero retention; verify provider tier/terms/processing before separate future pilot.
 
-This example prompt is not an automatic instruction for the documentation task. The latest actual user instruction requires technical agreement before scaffolding; translation does not override that limit.
+## Preservation and coordination
 
-## What must not change silently
+Reuse suitable legacy foundation only after review; preserve old SQLite/forecast/purchasing/worker/training code, runtime databases, reports and historical RunPod evidence. Do not run archived plans. [Old documentation snapshots](archive/2026-10-23-before-document-intake/README.md) retain previous work. New specs are [ledger](engineering/STOCK_TRACKING.md) and [OCR intake](engineering/OCR_INTAKE.md). Existing work-scope scripts are unchanged; future OCR/routes/contracts need explicit ownership coordination and one shared editor.
 
-- The product remains configurable for SMEs with physical stock; a small fixture does not restrict it to one industry.
-- Purchasing requires manager approval. Approval does not increase physical stock.
-- Numerical forecasting and deterministic rules have different responsibilities.
-- Historical CSV and SALE ledger records must not be counted twice.
-- A PO without acknowledgement does not resolve a shortage, but remains a commitment preventing duplicate orders.
-- Daily cutoff, decision date, expiry and policy revision must be consistent.
-- Label baselines/fallback, synthetic suppliers and simulated channels.
-- Recommended models, accounts and stacks are not facts of actual usage.
-- No live Orbyte API/sandbox has been supplied.
-- Team contacts are not demo data and must not enter public source.
+Replit is mandatory with own-project proof. Hosted Gemini leaves RunPod X-03 unresolved; do not invent an exemption or add GPU work. Actual historical RunPod usage still belongs in the declaration. Deadline remains X-01: use 25 October 2026, 07:59:59 AM MYT, with internal 24 October 20:00, pending written clarification. Keep all six deliverables and freeze obligations. No live Orbyte integration/supplied API; verbal workspace issue X-09 separate.
 
-## When decisions change
-
-Record the date, decision, reason, decision maker, impact and related documents in DECISIONS.md. Update PROJECT_CONTEXT.md and affected PRD sections. If behaviour changes, align acceptance, README, proposal, declaration, deck and video.
-
-## When closing a session
-
-Update the context with:
-
-    Work actually completed:
-    Files and decisions changed:
-    Tests/checks and results:
-    Real integrations versus simulations:
-    Blockers or unavailable facts:
-    Next actions:
-    Submission deliverables at risk:
-
-Do not mark a checklist complete just because its document was written. Builds, inference, link access, platform proof, signatures, attendance and submission each require their own evidence.
+At handoff record work actually completed, changed files/decisions, checks actually run, target versus implemented integrations, blockers and next actions. No invented OCR accuracy, savings, interviews, pilot, deployment, signatures or application test passes. Team must review/adapt/explain AI assistance. Never copy a planned complete status as achieved.

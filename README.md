@@ -1,18 +1,37 @@
 # eStock
 
-A replenishment assistant for SMEs managing physical stock. Record sales, analyse complete daily history, review a purchase, and follow it through to receiving.
+eStock's approved direction is **document-assisted inventory for one shop and one warehouse**: turn supplier-document lines into a reviewed stock-intake draft, then update inventory only after a Manager confirms actual receipt. Staff search products and use Take or Return.
 
-**TooGoodToBeTrue · SDC Hackathon 2026 · Domain 2: Orbyte Smart SME Challenge.** eStock is a team proposal, not an official Orbyte module or a connected Orbyte integration.
+TooGoodToBeTrue · Xiamen University · SDC Hackathon 2026 · Domain 2, Orbyte Smart SME Challenge · SDG 8.2/8.3. eStock is a team proposal, not an official Orbyte module or a working Orbyte integration.
 
-**Implemented locally, 21 October 2026:** refined landing page and a persistent synthetic workspace at `/demo`. SQLite stores stock, policies, sales history, analyses, recommendations, decisions, purchase orders, a simulated supplier outbox, receipts and audit. The default forecasting adapter computes a labelled baseline from saved history. Actual RunPod GPU inference and Replit deployment are still unverified.
+## What exists and what is planned
 
-## Run locally
+| Layer | Status on 23 October 2026 |
+| --- | --- |
+| Existing website and application | Landing/header/sign-in text now describes the new product, retaining the existing style. The local SQLite demo still uses legacy inventory, sales/history, forecasting/baselines, replenishment, simulated PO/outbox/receiving and audit |
+| New approved product | Manager image upload → Gemini draft → official-name/alias matching → Manager review and actual-receipt approval → Intake + movement History; simple shared-Staff Take/Return |
+| Target stack | Reuse Next.js/TypeScript where suitable; PostgreSQL structured data and backend Gemini API. Migration, accounts, OCR and new approval workflow **not implemented or verified** |
+| Verification | Existing [reports](DOCUMENT_STATUS.md) describe legacy checks only. No new application tests, live OCR, PostgreSQL migration or deployment checks were run by this documentation task |
 
-Team documentation lives in [docs/team/](docs/team/README.md). Keep it out of a root `pages/` directory: Next.js treats that name as application routes, which conflicts with this project's `src/app` layout. The documentation was moved and its links and work scopes updated on 21 October to restore normal startup.
+The landing page now introduces document-assisted inventory and clearly says scanning is planned. Its Open demo links still lead to the earlier application, whose role selector permits legacy actions that differ from the new role matrix. It is not a demonstration of the new PRD. The user authorised the landing-copy follow-up only; implementing the new workflow still requires explicit instruction.
 
-The landing page uses a light-blue palette, a bold headline, word entrances and sections that reveal on scroll. Employee/manager panels have strong type and tight spacing. How it works explains recording stock, suggestions for what/when/how much to order, workspace review prompts and manager approval. The AI explanation keeps the current baseline-only demo clearly labelled. The tagline reads “Stock planning for SMEs”. Overview, Your team and How it works navigate to their sections, with hover underlines and no target outline. Hero action labels animate as one piece. Purchase previews and the footer wordmark remain removed. Reduced motion shows content immediately. The latest isolated production preview is [localhost:3006](http://localhost:3006/?v=reorder-copy), with its own synthetic database. Shared blue tokens still style the inventory workspace; green success, amber warnings and error distinctions are preserved. Backend calculations, permissions and persistence code were not changed.
+The [copy verification report](docs/verification/LANDING_COPY_2026_10_23.md) records responsive, link, keyboard and contrast checks. Scoped lint passes; full-project lint/typecheck encounter pre-existing errors in unchanged `src/lib/server/forecast.ts`. No CSS/layout or backend behaviour changed.
 
-Requires **Node.js 22.18+** with built-in SQLite. This implementation was checked on **Node 22.23.3**. Node emits an experimental SQLite warning on this version. Python 3 is needed only for worker contract tests, not for running the local app.
+## Approved scope
+
+Manager alone creates/edits products, enters Opening stock, scans/uploads, reviews/edits/matches/approves/discards drafts and sees full History. Manager and Staff view/search stock and perform Take/Return. MVP has a separate Manager account and one shared Staff account; History identifies that shared account/role, not individual employees. Backend permission checks are required.
+
+Products have an official name, one base unit, Opening and generated internal ID; no mandatory user-entered SKU/barcode/shelf location. Final quantities are integers. Opening 0 is an explicit catalogue-setup clarification; unknown products created during review start at zero, then receive Intake once on approval. Intake/Take/Return quantities are positive. Concurrent Take cannot make stock negative. Return means usable goods physically returned, not a refund or linked reversal of a previous Take.
+
+An image does not prove goods arrived. Manager must confirm actual receipt before stock increases, including for an invoice or order-detail image. Drafts persist as structured data, Approved is immutable and one draft posts only once atomically. Preserve raw versus approved fields and Document date versus server Approved at; an old printed date never backdates the ledger. Present MYT. Convert cartons manually to base units; aliases do not retrain Gemini. Low stock is strictly below 5, including zero; exactly 5 is not Low stock.
+
+No prices, monetary calculations, forecasting, purchasing policies, outboxes, PO management, budgets, fine-tuning, RAG, embeddings, self-hosted GPU inference or training pipeline in the new MVP. Similar-document warnings across separate uploads are P1; single-draft protection is not universal duplicate-image prevention.
+
+Only team-created synthetic images, products, supplier details and test records are permitted for the hackathon. Uploaded images may exist transiently but must not remain in app database/disk/object/browser storage, logs, telemetry or caches. Reopened drafts have no original image; Manager must re-upload for comparison. Gemini's own retention/terms/tier must be verified before any separate future real-world pilot.
+
+## Existing local setup: legacy only
+
+The existing commands/configuration remain unchanged. Historical local setup requires Node 22.18+ for built-in SQLite; Python is used by legacy worker/tests. The prior [README snapshot](docs/archive/2026-10-23-before-document-intake/README.md.txt) retains detailed setup/rehearsal/API guidance. These commands run the old application, not PostgreSQL/OCR:
 
 ```sh
 npm ci
@@ -21,121 +40,27 @@ npm run db:seed
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000), then **Open demo**. Choose a labelled demo manager or staff session. No cloud credentials are required. Migrations and the seed are also applied on first access; rerunning them preserves existing records.
+No commands above were executed in this documentation task. Legacy default database is ignored `data/estock.sqlite`; normal startup is documented as empty. Do not reset/populate it or change running services to inspect the new concept. `/`, `/login` and `/demo` remain legacy routes. Existing cloud/secret setup is not new Gemini configuration. Historical [stock](docs/verification/STOCK_TRACKING_2026_10_21.md), [forecast](docs/verification/FORECASTING_2026_10_21.md), [integration](docs/verification/INTEGRATION_2026_10_22.md), [UI](docs/verification/UI_2026_10_22.md) and [automatic SKU](docs/verification/AUTO_SKU_2026_10_22.md) evidence remains intact.
 
-The default database is `data/estock.sqlite`, ignored by Git. **Records survive page refresh and application restart.** An optional `.env.local`, based on `.env.example`, can change `ESTOCK_DB_PATH`, gate role selection with `ESTOCK_DEMO_ACCESS_CODE`, or configure the forecast provider. Never commit credentials. To try a separate fresh fixture without deleting data, stop the server and use another database path in `.env.local`, then restart and seed.
+## Read and coordinate
 
-Production locally:
+Start with [AGENTS.md](AGENTS.md), [context](PROJECT_CONTEXT.md), [English PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [stock specification](docs/engineering/STOCK_TRACKING.md), [OCR intake specification](docs/engineering/OCR_INTAKE.md), [build handoff](docs/plans/BUILD_PLAN.md) and [team integration](docs/team/integration.md). The [Indonesian source](docs/product/sources/PRD_ID_2026_10_23.md) is preserved; [superseded documentation](docs/archive/2026-10-23-before-document-intake/README.md) is historical. Existing scope scripts are unchanged and need future coordination for new modules.
 
-```sh
-npm run lint
-npm run typecheck
-npm test
-npm run test:worker
-npm run build
-npm start
-```
-
-Stop the dev server before starting production on the same port. Both server commands accept `-- --port 3001`. The build, local production server and restart persistence were tested; this is not deployment proof.
-
-## Try the complete synthetic journey
-
-1. Open `/demo` as **Manager**. **Needs attention** is the actionable review list; calculations and history are expandable.
-2. Go to **Stock records**, select **Takeaway cartons**, and save a dated sale of 5 units with a synthetic reference. Starting stock is 45 units; it becomes 40. A movement posts once and the form clears after success.
-3. Expand **Close the day and prepare analysis**. Confirm that all products’ sales records, including actual zero-sales days, are complete. Closing advances the explicit demo date and triggers analysis from the closing balance. It never invents unfinished days. Stockout flags can be recorded when closing; a zero closing balance is flagged automatically.
-4. Return to **Needs attention** and **Review purchase**. Inspect the supplier, quantity/unit, estimated cost, packaging, arrival and warnings. The default result is a **mock adapter using a saved-history baseline**, not AI. The app's seed has no pre-existing inbound, so its quantity can differ from the landing page's fixed 60-unit fixture.
-5. Keep the suggested quantity, acknowledge warnings and **Confirm approval**. A change needs a reason and must satisfy packaging, MOQ and the configured approval limit. Rejection also needs a reason. Approval creates exactly one PO and outbox message and leaves physical stock unchanged.
-6. Go to **Purchase orders**, then **Dispatch to simulator**. Expand the **SIMULATED supplier outbox** to inspect the persisted message. Optional failure controls save a simulated dispatch failure; retry keeps the same business reference.
-7. Record a **synthetic supplier acknowledgement**, keeping the approved date and terms. Dispatch is separate from acknowledgement. A changed arrival date places the commitment on hold for manager review; cancel with evidence and reanalyse before replacing it. Late deliveries do not quietly reduce the purchase need.
-8. Record a partial usable receipt with a synthetic evidence reference, then receive the remainder. Only usable goods add stock; usable plus damaged goods reduce PO remaining. Damage opens a manager exception, even if physical receiving is complete. No replacement stock is invented.
-9. Inspect **Stock records** and **Activity**, then refresh or restart. Saved balances, orders, messages, receipts and audit remain. The date is a synthetic demo clock, not your computer's current day.
-
-Staff can record stock and receive confirmed orders. Manager-only actions are checked on the server, including approval, policy changes, imports, dispatch and synthetic supplier events. Demo role selection simulates identity; it is **not production authentication or Orbyte SSO**. Every demo session shares one synthetic organisation/location.
-
-## Everyday screens
-
-- **Needs attention:** product, review timing, suggested order, short reason and next action. Expand calculations, daily projections, complete/partial weekly totals and model metadata when needed.
-- **Stock records:** movement form first; daily closing, purchasing configuration, product creation, CSV and history are separate disclosures. Products have explicit base units and 0–3 quantity decimal places. Unit and precision cannot be changed after creation.
-- **Purchase orders:** dispatch, acknowledgement and receiving follow their actual order state. Existing commitments prevent additional purchase approvals until resolved. Cancellation keeps previous receipts and audit.
-- **What-if:** enter stock, weekly sales, lead time, review interval, safety stock and packaging. This **Manual estimate** uses constant demand, no inbound and review due today. It never writes scenario inputs into operational records or fabricates daily history. Costs remain uncertain when reference price or shipping is unknown.
-- **Activity:** actor, MYT display time, action, explanation and expandable before/after record.
-
-The landing page retains its original browser-memory scenario/review demonstration under **Inspect the synthetic 60-unit example**. That example resets on refresh; it does not write stock, POs or messages. `/demo` is the persistent app.
-
-## CSV and data conventions
-
-Download the small example from the import disclosure or [public/fixtures/history-example.csv](public/fixtures/history-example.csv). Preview validates the full batch with row errors; commit revalidates it in one transaction. Identical source IDs are skipped. A historical correction requires the same source ID/SKU/date, an explicit correction option and a manager reason; it increments the revision and retains a before/after audit.
-
-Daily history headers:
-
-```csv
-source_record_id,sku,business_date,quantity_sold,data_complete,stockout_flag
-```
-
-Opening fixture headers:
-
-```csv
-source_event_id,sku,occurred_at,movement_type,quantity,reference,reason
-```
-
-Dates in these imports are `YYYY-MM-DD` business dates. Flags are `true`/`false`. Quantities must be explicit decimal values; blank does not mean zero. Optional `unit` must match the product. History must precede `ledger_start_date`; from that date, gross SALE movements are the canonical demand source. History imports never post stock. Opening imports accept only `OPENING_BALANCE` for a product created with **Create this opening balance now** unchecked, on its ledger start date. An existing opening balance cannot be replaced; use a reasoned stock adjustment.
-
-Quantities use integer thousandths internally, with each product's stricter precision enforced. Money uses integer **MYR sen**, reference price **per base unit** and explicit shipping. A blank cost is unknown, not zero, and blocks approval. The ledger is append-only; closed-day physical corrections use manager adjustments on the open day. See the [synthetic data card](docs/data/SYNTHETIC_DATA.md).
-
-## Stock tracking API
-
-Stages 1 and 2 add dedicated stock endpoints on the local `feat/stock-tracking` branch. They reuse the existing SQLite ledger and transaction service. Frontend pages and styling are unchanged in this stage.
-
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/products` | Current physical stock, separate confirmed incoming, units and ledger versions |
-| `GET /api/movements?productId=...&limit=50` | Movement history, newest first, with cursor pagination |
-| `POST /api/movements` | Record a sale, usage, loss, usable return or authorised adjustment |
-
-Use the existing synthetic session cookie. Mutations require JSON and an `Idempotency-Key` header; preserve the same key, source event and input on retries. Supplier receipts still use the purchase-order receiving workflow. The original `/api/demo` interface remains available.
-
-Frontend types, sample requests, validation/error handling, file ownership and stage-specific verification are documented in [the stock tracking agreement](docs/engineering/STOCK_TRACKING.md). Updates are request-based; refresh stock/history after a save. This stage does not add server push or a live POS connection.
-
-Stock verification on Node 24.16.0 passed **60 Node tests** and **24 production HTTP scenario groups**, including permissions, duplicate protection, concurrent sales and stock/history/session persistence across a fresh server process. Run `npm test`, then `npm run build` and `node scripts/verify-stock-tracking.mjs` to reproduce. The HTTP harness uses its own temporary database, stops its server processes and removes that database. It requires permission to listen on localhost. Evidence and limits: [stock verification](docs/verification/STOCK_TRACKING_2026_10_21.md). Progress and the next stage: [MVP checkpoints](docs/plans/MVP_PROGRESS.md).
-
-## Forecasting and purchasing rules
-
-The server separates demand estimation from purchasing arithmetic. `max(30, lead time + effective review interval)` forecast days are requested. Routine and urgent review timing differ. Confirmed inbound is considered on its actual date; overdue/unconfirmed goods never masquerade as on-hand. Raw need is clamped to zero before pack/MOQ rounding. Daily projections show shortages that a proposed arrival cannot resolve.
-
-The fixed **PRD test**, not a model result, uses demand 10/day, lead time 3, review interval 7, safety stock 20, usable stock 45 and confirmed inbound 25 in the horizon. Raw need is 50; packs/MOQ 12 give 60. Moving that inbound to day 12 gives raw 75 and packaged 84.
-
-`FORECAST_MODE=MOCK` is the default. It uses the 28-day mean or seasonal-naive baseline from saved history and exposes its source. Fewer than 28 complete consecutive days or unresolved gaps return **More complete history needed**, with no forecast purchase quantity. A server-side RunPod queue adapter and CUDA Python worker are implemented, with pending/completed/failed jobs, saved results, model/version validation and explicit fallback. **No live GPU inference was performed.** Configuration, dependency-lock and own-account proof steps: [worker/README.md](worker/README.md).
-
-## Replit and submission implications
-
-SQLite needs a **durable writable disk and one application instance**. A Replit workspace can run this application with Node 22.18+ and the commands above. Do not claim an ephemeral/autoscale deployment preserves its filesystem across redeployment. Before publishing, provide a persistent volume with a verified restart/redeploy test, or migrate the repository layer to a hosted persistent database. Configure server secrets through Replit, never public client variables. No paid resources were provisioned and no site was published here.
-
-Remaining submission work includes actual Replit usage/proof, real RunPod inference/evaluation and account evidence, team review, committee access, meaningful authorised commits, live judge access, official signed PDFs, deck and 5–7-minute video. No real supplier messaging is required for the core simulator. No commit, push, publication, service purchase or real message was performed by this implementation task.
-
-Use the earlier deadline pending authoritative clarification: **25 October 2026, 07:59:59 AM MYT**. Internal target: **24 October, 20:00 MYT**. Preserve the source conflict and freeze judged materials after the applicable deadline.
-
-## Team and project documents
-
-Before parallel edits, read [integration rules](docs/team/integration.md) and use the scope checker described there. Frontend landing and demo UI have separate edit boundaries; shared files require coordinated integration.
-
-Individual work pages: [team index](docs/team/README.md), [Vitto / frontend](docs/team/frontend.md), [Maxi / data](docs/team/data.md), [William / backend and system](docs/team/backend.md), [Marco / AI](docs/team/ai.md), and [shared demo](docs/team/demo.md).
-
-| Member | Assigned work | University |
+| Member | Assignment | University |
 | --- | --- | --- |
-| Marco Ryan Suseno | Team leader; AI | Xiamen University |
-| Riakudu Vittorios Surjoraharjos (Vitto) | Frontend | Xiamen University |
-| Maximillion Cang (Maxi) | Data | Xiamen University |
-| William Christiansen | System and backend | Xiamen University |
+| Marco Ryan Suseno | Leader / AI | Xiamen University |
+| Riakudu Vittorios Surjoraharjos | Frontend | Xiamen University |
+| Maximillion Cang | Data | Xiamen University |
+| William Christiansen | System / backend | Xiamen University |
 
-Assignments confirmed by the user on 21 October 2026. Registration contacts stay in ignored `.private/TEAM_DETAILS.md`.
+Private registration contacts stay outside public documentation. Repository: [Swiftny/sdc2026-TooGoodToBeTrue-domain2](https://github.com/Swiftny/sdc2026-TooGoodToBeTrue-domain2).
 
-- [Context and handoff](PROJECT_CONTEXT.md), [PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [build plan](docs/plans/BUILD_PLAN.md).
-- [Implementation plan](docs/plans/IMPLEMENTATION_2026_10_21.md), [visual rationale](DESIGN.md), [actual verification and Delivery Gate](docs/verification/WORKFLOW_2026_10_21.md).
-- [Compliance matrix](docs/COMPLIANCE_MATRIX.md), [submission checklist](docs/SUBMISSION_CHECKLIST.md), [pitch/demo guide](docs/submission/PITCH_AND_DEMO.md).
-- [Proposal draft](docs/submission/PROPOSAL_DRAFT.md), [tools declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md), [AI handoff](docs/AI_HANDOFF.md).
+## Competition and submission status
 
-Live prototype, Replit/RunPod proof, official PDFs, pitch deck and YouTube video are still unavailable. Repository remote: [Swiftny/sdc2026-TooGoodToBeTrue-domain2](https://github.com/Swiftny/sdc2026-TooGoodToBeTrue-domain2).
+[Compliance matrix](docs/COMPLIANCE_MATRIX.md) and [checklist](docs/SUBMISSION_CHECKLIST.md) retain all six preliminary deliverables: official-template proposal PDF, deck, accessible working prototype, Technical & Tools Declaration with actual proof, public GitHub source with Apache 2.0/committee access, and a 5–7-minute YouTube pitch/demo. Drafts are not completed deliverables.
 
-## Licence
+Replit is mandatory with own-account/project evidence (PH §9.2/§10.6); deployment and durable hosted storage remain unverified. PH §9.3 ties RunPod to GPU work and §10.7 requires proof for teams that used it. The older sample's general Required wording remains unresolved (X-03); hosted Gemini creates no invented exemption. Historical [RunPod training/evaluation](docs/plans/AI_RUNPOD_PLAN.md) remains declarable; it is not OCR evidence or proof of a connected Serverless app.
 
-The original [Apache 2.0 LICENSE](LICENSE) and Git history are preserved. Dependencies retain their own licences; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Synthetic operational data is created within this project; no real customer, supplier or registration contacts are used.
+PH/earlier orientation: **25 October 2026, 07:59:59 AM MYT**. [Website](https://sdchack.my/) and [FAQ](https://sdchack.my/faq) still show **11:59 PM MYT**. Use the earlier cutoff pending written clarification; internal target **24 October 2026, 20:00 MYT**. Freeze judged materials after the applicable deadline. Latest private announcements, portal fields, attendance, workshops, signatures and final access still require team verification.
+
+The original [Apache 2.0 LICENSE](LICENSE), Git history and historical evidence are preserved. See [third-party notices](THIRD_PARTY_NOTICES.md). The documentation pivot changed no application files; the subsequent authorised copy update changed only text in four frontend/shared files. Dependencies, CSS, backend, database schema, configuration and tests remain unchanged. No commit/push/publication or paid model call was made. Neither task authorises implementing the new workflow.

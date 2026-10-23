@@ -3,9 +3,9 @@ import "@fontsource-variable/manrope";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "eStock | Know when to reorder. Know how much.",
+  title: "eStock | From receipt to stock. With your approval.",
   description:
-    "A replenishment assistant for SMEs. See how sales and stock data can become a purchase recommendation, ready for manager approval. Synthetic prototype preview.",
+    "Document-assisted inventory for one shop and one warehouse. Review supplier-document drafts before approving stock intake, with simple Take and Return for staff. Document scanning is planned.",
   robots: { index: false, follow: false },
   icons: { icon: "data:," },
 };
