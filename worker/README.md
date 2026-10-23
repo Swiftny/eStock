@@ -1,3 +1,5 @@
+> **HISTORICAL — superseded 23 October 2026.** The active eStock MVP is document-assisted inventory with target PostgreSQL/backend Gemini. This older forecasting/purchasing/training material and its results/commands are preserved as history, not current build instructions. Do not execute its setup, model calls, deployment or next-stage tasks from the documentation-only request. No new GPU/training workflow is required by the product. Historical RunPod run `20261021T110320Z` and actual evidence remain declarable; older local “not run here” statements do not negate that separate training run. A connected application-to-Serverless inference is not proven by historical training. Existing code and evidence remain unchanged.
+
 # RunPod forecasting worker
 
 This worker is implemented but **has not run on RunPod or downloaded/executed Chronos here**. Seven local Python tests validate its request/evaluation logic and serialization; one substitutes simulated CUDA/pipeline modules. No real Torch, CUDA or RunPod package is executed by those tests. A successful mocked HTTP contract test is not a real GPU round trip.

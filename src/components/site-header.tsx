@@ -35,7 +35,7 @@ export function SiteHeader() {
             Sign in
           </a>
           <a className="button button-small button-primary landing-demo" href="/demo">
-            Try it now
+            Open demo
           </a>
         </div>
       </div>

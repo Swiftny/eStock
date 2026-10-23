@@ -1,21 +1,39 @@
-# Synthetic operational data card
+# eStock: synthetic document and inventory evaluation plan
 
-Updated 22 October 2026. Test fixture version: `estock-test-fixture-v1-20261022`, explicit literal fixtures and deterministic generation in `tests/synthetic-fixture.ts`. Project-created synthetic operational/test data, covered by the repository's Apache 2.0 licence. No external operational dataset or real contacts are used.
+23 October 2026. **New dataset/evaluation specification, not generated assets or measured results.** Domain 2 permits only team-created synthetic operational/evaluation data. All document images, supplier details, products and test records must be synthetic; do not recommend real Indonesian or Malaysian business receipts for the competition. A real-world pilot is separate future work after privacy/provider review.
 
-Normal startup is empty. `src/lib/server/seed.ts` initialises only blank-workspace metadata and the Demo supplier SIMULATED setting, with no inventory or transactions. The dataset below is explicitly loaded only in isolated tests. One synthetic organisation and three SKUs are used; no real messaging destination exists. User inventory is not part of this fixture.
+The [earlier data card](../archive/2026-10-23-before-document-intake/docs/data/SYNTHETIC_DATA.md.txt), existing fixtures, CSV files and reports remain historical and unchanged. Normal new-MVP startup should be empty; load synthetic fixtures explicitly only in isolated evaluation environments. No CSV primary-storage/import requirement is carried into the new core.
 
-| SKU | Unit / precision | Physical opening | Recorded sale on 20 Oct | Initial remaining | History before ledger |
-| --- | --- | --- | --- | --- | --- |
-| SYN-001 Takeaway cartons | units / whole | 55 | 10 | 45 | 168 constant days at 10/day |
-| SYN-002 Coffee beans | kg / 3 decimals | 23.5 | 1.5 | 22 | 168 days with a repeated weekday multiplier |
-| SYN-003 Cup lids | units / whole | 80 | 5 | 75 | 10 constant days at 5/day, deliberately short |
+## Planned fixture coverage
 
-Fixture history ends 19 October 2026. Its physical ledger starts 20 October; its SALE creates that day's complete canonical sales record. Main SKUs therefore initially have 169 dated observations. Analysis uses the latest 168, ending at the cutoff. Cup lids initially has 11 complete days and uses DEMO_ESTIMATE, an explicitly labelled available-days average rather than live AI or a validated forecast. RunPod requires at least 28 complete days. No PO/inbound is pre-seeded. The separate arithmetic fixture's 25 inbound units are not persisted inventory.
+| Case family | Team-created examples / ground truth |
+| --- | --- |
+| Catalogue | Official names, one base unit, Opening, generated internal IDs; similar size/colour variants; no mandatory SKU/barcode/shelf |
+| Supplier descriptions | Abbreviations, case/spacing, aliases, unknown names and intentional alias collisions; fictional supplier identities only |
+| Images | Receipt, invoice, delivery note, order-detail/advance invoice; synthetic Indonesian and Malaysian wording/date/unit layouts; blur/crop/rotation and missing date/quantity |
+| Monetary exclusion | Synthetic RM/Rp, price, tax/subtotal/amount columns present in source fixture but excluded from persisted application/provider-result fields |
+| Units | Raw boxes/cartons versus final integer pcs; verified manual factors and deliberately unknown factors |
+| Receipt status | Text-readable order with no delivery; only some physically received quantities; all approved quantities require Manager confirmation |
+| Reliability | Multi-line approval failure, same-draft replay, edit race, concurrent Takes, Take/Return retry, image re-upload for comparison |
+| Similar documents | Identical/similar dates and lines in separate drafts, including two genuine deliveries (P1 warning) |
+| Injection | Synthetic document text asking model/app to ignore rules; treated as data without authority |
 
-Coffee multipliers repeat `[0.9, 1, 1, 1, 1.1, 1.2, 0.8]`, with quantities rounded to thousandths. This is a fixed constructed pattern, not measured demand or randomness. Constant series make a simple mean baseline strong; there is no claim that a model improves it.
+For each case, record author, source-generation method, version, case ID, image hash where an authored fixture exists, expected extracted fields/uncertainty, product mapping, Manager-approved values/conversion, actual-receipt scenario and expected ledger result. Freeze evaluation cases before reporting improvements; keep prompt-development cases separate from held-out evaluation. The future asset format/location and fixture count are unresolved, not implemented by this task.
 
-The test helper requires an empty isolated database and inserts fixture records transactionally. Relevant unit tests create temporary databases, block external fetches, remove real provider settings and clean up while restoring the previous environment. Browser verification uses only `/private/tmp/estock-integration-browser-20261022.sqlite`; the normal user database is preserved. See [current evidence](../verification/INTEGRATION_2026_10_22.md). Plan ahead inputs are not added to operational history.
+Authored synthetic image assets can be retained as team-created test sources. **Application uploads, including uploaded copies of those fixtures, still follow transient-only image policy.** Do not use fixture retention to justify storing user uploads or their raw provider responses. Reopened application drafts contain structured fields only and must explain image re-upload.
 
-Daily completeness is explicit. New ledger days remain partial until a human closes the day, including confirmed zero-sales days and stockout flags. Missing days are not fabricated. Gross sales are the model target; damage, usage, adjustments and receipts are excluded. Historical CSV dates cannot overlap the ledger. Reviewed CSV corrections preserve source identity, increment revisions and record before/after values without posting physical stock.
+## Measurements to collect later
 
-For submission evaluation, freeze this generator/version, an explicit cutoff and resolved model/packages before running the model and both baselines. Retain input hash, dates, source, GPU runtime and the model's actual output. The worker implements validation origins 58/72 and final origin 124, with identical censored-day exclusions. No actual model evaluation results have been produced in this local task.
+- Field/date/quantity/line extraction correctness against declared ground truth, including missing fields and invalid structured output.
+- Correct/ambiguous/incorrect product suggestions, Manager correction rate and alias-collision outcomes; do not turn ambiguity into an accuracy win by hiding it.
+- Manual entry versus upload-to-reviewed-approval time on comparable synthetic tasks, with N, participants, case mix, median/range and failure handling.
+- Ledger/permission/retry/rollback/concurrency acceptance and image-retention inspection across storage/log/cache paths.
+- Mobile/desktop/keyboard task completion and actual Replit restart/redeploy persistence/access.
+
+Report provider/model/configuration, schema/prompt version, mock/live mode, date and limitations. No numerical OCR accuracy, time savings, interviews, pilot or passing application tests exist for the new concept. Synthetic results would not establish real-store performance.
+
+## Historical data and RunPod evidence
+
+Preserve `data/DATA_CARD.md`, generated 168-day DEMO series (seed 20261021) and team 2020–2026 SYN daily/weekly/monthly files. These served old forecasting/training, not receipt extraction. Team-history generator/seed/author provenance remains pending; do not silently claim it is verified synthetic merely because the filename or previous plan says so. Resolve before submission declarations/evaluation claims.
+
+Historical `submission/evidence/run_info.json`, `metrics.csv`, `selection.json` and RunPod proof remain unchanged. Run `20261021T110320Z` used Chronos-2 LoRA/RTX 4090. Declare actual historical usage even though training is outside active MVP. No data generation, regeneration, training or paid model API call occurred in this documentation task.

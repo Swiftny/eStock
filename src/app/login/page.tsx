@@ -49,7 +49,9 @@ export default function LoginPage() {
       <main id="login-main" className={styles.main} tabIndex={-1}>
         <p className={styles.eyebrow}>Your stock workspace</p>
         <h1>Welcome back.</h1>
-        <p className={styles.description}>Sign in to keep your stock and next orders in view.</p>
+        <p className={styles.description}>
+          Sign in to keep your products and current stock in view.
+        </p>
         <form className={styles.form} onSubmit={signIn} aria-busy={pending}>
           <label htmlFor="access-code">Workspace access code</label>
           <input
@@ -78,7 +80,7 @@ export default function LoginPage() {
           </span>
         </form>
         <a href="/demo" className={styles.tryLink}>
-          Try it now
+          Open demo
         </a>
       </main>
     </div>

@@ -1,3 +1,5 @@
+> **HISTORICAL — superseded 23 October 2026.** The active eStock MVP is document-assisted inventory with target PostgreSQL/backend Gemini. This older forecasting/purchasing/training material and its results/commands are preserved as history, not current build instructions. Do not execute its setup, model calls, deployment or next-stage tasks from the documentation-only request. No new GPU/training workflow is required by the product. Historical RunPod run `20261021T110320Z` and actual evidence remain declarable; older local “not run here” statements do not negate that separate training run. A connected application-to-Serverless inference is not proven by historical training. Existing code and evidence remain unchanged.
+
 # Demand forecasts and stock coverage: backend handoff
 
 21 October 2026. Step 3 covers MVP capabilities **2 and 3**. All operational records and local test responses are synthetic. **Local implementation and verification are complete; actual RunPod inference is pending.**

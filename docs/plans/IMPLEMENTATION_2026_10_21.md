@@ -1,3 +1,5 @@
+> **HISTORICAL — superseded 23 October 2026.** The active eStock MVP is document-assisted inventory with target PostgreSQL/backend Gemini. This older forecasting/purchasing/training material and its results/commands are preserved as history, not current build instructions. Do not execute its setup, model calls, deployment or next-stage tasks from the documentation-only request. No new GPU/training workflow is required by the product. Historical RunPod run `20261021T110320Z` and actual evidence remain declarable; older local “not run here” statements do not negate that separate training run. A connected application-to-Serverless inference is not proven by historical training. Existing code and evidence remain unchanged.
+
 # Local workflow implementation plan
 
 The user authorised frontend refinement and the persistent application on 21 October 2026. This supersedes the earlier landing-only pause. No commit, push, publication, service purchase or real supplier message is authorised.

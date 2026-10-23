@@ -1,50 +1,45 @@
-# Parallel work and integration
+# Work areas and coordinated integration
 
-The user requested conflict prevention on 21 October 2026. These rules supersede the earlier request for task pages without file boundaries. They apply to humans and AI assistants.
+Updated 23 October 2026 for document-assisted inventory. **Current user-authorised task is one coordinated documentation update across areas, with one sole editor per shared file. No code, scope-script or runtime changes.** Future implementation requires explicit instruction.
 
-Team guides live in `docs/team/`. Do not recreate a root `pages/` folder for documentation: Next.js treats that directory as application routes and fails alongside this project's `src/app` layout. The 21 October startup repair moved these guides and their scope entries together without changing application routes.
+Keep team Markdown in `docs/team/`, never a root `pages/` folder. Existing Next.js source/layout, Git history, databases, credentials, original LICENSE and all team changes/evidence remain intact. The [old integration guide](../archive/2026-10-23-before-document-intake/docs/team/integration.md.txt) preserves exact prior scope detail.
 
-## Separate work areas
+## Existing scopes, unchanged
 
-| Area | Member | Main files |
+| Area | Member | Existing map covers / limitation |
 | --- | --- | --- |
-| Frontend landing | Vitto | `src/app/page.tsx`, landing/header/recommendation components, `src/styles/refinement.css` |
-| Demo interface | Vitto, or one explicitly delegated teammate per task | `src/app/demo/`, `src/components/demo-app.tsx`, `src/styles/workspace.css` |
-| Data | Maxi | migrations, db/store/seed/import modules, synthetic CSV/data card |
-| Backend | William | demo API, service/validation modules, purchasing rules and workflow tests |
-| System | William | session API/module, runtime config and HTTP smoke script |
-| AI | Marco | `worker/`, server forecast adapter, forecast tests and AI plan |
+| frontend | Riakudu Vittorios Surjoraharjos | Legacy landing files; separate from demo |
+| demo | Vitto, or one explicitly assigned editor | Legacy persistent demo UI; no simultaneous editors of its large component |
+| data | Maximillion Cang | Existing db/store/seed/import modules and data docs |
+| backend | William Christiansen | Existing demo API/service/validation/purchasing/test paths |
+| system | William Christiansen | Session/runtime/smoke paths |
+| ai | Marco Ryan Suseno | Existing worker/forecast paths and AI plan |
 
-Exact paths are in `scripts/work-scopes.json`. A friend working on demo UI must select `demo`; a frontend task must select `frontend`. Both may read any area. Do not edit another area's files to make your task work; describe the required change for the other task instead. Do not run repository-wide formatting.
+Exact entries are in `scripts/work-scopes.json`; checker is `scripts/check_scope.py`. **Both remain unchanged. They do not already cover all future OCR routes/modules, new PostgreSQL data access, account endpoints or new shared types.** Before future code tasks, agree precise disjoint paths, then coordinate a separately authorised map/contract update. Do not silently treat this table as scope expansion.
 
-Demo rehearsal is shared, but demo application code has one active editor per task. The landing page's in-memory recommendation example belongs to frontend; the persistent `/demo` screen belongs to demo. The current demo component is one large file: two people must not edit it concurrently.
+## Shared contracts to agree before future parallel code work
 
-## Shared files
+- Product/internal ID/official name/base unit and once-only Opening; integer balances/movement types and account/time/source.
+- Manager versus shared Staff permissions for reads and writes; account/session lifecycle and no individual Staff attribution.
+- Extracted versus reviewed draft/line/date/unit/quantity fields, business statuses/revisions, actual-receipt confirmation and immutable approval snapshots.
+- Official-name/alias matching and collisions; zero-balance product creation during review; no automatic conversion or variant merge.
+- Approval all-line atomicity/rollback, product concurrency, once-only source identities, idempotent Take/Return and approval, stale edit/approval/error responses.
+- Backend extraction schema/provenance/mock-live labels, non-monetary allowlist and transient-image boundary across request/log/cache/storage layers.
+- PostgreSQL migration/legacy isolation, hosting/durability and Replit evidence; API route/type names and deployment/secrets need verified decisions.
 
-Anything outside the scope map is shared and needs a separate coordinated integration task. This includes `src/lib/contracts.ts`, `src/components/ui.tsx`, `src/app/layout.tsx`, `src/app/globals.css`, design tokens, dependency manifests/lockfiles, TypeScript/lint config, environment examples, root documentation and scope rules themselves.
+Shared files include root docs, common contracts/components/layout/styles/tokens, configuration/dependencies, schema interfaces and scope rules. Announce exact files and contract impact; assign **one active editor**, integrate that contract first, then dependent tasks. A clean textual merge is not semantic compatibility. No merging/pushing is authorised by this documentation task.
 
-Before a shared change, tell the team the exact files and interface change. Assign one active editor, agree the expected inputs/outputs, integrate that change first, then let dependent tasks update. Preserve backward compatibility where practical. A clean textual merge can still break behaviour, so run the relevant checks after combining changes.
+## Isolation and verification
 
-## Working separately
+For simultaneous sessions, use separate clones/worktrees/task branches, local databases and secrets. Switching branches in one shared folder does not isolate edits. Never copy a teammate's runtime database/credentials or overwrite pre-existing changes. Inspect status/remotes before editing; no repository-wide formatter.
 
-Use a separate clone or worktree and task branch for each simultaneous AI session. Branches alone do not isolate two sessions sharing the same working directory. Each workspace needs its own local database and environment secrets. Do not copy another member's running SQLite database or credentials.
-
-Before editing, inspect status, select one scope and confirm that scope has no concurrent editor. Before handoff, check your diff and run, from the repository root:
+For future scoped code work, run the existing checker with the agreed area (and integration base when relevant):
 
 ```sh
 python3 scripts/check_scope.py frontend
-```
-
-Replace `frontend` with `demo`, `data`, `backend`, `system` or `ai`. The default checks staged, unstaged and untracked files. To include branch commits relative to a base available in your clone:
-
-```sh
 python3 scripts/check_scope.py frontend --base origin/main
 ```
 
-The checker exits with failure for cross-area or shared paths. It does not modify files, reject pushes, enforce branch protection or automatically run on commit. A failure caused by pre-existing changes is not permission to delete or reset them. Separate the workspace or report the blocker. Shared integration tasks require human review instead of claiming a single-area pass.
+Replace frontend only with an agreed existing area. The checker reports staged/unstaged/untracked paths; it is opt-in, not remote enforcement, and does not approve new OCR paths. Failure is not permission to reset others' work. Shared documentation integration cannot honestly be called a single-area pass; verify its explicit documentation allowlist, links and preservation instead.
 
-Merge one reviewed task at a time into the current integration branch and run relevant business tests, typecheck and build after integration. Start later tasks from the updated integrated version. Git commits, pushes, merges and external publication still require session authorisation; this guide does not perform them.
-
-## Starting an AI task
-
-> My area is FRONTEND/DEMO/DATA/BACKEND/SYSTEM/AI. Read AGENTS.md, docs/team/integration.md and my work page. Inspect Git status. Edit only paths allowed for my area in scripts/work-scopes.json. Read other areas as needed, but report dependent changes instead of editing them. Do not touch shared files or format the whole repository. Preserve existing changes. Run the scope checker and relevant tests; report actual results and blockers. Do not commit, push or publish without authorisation.
+After future code integration, run relevant meaningful business/permission/concurrency checks and then appropriate types/build/UI evidence. Existing reports stay historical; do not rewrite them to make the new workflow look verified. Record actual results and blockers. Commits, pushes, merges, publication, purchases, infrastructure, paid models and external messages remain subject to explicit authorisation; stop after current documentation.

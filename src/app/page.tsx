@@ -2,14 +2,17 @@ import { LandingMotion } from "@/components/landing-motion";
 import { SiteHeader } from "@/components/site-header";
 
 const workflow = [
-  ["Record sales and stock", "Employees keep sales, stock movements and deliveries up to date."],
   [
-    "Get a reorder suggestion",
-    "AI estimates demand. eStock suggests what to reorder, when to buy and how many units to order.",
+    "Scan a supplier document",
+    "A manager photographs or uploads a document. AI prepares the product lines for review.",
   ],
   [
-    "Get reminded. Make the call.",
-    "Reorder prompts appear in the workspace when a purchase needs review. A manager checks and approves it before a supplier request is created.",
+    "Review products and quantities",
+    "Match each line to a product, correct unclear details and convert quantities into the product’s base unit.",
+  ],
+  [
+    "Confirm receipt. Update stock.",
+    "A manager confirms what actually arrived and approves the intake. Stock and movement history update together.",
   ],
 ];
 
@@ -39,21 +42,18 @@ export default function Home() {
       <LandingMotion />
       <main id="main" tabIndex={-1}>
         <section className="landing-hero container" aria-labelledby="hero-title">
-          <p className="landing-eyebrow">{words("AI-assisted stock planning")}</p>
+          <p className="landing-eyebrow">{words("AI-assisted stock entry")}</p>
           <h1 id="hero-title">
-            <span>{words("Know when to reorder.", 80)}</span>
-            <span className="headline-accent">{words("Know how much.", 180)}</span>
+            <span>{words("From receipt to stock.", 80)}</span>
+            <span className="headline-accent">{words("With your approval.", 180)}</span>
           </h1>
-          <p className="landing-motto">{words("Less guesswork. More control.", 260)}</p>
+          <p className="landing-motto">{words("Less retyping. More control.", 260)}</p>
           <p className="landing-description">
-            {words(
-              "Turn sales and stock records into your next order, with approval in your hands.",
-              320,
-            )}
+            {words("Turn supplier documents into stock updates you can review and approve.", 320)}
           </p>
           <div className="landing-actions">
             <a href="/demo" className="button button-primary">
-              Try it now
+              Open demo
             </a>
             <a href="#how-it-works" className="landing-text-link hero-workflow-link">
               How it works
@@ -63,58 +63,58 @@ export default function Home() {
         <section
           id="roles"
           className="landing-roles container"
-          aria-label="Employee and manager roles, and what the AI does"
+          aria-label="Staff and manager roles, and what the AI does"
         >
           <article className="role-card" data-reveal>
-            <h2>{words("For employees")}</h2>
+            <h2>{words("FOR STAFF")}</h2>
             <h3>
-              {words("Keep stock")}
+              {words("Take. Return.")}
               <br />
-              {words("up to date.", 80)}
+              {words("Get on with your day.", 80)}
             </h3>
-            <p>
-              {words(
-                "Record what goes out and what comes in, so the team works from the same stock records.",
-              )}
-            </p>
+            <p>{words("Find an item, enter a quantity, and keep stock up to date.")}</p>
             <ul>
-              <li>{words("Record sales and stock movements")}</li>
-              <li>{words("Receive confirmed deliveries", 60)}</li>
-              <li>{words("Check stock and activity", 120)}</li>
+              <li>{words("Find the right product")}</li>
+              <li>{words("Record what you take", 60)}</li>
+              <li>{words("Return usable items to stock", 120)}</li>
             </ul>
           </article>
           <article className="role-card role-card-manager" data-reveal>
-            <h2>{words("For managers")}</h2>
+            <h2>{words("FOR MANAGERS")}</h2>
             <h3>
-              {words("Make the call")}
+              {words("Start with a photo.")}
               <br />
-              {words("on every order.", 80)}
+              {words("Stay in control.", 80)}
             </h3>
-            <p>{words("Review stock, quantities and delivery dates before approving an order.")}</p>
+            <p>
+              {words(
+                "Upload a supplier document. Review the details, make any corrections, and approve the stock update.",
+              )}
+            </p>
             <ul>
-              <li>{words("Approve, adjust or reject an order")}</li>
-              <li>{words("Set buying rules and limits", 60)}</li>
-              <li>{words("Track supplier requests and receiving", 120)}</li>
+              <li>{words("Less retyping from receipts")}</li>
+              <li>{words("Product matches you can check", 60)}</li>
+              <li>{words("A clear record of every approval", 120)}</li>
             </ul>
           </article>
           <article className="ai-explainer" data-reveal>
             <div>
-              <h2>{words("What the AI does")}</h2>
+              <h2>{words("WHAT THE AI DOES")}</h2>
               <h3>
-                {words("What to order.")}
+                {words("A first draft.")}
                 <br />
-                {words("When. And how much.", 80)}
+                {words("A lot less typing.", 80)}
               </h3>
             </div>
             <div className="ai-explanation">
               <p>
                 {words(
-                  "AI’s role is to estimate demand from sales history. eStock combines that estimate with your stock, incoming deliveries and buying rules to suggest what to order, when and how much. Reorder prompts remind a manager to review the purchase.",
+                  "AI reads product names, quantities and dates from your documents. eStock suggests matching products, ready for your review. Stock changes only after you approve.",
                 )}
               </p>
               <p className="ai-demo-note">
                 {words(
-                  "Current demo: a baseline calculation. Live AI forecasting is not connected.",
+                  "Document scanning is planned. The current demo shows the earlier inventory workflow.",
                 )}
               </p>
             </div>
@@ -130,7 +130,7 @@ export default function Home() {
           <h2 id="workflow-title">
             {words("A clear path", 40)}
             <br />
-            <span>{words("from stock to order.", 140)}</span>
+            <span>{words("from document to stock.", 140)}</span>
           </h2>
           <ol className="landing-steps">
             {workflow.map(([title, detail], index) => (
@@ -144,7 +144,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="landing-footer container" data-reveal>
-        <p>{words("Supplier messages are simulated.")}</p>
+        <p>{words("One shop. One warehouse.")}</p>
         <p>{words("TooGoodToBeTrue · SDC Hackathon 2026")}</p>
       </footer>
     </div>

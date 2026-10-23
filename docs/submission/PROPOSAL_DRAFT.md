@@ -1,145 +1,105 @@
-# eStock: preliminary proposal template draft
+# eStock: official-template proposal working draft
 
-Source: official PT template. **This is working text to transfer into the official template and export as PDF**, not a replacement for its layout/form. The team must review, adapt, verify facts and sign it themselves.
+23 October 2026. Transfer reviewed text into the [official PT template](https://drive.google.com/file/d/1jNjuMJfhMYjo3qQw_PmmeGM-INEwuleo/view) and export **SDC2026_TooGoodToBeTrue_Preliminary.pdf**. This Markdown is not the official PDF, signature or proof of readiness. Current implementation is the legacy replenishment application; the document-assisted direction below is unimplemented. [Prior draft](../archive/2026-10-23-before-document-intake/docs/submission/PROPOSAL_DRAFT.md.txt) remains historical.
 
-Official output filename: **SDC2026_TooGoodToBeTrue_Preliminary.pdf**.
+## 1. Team and project overview
 
-This draft does not claim a completed application, measurements, workshop completion or deployment proof.
-
-## 1. Team and Project Overview
-
-| Template field | Entry |
+| Field | Entry |
 | --- | --- |
-| Team Name | TooGoodToBeTrue |
-| Selected Domain | Domain 2: Orbyte Smart SME Challenge: Less Busywork, Better Business |
-| Selected SDG Track | SDG 8: Decent Work and Economic Growth; targets 8.2 and 8.3 |
-| Project / Solution Name | eStock |
-| Name (Leader) | Marco Ryan Suseno |
-| Email & Phone (Leader) | Email in .private/TEAM_DETAILS.md; phone not provided |
-| University Affiliation(s) | Xiamen University, as reported by the user; check campus spelling against the portal |
-| Number of Team Members | 4 |
+| Team | TooGoodToBeTrue |
+| Domain | 2: Orbyte Smart SME Challenge: Less Busywork, Better Business |
+| SDG | 8, targets 8.2 and 8.3 |
+| Product | eStock |
+| Leader | Marco Ryan Suseno |
+| Leader email/phone | Private team record; phone still needs completion |
+| University | Xiamen University, as reported; verify portal spelling privately |
+| Members | 4: Marco Ryan Suseno; Riakudu Vittorios Surjoraharjos; Maximillion Cang; William Christiansen |
 
-Members: Marco Ryan Suseno; Riakudu Vittorios Surjoraharjos; Maximillion Cang; William Christiansen. Final work assignments have not been agreed.
+Assignments: Marco leader/AI; Riakudu frontend; Maximillion data; William system/backend. No registration emails or credentials in public documents.
 
-## 2. Executive Summary & Problem Statement
+## 2. Executive summary and problem
 
-### 2.1 The Problem Context: maximum 250 words
+### 2.1 Problem context: maximum 250 words
 
 <!-- WORDCOUNT:proposal_problem:250 -->
-Small businesses that maintain sales, stock records and supplier communication in separate tools must repeatedly reconcile those records before replenishing inventory. An owner may need to check recent sales, count usable stock, find outstanding purchases, estimate supplier delivery time and decide how much to order. A low-stock alert alone does not explain whether an incoming purchase will arrive in time or whether another order would duplicate an existing commitment.
+Small shops receive supplier documents whose product descriptions may differ from the names used inside the shop. Managers know the products and suppliers, but must manually retype document lines into inventory and translate abbreviations or unfamiliar names. Staff may not recognise every description. Incorrect product matching or quantities can make current stock difficult to trust.
 
-eStock targets this recurring operational task for Malaysian micro and small enterprises managing physical stock. Its configurable product policies support different units, suppliers and purchasing cycles without requiring a separate custom application for every business.
+eStock focuses on one shop managing one warehouse. The recurring burden is recording actual incoming goods accurately while keeping everyday stock withdrawal and return simple for staff. Document text alone cannot prove that goods arrived, so the manager must review quantities and confirm physical receipt before inventory increases.
 
-The problem matters because manual reconciliation consumes time and can produce inconsistent purchasing decisions. The proposed prototype will test whether connecting the relevant records and presenting a traceable recommendation reduces the effort required to prepare a purchasing decision.
+The team proposes a document-assisted workflow that combines extraction, the shop catalogue and confirmed aliases, with human approval and a movement history. It will use only team-created synthetic documents, supplier details, products and evaluation records for the hackathon. No real Indonesian or Malaysian business receipts will be used.
 
-The team has not yet established the prevalence or financial cost of this problem through SME interviews. All prototype business records and evaluation data will be team-created and synthetic. Any timed task results will be reported as prototype measurements, not field savings or evidence of customer adoption.
+This problem is a team hypothesis; interviews, field losses, time savings and customer adoption have not been established. Evaluation will compare manual entry with reviewed intake on declared synthetic tasks and report correction rates, completion times and limitations without claiming real-store impact.
 <!-- END_WORDCOUNT -->
 
-### 2.2 The Proposed AI Solution: maximum 300 words
+### 2.2 Proposed AI solution: maximum 300 words
 
 <!-- WORDCOUNT:proposal_solution:300 -->
-eStock connects recorded sales, usable inventory, dated incoming purchases, supplier information and per-product purchasing policies. A recorded stock movement or daily review starts an analysis. A pretrained time-series model estimates future unit demand from completed daily sales history. Deterministic rules then calculate a proposed purchase quantity using the forecast, supplier lead time, review interval, safety stock, packaging and existing confirmed purchases.
+eStock will let a Manager photograph or upload a supplier receipt, invoice, delivery note or order-detail image. Gemini, called through the backend, will propose product descriptions, quantities, units, dates and uncertain fields. The application will match official product names and Manager-confirmed aliases. Ambiguous matches require selection; unknown products can be created during review.
 
-The manager receives a recommendation showing its inputs, assumptions, data cutoff and any shortage before expected deliveries. Only an authorised manager can approve, edit with a reason, or reject the proposed purchase. Approval creates a purchase request and supplier message in an auditable outbox. Supplier acknowledgement and physical receipt are recorded separately; approval never increases physical stock.
+The Manager will correct the draft, manually convert cartons into each product's base unit, and confirm that approved quantities were actually received as usable goods. Approval will atomically update inventory and movement history once. An order-only document or advance invoice cannot automatically increase stock. New products created during review start with zero Opening stock, preventing the receipt quantity from being counted twice.
 
-Replit will host the application workflow, while RunPod will perform real model inference. The model will be compared against simple historical baselines. If a baseline performs better or inference is unavailable, the application will identify the method actually used rather than presenting a fallback as AI.
+Staff will search products, choose Take or Return, enter a positive integer quantity and confirm. Backend permissions will restrict product setup, document processing, approval and full History to the Manager. Take must remain nonnegative under concurrent requests. One shared Staff account limits attribution to that account rather than individual employees.
 
-The MVP uses synthetic CSV data and stock-entry forms. A labelled supplier simulator completes the demonstration; official WhatsApp messaging is preferred if account setup permits, and Telegram is optional. Simulated identity and Orbyte interfaces will show how eStock could reuse shared permissions, approval and audit services without claiming live Orbyte access.
+The target architecture reuses suitable Next.js/TypeScript foundations, PostgreSQL for structured data and Gemini for extraction. Images will be transient; saved drafts contain structured fields without the original image. Monetary fields are excluded. Replit must form part of the solution with own-project evidence. Hosted Gemini leaves the historical RunPod wording conflict open for written clarification; actual earlier RunPod usage remains declared.
 
-The team will apply database, cloud deployment and responsible AI practices. The contribution is a connected replenishment decision workflow, not a chatbot or replacement ERP.
+The team intends to apply GenAI, database and cloud practices without claiming workshop completion. There is no new forecasting, purchasing, outbox, training, RAG or GPU pipeline in this MVP, and no working live Orbyte integration is claimed.
 <!-- END_WORDCOUNT -->
 
-## 3. Technical Architecture & Implementation Plan
+## 3. Technical architecture and implementation plan
 
-### 3.1 Conceptual Tech Stack
+### 3.1 Conceptual stack and block diagram
 
-Planned mandatory components:
+Target: reusable existing Next.js/TypeScript foundation → role-scoped backend → PostgreSQL products/aliases/drafts/ledger, plus backend Gemini image extraction. Model, SDK/version, ORM, database hosting/plan/region and authentication remain unresolved. Existing SQLite/forecast/purchasing modules are legacy, not the target migration. Replit involvement is mandatory; actual own-project proof, deployment/access and restart/redeploy durability remain unverified.
 
-- Web application and server workflow on Replit.
-- Persistent database for ledger, daily sales, policy, forecast, approval, outbox, PO and audit.
-- Python worker/pretrained model on RunPod.
-- Synthetic CSV input and stock movement/receiving forms.
-- Server-side replenishment, permission, idempotency and outbox rules.
-- Supplier simulator; official WhatsApp if ready; optional Telegram.
+```text
+Synthetic document image → Manager upload → backend Gemini extraction
+                                               ↓ validated non-monetary fields
+Catalogue + confirmed aliases → matching → saved structured Draft
+                                               ↓ Manager correction + actual-receipt confirmation
+                                    atomic approval → stock + Intake History
+Staff search → Take / Return → atomic stock movement + updated stock
+```
 
-Application framework/database packages/model revision/deployment region have not been selected or verified. Populate them from M0 decisions and actual implementation before the final PDF. Initial recommendation: TypeScript web/server, PostgreSQL and Python worker; this is not an actual-used stack declaration.
+No image persists with the Draft. Gemini has no stock-write authority. Reusable Orbyte-hub permission/approval/activity contracts are proposed only; no live platform API/sandbox was supplied. X-09 verbal workspace issue remains separate. Historical RunPod training/evaluation is retained in the declaration; no new GPU work is added solely to settle X-03.
 
-    CSV / forms → Replit application → persistent database
-                                 ↘ RunPod forecast worker
-                       forecast + stock policies → manager approval
-                       → purchase outbox → supplier acknowledgement
-                       → goods receipt → stock ledger + activity log
-
-Sponsor resources: Replit/RunPod usage is planned and must be demonstrated with the team's own projects/accounts. No Orbyte API, production account or sponsor dataset was supplied for this prototype. Record actual usage in the final declaration.
-
-### 3.2 Design-Thinking & Deployment Strategy: maximum 200 words
+### 3.2 Design-thinking and deployment: maximum 200 words
 
 <!-- WORDCOUNT:proposal_design:200 -->
-The team will investigate how SME owners currently decide when and how much to reorder, focusing on the information they reconcile and the exceptions they must resolve. A short task-based review will test whether a new user can understand the recommendation, identify uncertainty and complete approval without additional verbal instructions.
+The team will test a narrow task: recording received goods from supplier-document lines while keeping staff stock actions simple. Synthetic cases will include unfamiliar descriptions, aliases, missing fields, manual carton conversion and order-only documents without physical delivery. A Manager must resolve uncertainty before approval.
 
-The MVP will demonstrate one complete replenishment journey using a small, configurable synthetic inventory. It will include missing data, a delayed incoming purchase and duplicate-action tests. A model deployment spike will test RunPod integration before interface expansion. Historical-only baselines and time-ordered evaluation will distinguish model performance from stock-policy correctness.
+Implementation is planned in five stages: PostgreSQL and role-scoped ledger foundations; basic inventory and Take/Return; image extraction and saved drafts; matching, correction and atomic approval; then synthetic evaluation, responsive usability and submission evidence. Existing framework and suitable controls may be reused, while legacy purchasing and forecasting remain outside the new core.
 
-The application will be deployed through Replit with persistent storage, server-side secrets and accessible judge instructions. Simulated channels and Orbyte interfaces will be labelled. Before submission, the team will verify the live build from a fresh session, review all AI-assisted work, reconcile the proposal with the actual implementation, and prepare a backup recording. Later development will prioritise validated integrations rather than expanding into a full ERP.
+Future checks will cover direct backend permission denial, repeated and concurrent requests, full approval rollback and draft persistence without images. The team will measure extraction corrections and comparable task times rather than inventing accuracy or savings.
+
+Replit usage, own-project proof, persistent deployment and judge access must be verified before submission. All members will review and adapt AI-assisted work, align materials with the actual build, and complete workshop and signature fields truthfully. A separate future real-world pilot requires provider terms, account-tier and retention review.
 <!-- END_WORDCOUNT -->
 
-## 4. Preliminary Environmental & SDG Impact Framework
+## 4. Preliminary SDG impact framework
 
-| Field | Draft for review |
+| Official field | Draft for team review |
 | --- | --- |
-| Exact SDG sub-target(s) | SDG 8.2, productivity through technological upgrading; SDG 8.3, support for entrepreneurship and micro/small enterprises |
-| Current Problem Baseline | Planning assumption: 10 minutes to prepare one manual replenishment decision. NOT measured field data. Replace with actual timed prototype-task baseline or retain explicitly as an assumption |
-| Core Measurable KPI | Median minutes per complete purchasing decision; report participants/cases and comparable manual/eStock task |
-| Phase 2 Impact Target | Proposed 50% reduction relative to the verified baseline by the final prototype; target, not achieved result |
-| Supporting technical evidence | MAE/WAPE model vs baselines; duplicate-order prevention; percentage of decisions with complete audit |
+| Exact SDG subtargets | 8.2 productivity through technological upgrading; 8.3 support for micro/small enterprises |
+| Numeric baseline | **Agent-suggested, unmeasured planning placeholder for team approval:** 10 minutes to manually enter/reconcile one synthetic 10-line intake. This is a proposed benchmark task, not an interview or field result; replace with a timed baseline |
+| Core KPI | Median minutes from document/manual entry to reviewed intake approval, plus correction rate and invariant failures; report N/case mix/model/mode |
+| Phase 2 percentage target | **Agent-suggested, unachieved target for team approval:** 30% lower median completion time than the measured manual baseline, without loss of inventory correctness. Team must review feasibility after measurement |
 
-No environmental savings or food-waste reduction claims without appropriate measurement.
+The former replenishment baseline/50% target is superseded; do not reuse it as evidence for intake. No financial/environmental savings or OCR accuracy results are claimed.
 
-## 5. Eligibility & Readiness Checklist
+## 5. Eligibility and readiness
 
-Do not tick before verification:
+- [ ] All members completed mandatory GenAI/Database/Cloud workshops according to clarified PT checklist; resolve X-02 using facts.
+- [ ] Problem validation/SDG claim supported honestly; no fabricated interviews.
+- [ ] Functional, accessible prototype with required Replit evidence exists and matches these claims.
+- [ ] Every official field is completed and final word limits checked.
 
-- [ ] ALL members completed GenAI, Database and Cloud Deployment workshops as required by the template.
-- [ ] Concept addresses a verified real-world problem directly mapped to SDG(s).
-- [ ] Team targets a functional deployed application.
-- [ ] Every field is completed within word limits.
+## 6. IP and originality
 
-Team note: TC says general workshops may be attended, while the template has a specific mandatory checklist. Clarify accepted attendance/tasks/replays; do not fabricate or ignore these checkboxes.
+Prior-owned work: **TEAM YES/NO ANSWER REQUIRED**, including significant pre-event supporting material and OH §8.2.1 approval applicability/reference. Existing eStock legacy work was created during this event according to historical records; retain genuine history rather than rewriting it. Historical example PRD from another competition was a structural reference, not permission to copy its facts/rules.
 
-## 6. IP & Originality Declaration
+Third-party code/models/datasets: actual existing framework/libraries/font/development tools and historical RunPod Chronos-2/AutoGluon/PyTorch use must be declared with verified licences. Planned Gemini/PostgreSQL must stay labelled planned until used. Historical dataset provenance gaps remain open. See [notices](../../THIRD_PARTY_NOTICES.md) and [declaration](TECH_DECLARATION_DRAFT.md).
 
-### 6.1 Pre-Existing / Prior-Owned Work
-
-**TEAM ANSWER REQUIRED: Yes/No.** Audit materials owned before the hackathon. eStock source must be new during the event; disclose supporting libraries/models/templates as required.
-
-For significant pre-existing material covered by OH §8.2.1, record whether organiser approval is required, its status and written approval reference before use. Do not assume declaration alone is always sufficient. Distinguish prior-owned core assets from ordinary supporting libraries; clarify uncertain scope.
-
-The example flood PRD from another competition was used only as a structural reference. Do not copy its facts, features, data, source or claims as eStock work. Determine whether this reference belongs in the supporting-material list under the form.
-
-### 6.2 Third-Party Code, Datasets or Models
-
-**Yes/No: CONFIRM FROM ACTUAL USAGE BEFORE FINALISATION.** Planned third-party models/frameworks mean Yes if those components are actually used. Do not leave Yes/No blank on the official form.
-
-Populate from actual implementation:
-
-| Name | Type | Licence |
-| --- | --- | --- |
-| Chronos-2 (autogluon/chronos-2), fine-tuned | Pretrained model, LoRA fine-tuned on synthetic data | Apache 2.0; revision recorded in run_info.json |
-| Runtime libraries/frameworks | Code | Actual names/versions/licences from lockfiles |
-| eStock synthetic dataset | Team-created synthetic data | Explicitly assign the team's dataset licence |
-| Other assets/templates | According to usage | Verify ownership/licence |
-
-Do not treat this table as final if libraries/models have not been used. Declare runtime AI and AI-assisted development tools in TechDecl.
-
-### 6.3 Employment-Related IP Conflicts
-
-**TEAM ANSWER REQUIRED: Yes/No.** Ask each member about relevant employment/internship/consulting arrangements. If Yes, explain and follow organiser instructions; AI cannot declare None on members' behalf.
+Employment/internship/consulting IP: **TEAM YES/NO ANSWER REQUIRED** from all members. No invented None. Complete the official table and answers from actual facts.
 
 ## 7. Declaration
 
-Leader name: Marco Ryan Suseno.
-
-Signature: **LEADER TO COMPLETE AFTER REVIEW**.
-
-Date: **ACTUAL SIGNING DATE**.
-
-Before signing: confirm product/figures match implementation, the team reviewed/adapted all AI text, personal fields are correct and this draft was transferred into the official template.
+Leader Marco Ryan Suseno must review the official template and provide the actual signature/date. No signature is created here. Final official PDF/deck/video/prototype/source/declaration must describe the same implemented build and comply with the earlier deadline pending X-01 clarification.
