@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: estock
+      POSTGRES_USER: estock
+      POSTGRES_PASSWORD: estock_local_only
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - estock_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U estock -d estock"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  estock_postgres_data:

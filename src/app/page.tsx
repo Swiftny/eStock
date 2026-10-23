@@ -114,7 +114,7 @@ export default function Home() {
               </p>
               <p className="ai-demo-note">
                 {words(
-                  "Document scanning is planned. The current demo shows the earlier inventory workflow.",
+                  "In the demo, managers can upload a sample supplier document and approve the resulting stock entry.",
                 )}
               </p>
             </div>

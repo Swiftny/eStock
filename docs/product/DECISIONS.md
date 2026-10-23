@@ -1,13 +1,13 @@
 # eStock: active decisions and open items
 
-23 October 2026. Product decisions below are approved requirements; implementation is paused pending explicit instruction. [Complete earlier register](../archive/2026-10-23-before-document-intake/docs/product/DECISIONS.md.txt) preserves old U/R/OPEN/SUB IDs and implementation history. Old IDs U-16/U-17/U-18 were reused for different topics; cite the historical section/date when referring to them. They do not override this pivot.
+23 October 2026. Later explicit user instructions authorised local implementation and verification of the approved MVP. [Current verification](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) distinguishes source, synthetic tests and Unverified real-device/live-provider behavior. [Complete earlier register](../archive/2026-10-23-before-document-intake/docs/product/DECISIONS.md.txt) preserves old U/R/OPEN/SUB IDs and implementation history; reused historical IDs do not override the pivot.
 
 ## New user decisions
 
 | ID | Decision | Basis / impact |
 | --- | --- | --- |
 | U-20 | eStock is document-assisted inventory, one shop/one warehouse | User's 23 October source and instructions; supersedes forecasting scope U-03/04/05/06 and historical U-17/18/19 product/training plans |
-| U-21 | Documentation only now; stop before implementation | Explicit user boundary; old coding authorisations do not start the new workflow |
+| U-21 | Historical documentation-only boundary, superseded by later explicit implementation instructions | Preserve the earlier boundary as history; current user task authorises the MVP revision and non-destructive verification |
 | U-22 | Manager-only catalogue/Opening/upload/drafts/approval/full History; both roles Take/Return/view/search | Separate Manager + one shared Staff account, backend enforcement; staff individual attribution unavailable |
 | U-23 | Official name/base unit/Opening/generated ID; integer operations | No mandatory entered SKU, barcode or shelf; positive Intake/Take/Return, concurrent nonnegative Take |
 | U-24 | Actual-receipt confirmation before Intake; atomic immutable once-only approval | Image/invoice/order text is not physical-delivery evidence; no PO-management addition |
@@ -17,6 +17,9 @@
 | U-28 | Low stock strictly below 5; similar-document warnings P1 | Zero is Low stock, 5 is not; no forecast; same-draft protection is narrower than duplicate uploads |
 | U-29 | Preserve original Indonesian source; canonical English working docs | English instruction U-10 retained; source corrections documented in current PRD |
 | U-30 | Retain teal/Linear/Shopify proposed direction in DESIGN.md only | No CSS/site redesign now; U-11 UI skills/during mode preserved for future UI |
+| U-31 | Receipt history is the primary received-goods record; group by approved draft ID | Latest explicit History clarification supersedes the combined layout. Separate searchable Stock activity for Take/Return and labelled Manager Opening; same-date receipts stay separate |
+| U-32 | Shared access code only in explicitly enabled development demo mode | Server sessions retain separate roles; equal production passwords rejected. No individual Staff identity assurance |
+| U-33 | Fix justified blank-line exclusion; temporary comparison-only image; bounded provider extraction; retained isolated tests | Latest pre-handoff task. No automatic comparison scan, automatic capture, live Gemini call, operational-data reset, commit/push/deployment or heuristic/pagination expansion |
 
 Retained identities/assignments: U-01 eStock; U-07 leader/four names; U-10 English; U-11 ui-ux-pro-max + antislop during; U-15 existing Next.js/TypeScript/plain-CSS foundation. Historical verbal Orbyte workspace decision remains X-09, separate from written D2 rules. Old channel, fine-tuning, policy and numerical-evaluation defaults are historical, not active backlog.
 
@@ -29,18 +32,18 @@ Retained identities/assignments: U-01 eStock; U-07 leader/four names; U-10 Engli
 | IC-03 | Product edits cannot mutate stock or reinterpret posted base units | General stock corrections remain out of scope; retain immutable approval snapshots |
 | IC-04 | Persistent event/request identity for Take/Return and approval; changed-payload reuse conflicts | Lost responses/concurrent requests cannot post twice |
 
-These are behavioural clarifications, not quotations from the supplied PRD or already implemented database mechanisms.
+These are behavioural clarifications, not quotations from the supplied PRD. Current implementation and executed checks are linked above; no live-provider/device/deployment acceptance is implied.
 
 ## Unresolved implementation decisions
 
 | ID | Decision to make after explicit authorisation | Evidence needed |
 | --- | --- | --- |
-| OPEN-01 | PostgreSQL schema/migration layer/ORM and legacy isolation | Current official documentation, reversible migration/reuse plan preserving old data |
+| OPEN-01 | pg and initial SQL implemented; versioned upgrades/hosted migration lifecycle remain open | Isolated schema tests and legacy preservation verified locally; no operational data reset |
 | OPEN-02 | Replit own project/account/usage and deployment arrangement | PH §9.2/10.6 evidence; restart/redeploy persistence, not assumptions |
 | OPEN-03 | X-03 RunPod clarification and historical proof completeness | Written organiser interpretation for hosted Gemini; actual historical own-account proof |
-| OPEN-04 | Gemini model/SDK/version, account tier/limits and processing/retention | Verified current docs/terms and approved resource limits; no exact selection now |
+| OPEN-04 | Backend Google Gen AI SDK/default model implemented; live accuracy, tier/limits and retention remain open | No configured key or live call in this verification. Supported timeout/cancellation read via Context7; provider checks use test-only stubs |
 | OPEN-05 | PostgreSQL hosting/plan/region, backups and judge access | Verify actual service, persistence and approved costs; no provisioning now |
-| OPEN-06 | Manager/shared Staff authentication/session lifecycle | Backend role/read/write denial and shared-account limitation |
+| OPEN-06 | Opaque role sessions and development exception implemented; hosted lifecycle remains open | Retained backend permission tests; shared-account limitation explicit |
 | OPEN-07 | New API/types/errors/idempotency/revisions/ownership map | One shared-contract editor; existing scripts need future scoped extension |
 | OPEN-08 | Proposed palette and interaction details | DESIGN.md source direction; future measured contrast/mobile/keyboard Delivery Gate |
 | OPEN-09 | Confirm required skill locations in future session | Resolve current catalog; preserve ui-ux-pro-max and antislop during |

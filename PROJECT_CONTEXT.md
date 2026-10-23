@@ -2,6 +2,8 @@
 
 Updated 23 October 2026, MYT. This is the active handoff. [Earlier complete context](docs/archive/2026-10-23-before-document-intake/PROJECT_CONTEXT.md.txt) is preserved as history, including prior authorisations, reported checks and contradictory GPU status notes. It must not drive new work.
 
+Latest authorised revision: Manager History now separates primary Receipt history (approved draft identity and all Intake lines) from searchable Stock activity/Manager Opening. Blank unreadable lines can be excluded with a reason; saved drafts support temporary comparison images with no scan; extraction has a 45-second server deadline and no SDK retries. New-demo lint is clean and retained PostgreSQL/API/browser tests use isolated synthetic resources. See the [current revision verification](docs/verification/MVP_REVISION_VERIFICATION_2026_10_23.md) for actual results and limitations. Physical camera, real mobile-device behavior, live Gemini, provider/hosting retention and deployment remain Unverified. No existing operational records, original Indonesian PRD or local credentials were changed. No commit, push or deployment.
+
 ## Latest user decision: document-assisted inventory
 
 The product remains **eStock**. One shop, one warehouse. Main burden: retyping supplier-document lines and mapping supplier abbreviations to recognised products. Manager knows the catalogue; staff need a simple search and Take/Return flow.
@@ -10,7 +12,13 @@ Manager: photograph/upload document → backend Gemini extraction → applicatio
 
 New source: [complete supplied Indonesian PRD](docs/product/sources/PRD_ID_2026_10_23.md). The [canonical English PRD](docs/product/prd.md) incorporates the user's later clarifications and hackathon corrections. The [decision register](docs/product/DECISIONS.md) records the pivot. Forecasting, replenishment, purchasing policies, PO/outbox, budgets and training are removed from the active MVP.
 
-## Latest follow-up: landing copy, existing style
+## Current implementation handoff: new `/demo` source
+
+On 23 October the user explicitly requested implementing this PRD in the demo and specified `ui-ux-pro-max` and `antislop` for UI work. This supersedes the earlier documentation-only limit below. The branch `feat/estock-demo-workflow` now contains a new Manager/Staff interface, PostgreSQL schema and inventory ledger, server-side password sessions and role checks, transient Gemini image extraction into persistent structured drafts, explicit Manager review, once-only atomic approval and History. Earlier legacy API routes return 410; historical source/evidence remains. The new setup is in [README.md](README.md), [`.env.example`](.env.example) and [`compose.estock.yml`](compose.estock.yml). This working copy has an ignored `.env.local` with local database URL and random Manager/Staff/session credentials; its `GEMINI_API_KEY` is intentionally blank.
+
+The initial implementation task performed no application verification. That historical limitation is superseded by the current verification report: local types/build, isolated synthetic PostgreSQL/API tests and separate headless Chrome journeys have now run. These do not prove real OCR, physical camera behavior, provider retention or deployment. Docker access was denied in the tool session; PostgreSQL was reachable directly. Do not reset existing data or make a live Gemini call merely to repeat verification.
+
+## Earlier follow-up: landing copy, existing style
 
 Git handoff, 23 October: the user authorised a new local branch, staging and commit of the documentation/landing-copy work, with pushing reserved for the user. Created branch `docs/document-intake-and-landing-copy` from `main`. Reviewed commit scope is 65 documentation/reference/archive/frontend-text files; the pre-existing generated `next-env.d.ts` change is excluded. Scoped four-file Biome and whitespace checks pass; the supplied Indonesian source retains its original hard-break spaces/final blank line, verified against the attachment. Candidate-file scanning found no private registration emails or credential patterns. Existing full-project forecast errors remain disclosed. No new workflow implementation, push, merge or publication is authorised.
 
@@ -20,17 +28,17 @@ On 23 October the user authorised updating landing-page text to match document-a
 
 Actual checks: scoped Biome passes for all four edited files; explicit frontend scope passes for landing/header. Browser checks cover landing widths 320/375/768/1440, login widths 320/375/1440, all nine landing links and login return/demo links, keyboard focus, reduced motion, final desktop/mobile screenshot review and 243 text elements with minimum contrast 5.80:1. Final landing console has no errors/warnings. Demo API requests were intercepted during destination checks to avoid intentional inventory actions. Full-project lint/typecheck are blocked by pre-existing duplicate keys and unknown-type errors in unchanged `src/lib/server/forecast.ts`; no full build or application test suite was run. [Scoped Delivery Gate and limits](docs/verification/LANDING_COPY_2026_10_23.md). Prior documentation changes and `next-env.d.ts` are preserved. No commit/push/publication or new workflow implementation.
 
-## Previous authorisation: completed documentation-only pivot
+## Historical authorisation: completed documentation-only pivot
 
-This coordinated cross-area task has one editor. Update documentation and stop; **wait for explicit user instruction before implementation**. Do not modify website/application/worker source, CSS, routes, existing website copy, database/schema/data, dependencies/lockfiles, runtime configuration/.env files, tests, scripts or running services. Do not stage, commit, push, merge, publish, purchase, provision cloud, invoke paid model APIs or send external messages.
+The earlier coordinated cross-area task had one editor and a documentation-only scope. Its instruction to wait before implementation was superseded by the later user request recorded above. No push, merge, publication, purchase, cloud provisioning, paid model call or external message was requested for the implementation task.
 
 Initial inspection: expected repository `/Users/riakuduvittorios/Code/SDC-Hackathon`, branch `main`, original `origin` remote retained. Only pre-existing working-tree change was `next-env.d.ts`; preserve its exact bytes. Source/asset/test/script/training/evidence/runtime files were fingerprinted for documentation-boundary verification. No private contact values were copied into public documents.
 
-## Existing legacy application versus target
+## Existing legacy application versus implemented source
 
-Existing Next.js/TypeScript landing/login/demo and SQLite backend remain in place. Legacy functionality includes product creation by Staff, decimal units, sales/history import, forecast/baseline analysis, purchasing policies, PO/simulated supplier outbox, receiving/damage and activity. Those behaviours and website copy are **not** the new role/quantity/Intake workflow. Do not claim the pivot is implemented because some stock primitives exist.
+The original SQLite application source remains. Legacy functionality included product creation by Staff, decimal units, sales/history import, forecast/baseline analysis, purchasing policies, PO/simulated supplier outbox, receiving/damage and activity. Those behaviours are **not** the new role/quantity/Intake workflow; the active `/demo` route and `/api/estock` source now target the PRD instead.
 
-Target: reuse Next.js/TypeScript where suitable; PostgreSQL for new structured inventory; Gemini API for image extraction through the backend. No PostgreSQL migration, Gemini integration, new accounts, saved OCR drafts, alias matching or new approval flow has been implemented/verified by this task. Exact Gemini model/SDK, hosting/plan/region, ORM, migration/auth and API paths remain decisions for future authorised work with current Context7 documentation.
+The branch uses Next.js/TypeScript, PostgreSQL and the backend Gemini SDK. Schema, accounts, drafts, exact matching, stock ledger and approval have isolated synthetic verification; the new receipt/activity History and comparison image controls have browser evidence in the current report. Real Gemini/physical camera, hosting, provider plan, region and deployment remain open.
 
 Legacy reports remain unchanged in `docs/verification/`; their test totals describe earlier scopes/environments. They do not establish new acceptance, PostgreSQL or OCR accuracy. No application tests/build, browser UI review or UI Delivery Gate was run during this documentation update.
 
@@ -65,4 +73,4 @@ Marco Ryan Suseno: leader/AI. Riakudu Vittorios Surjoraharjos: frontend. Maximil
 
 [Build plan](docs/plans/BUILD_PLAN.md) records five stages: PostgreSQL/roles/ledger; basic inventory and movements; upload/Gemini/saved drafts; matching/review/approval; synthetic evaluation/responsive checks/Replit proof/aligned submission. [Integration](docs/team/integration.md) lists future shared contracts. Existing scope scripts are unchanged and cannot be claimed to cover all new OCR modules.
 
-Documentation completion/check results and remaining decisions are recorded in [DOCUMENT_STATUS.md](DOCUMENT_STATUS.md). Landing-copy follow-up is recorded above. Next action is **user review and explicit instruction before further application implementation**, then scoped contract decisions. Do not start the new workflow from this plan.
+Documentation completion/check results and remaining decisions are recorded in [DOCUMENT_STATUS.md](DOCUMENT_STATUS.md). Earlier landing-copy follow-up is recorded above. Next action is to configure a Gemini key, start PostgreSQL and request verification of the complete demo flow. Then prepare genuine deployment and competition evidence separately; this source update alone does not establish submission readiness.

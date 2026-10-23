@@ -1,4 +1,4 @@
-import { DemoApp } from "@/components/demo-app";
+import { EStockApp } from "@/components/estock-app";
 export default function DemoPage() {
-  return <DemoApp />;
+  return <EStockApp />;
 }

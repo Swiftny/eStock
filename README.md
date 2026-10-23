@@ -4,18 +4,16 @@ eStock's approved direction is **document-assisted inventory for one shop and on
 
 TooGoodToBeTrue · Xiamen University · SDC Hackathon 2026 · Domain 2, Orbyte Smart SME Challenge · SDG 8.2/8.3. eStock is a team proposal, not an official Orbyte module or a working Orbyte integration.
 
-## What exists and what is planned
+## Current demo
 
 | Layer | Status on 23 October 2026 |
 | --- | --- |
-| Existing website and application | Landing/header/sign-in text now describes the new product, retaining the existing style. The local SQLite demo still uses legacy inventory, sales/history, forecasting/baselines, replenishment, simulated PO/outbox/receiving and audit |
-| New approved product | Manager image upload → Gemini draft → official-name/alias matching → Manager review and actual-receipt approval → Intake + movement History; simple shared-Staff Take/Return |
-| Target stack | Reuse Next.js/TypeScript where suitable; PostgreSQL structured data and backend Gemini API. Migration, accounts, OCR and new approval workflow **not implemented or verified** |
-| Verification | Existing [reports](DOCUMENT_STATUS.md) describe legacy checks only. No new application tests, live OCR, PostgreSQL migration or deployment checks were run by this documentation task |
+| Website | `/demo` contains separate Manager and Staff views. Staff search stock and record Take/Return. Manager can also manage products, upload documents, review drafts, approve intake and inspect History. |
+| Data and AI | New `/api/estock` backend and PostgreSQL schema implement the document-intake workflow. The image goes to Gemini from the server, and extracted lines stay in a reviewable draft until Manager approval. |
+| Legacy code | The earlier SQLite replenishment/forecasting source remains for historical context; it is outside this demo workflow. |
+| Verification | Current types/build, retained new-demo PostgreSQL/API checks and isolated headless Chrome journeys are recorded in the [revision verification](docs/verification/MVP_REVISION_VERIFICATION_2026_10_23.md). New-demo lint passes; unrelated legacy formatting remains separate. Physical camera/mobile device, live Gemini and deployment remain unverified. The [pre-push audit](docs/verification/PRE_PUSH_PRD_AUDIT.md) is the earlier findings snapshot. |
 
-The landing page now introduces document-assisted inventory and clearly says scanning is planned. Its Open demo links still lead to the earlier application, whose role selector permits legacy actions that differ from the new role matrix. It is not a demonstration of the new PRD. The user authorised the landing-copy follow-up only; implementing the new workflow still requires explicit instruction.
-
-The [copy verification report](docs/verification/LANDING_COPY_2026_10_23.md) records responsive, link, keyboard and contrast checks. Scoped lint passes; full-project lint/typecheck encounter pre-existing errors in unchanged `src/lib/server/forecast.ts`. No CSS/layout or backend behaviour changed.
+The [copy verification report](docs/verification/LANDING_COPY_2026_10_23.md) describes the earlier landing-copy task; it does not verify the new demo.
 
 ## Approved scope
 
@@ -29,18 +27,44 @@ No prices, monetary calculations, forecasting, purchasing policies, outboxes, PO
 
 Only team-created synthetic images, products, supplier details and test records are permitted for the hackathon. Uploaded images may exist transiently but must not remain in app database/disk/object/browser storage, logs, telemetry or caches. Reopened drafts have no original image; Manager must re-upload for comparison. Gemini's own retention/terms/tier must be verified before any separate future real-world pilot.
 
-## Existing local setup: legacy only
+## Run the new demo locally
 
-The existing commands/configuration remain unchanged. Historical local setup requires Node 22.18+ for built-in SQLite; Python is used by legacy worker/tests. The prior [README snapshot](docs/archive/2026-10-23-before-document-intake/README.md.txt) retains detailed setup/rehearsal/API guidance. These commands run the old application, not PostgreSQL/OCR:
+Use Node 22.18+ and PostgreSQL. An optional local-only PostgreSQL service is provided in [`compose.estock.yml`](compose.estock.yml). Docker Desktop must be running before starting that service. Alternatively, use any PostgreSQL instance and set its connection URL.
+
+Create an ignored `.env.local` from [`.env.example`](.env.example) in a fresh checkout. Set `DATABASE_URL`, `GEMINI_API_KEY`, `ESTOCK_MANAGER_PASSWORD`, `ESTOCK_STAFF_PASSWORD` and a long random `ESTOCK_SESSION_SECRET`. `ESTOCK_GEMINI_MODEL` is optional. For the supplied local Compose service, use `DATABASE_URL=postgresql://estock:estock_local_only@127.0.0.1:55432/estock`. The Manager and Staff passwords are for the two demo accounts. Keep this file private; the browser never needs the Gemini key.
+
+In this working copy, `.env.local` already contains the local database URL and demo credentials. Open that ignored file to read or change the two sign-in passwords and configure your Gemini key. Preserve the existing `ESTOCK_SESSION_SECRET` when changing passwords.
+
+Manager and Staff passwords must normally differ. For an intentional local demo, set `ESTOCK_DEMO_ALLOW_SHARED_PASSWORD=true` in `.env.local` to allow both accounts to use the same password while running `npm run dev`. This exception is disabled by default and is never accepted in production mode. Sessions still retain the selected account role, and backend Manager-only permission checks still apply. Restart the development server after changing local authentication settings.
+
+The origin guard compares the browser Origin with the inbound Host and request scheme, including the port. This allows `http://localhost:3000` when the dev server binds to `0.0.0.0`; the bind address is not the browser's origin. Different origins and requests marked `cross-site` remain rejected. No wildcard or forwarded-host allowlist is used.
 
 ```sh
 npm ci
-npm run db:migrate
-npm run db:seed
+docker compose -f compose.estock.yml up -d
+npm run db:estock:migrate
 npm run dev
 ```
 
-No commands above were executed in this documentation task. Legacy default database is ignored `data/estock.sqlite`; normal startup is documented as empty. Do not reset/populate it or change running services to inspect the new concept. `/`, `/login` and `/demo` remain legacy routes. Existing cloud/secret setup is not new Gemini configuration. Historical [stock](docs/verification/STOCK_TRACKING_2026_10_21.md), [forecast](docs/verification/FORECASTING_2026_10_21.md), [integration](docs/verification/INTEGRATION_2026_10_22.md), [UI](docs/verification/UI_2026_10_22.md) and [automatic SKU](docs/verification/AUTO_SKU_2026_10_22.md) evidence remains intact.
+Open `http://localhost:3000/demo`, sign in as Manager or Staff, and add initial products from the Manager account. Manager document upload accepts JPEG, PNG or WebP images up to 6 MB and requires a real Gemini key; the default model is `gemini-2.5-flash`. There is no mock scan path. `npm run dev` runs the website; it does not start PostgreSQL. If the database or Gemini service is unavailable, the relevant operation will display an error instead of silently using sample inventory. These commands have not been executed as part of this update.
+
+On the Manager's **Scan receipt** page, choose **Take photo** or **Upload file**. Phones use their native camera chooser; supported desktop browsers show a live preview with **Take picture** and **Cancel camera**. Desktop preview requires HTTPS or localhost and camera permission. A phone opening a plain HTTP LAN address may need a secure preview URL for browser camera APIs. Camera errors leave Upload file available. Preview the selected image, then use **Retake photo**, **Change file**, or **Remove image** as needed. Readable camera formats such as HEIC/AVIF are converted to JPEG in memory; if the browser cannot decode them, choose JPEG, PNG or WebP. Both the original selection and prepared image must be no larger than 6 MB. Images and camera streams are temporary; there is no browser-storage or server-file save.
+
+**Create draft** sends either choice through the same server-side Gemini workflow. It does not add stock. Review the saved draft, enter quantities in the product's base unit, confirm actual usable receipt, and approve before Intake is posted. Staff have no scan menu and cannot call the draft APIs. Physical camera/permission behavior, real mobile devices and live Gemini remain Unverified; resized desktop-browser results and other checks are in the current revision report.
+
+Saved drafts have **Compare with a bon image** for temporary visual comparison. Choose/change/remove the image locally; it does not call Gemini, create a draft or change stock. A blank unreadable line can be excluded with a reason while other valid lines are approved. Extraction requests are bounded to 45 seconds and SDK retries are disabled. On provider failure/timeout, read the error and press Create draft deliberately to retry; a failed extraction saves no draft or stock.
+
+Manager **History** starts with **Receipt history**: one approved receipt per entry, grouped by persisted draft identity, with all included products/quantities and receipt-value details. Same-date receipts stay separate. Search by product/description/quantity and filter document date. **Stock activity** separately lists Take/Return with server account attribution and discoverable **Manager opening balance** records, with search/type filtering. Pending/discarded documents stay in Drafts. Shared Staff labels never identify an individual employee.
+
+## Repeatable local verification
+
+`npm run test:estock` runs retained PostgreSQL/API regressions with a test-only provider stub. Set `ESTOCK_TEST_DATABASE_URL` or use private local `DATABASE_URL`; the database account needs permission to create/drop its own uniquely named schema. Tests verify their search path, create synthetic data only there and remove only that owned schema. They never reset or seed operational tables. No live Gemini call occurs.
+
+`npm run test:estock:browser` launches a temporary source copy, unique synthetic schema, loopback provider stub and a fresh **headless Chrome** profile using the development demo credentials from the private environment. Chrome must be installed; `playwright-core` is a development-only driver and downloads no browser. Port 3107 must be free. A preview identity check prevents testing against another service. External fetches are blocked; no existing browser profile or operational data is used. The process must be allowed to stop its own child server tree for cleanup. Evidence is saved in ignored `.artifacts/estock-mvp/`. These tests resize a desktop browser; they do not verify real mobile devices or cameras.
+
+For a manual synthetic-only browser walkthrough, `npm run test:estock:preview` exposes the same isolated preview. Its third extraction request deliberately simulates a provider outage; other calls return clearly synthetic fixture data. Use `stop` then Enter to clean up, or Ctrl+C in an interactive terminal. No mock/fallback path was added to the ordinary app. Do not mistake this test-only preview for live receipt extraction.
+
+Only use team-created synthetic supplier documents and records for competition material. The app does not keep uploaded image files; it keeps structured draft and History records. Check Gemini service terms before processing real supplier documents. Historical [stock](docs/verification/STOCK_TRACKING_2026_10_21.md), [forecast](docs/verification/FORECASTING_2026_10_21.md), [integration](docs/verification/INTEGRATION_2026_10_22.md), [UI](docs/verification/UI_2026_10_22.md) and [automatic SKU](docs/verification/AUTO_SKU_2026_10_22.md) reports remain about the earlier system.
 
 ## Read and coordinate
 
@@ -63,4 +87,4 @@ Replit is mandatory with own-account/project evidence (PH §9.2/§10.6); deploym
 
 PH/earlier orientation: **25 October 2026, 07:59:59 AM MYT**. [Website](https://sdchack.my/) and [FAQ](https://sdchack.my/faq) still show **11:59 PM MYT**. Use the earlier cutoff pending written clarification; internal target **24 October 2026, 20:00 MYT**. Freeze judged materials after the applicable deadline. Latest private announcements, portal fields, attendance, workshops, signatures and final access still require team verification.
 
-The original [Apache 2.0 LICENSE](LICENSE), Git history and historical evidence are preserved. See [third-party notices](THIRD_PARTY_NOTICES.md). The documentation pivot changed no application files; the subsequent authorised copy update changed only text in four frontend/shared files. Dependencies, CSS, backend, database schema, configuration and tests remain unchanged. No commit/push/publication or paid model call was made. Neither task authorises implementing the new workflow.
+The original [Apache 2.0 LICENSE](LICENSE), Git history and historical evidence are preserved. See [third-party notices](THIRD_PARTY_NOTICES.md). This implementation changes application code and local setup only; no commit, push, publication or paid model call was made in this task.

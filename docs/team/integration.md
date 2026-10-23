@@ -1,6 +1,6 @@
 # Work areas and coordinated integration
 
-Updated 23 October 2026 for document-assisted inventory. **Current user-authorised task is one coordinated documentation update across areas, with one sole editor per shared file. No code, scope-script or runtime changes.** Future implementation requires explicit instruction.
+Updated 23 October 2026 for document-assisted inventory. **Latest explicit user task authorises the MVP revision and non-destructive verification across demo/backend/data/system contracts, with one editor per shared file.** [Current evidence](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) records actual results. No commit/push/deployment or operational-data reset is authorised. The older documentation-only boundary is superseded; teammate-specific laptop login troubleshooting remains deferred.
 
 Keep team Markdown in `docs/team/`, never a root `pages/` folder. Existing Next.js source/layout, Git history, databases, credentials, original LICENSE and all team changes/evidence remain intact. The [old integration guide](../archive/2026-10-23-before-document-intake/docs/team/integration.md.txt) preserves exact prior scope detail.
 

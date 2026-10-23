@@ -1,12 +1,12 @@
 # Inventory and movement ledger: future specification
 
-23 October 2026. **Target specification; not implemented.** The existing SQLite stock API and historical verification remain legacy. The [pre-pivot agreement](../archive/2026-10-23-before-document-intake/docs/engineering/STOCK_TRACKING.md.txt) preserves old endpoint examples and results. Do not assume those permissions, movement names, decimal quantities or endpoints satisfy this specification.
+23 October 2026. **Behavioral specification with a local implementation.** [Current verification](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) covers isolated PostgreSQL/API and browser checks. The SQLite stock API and older evidence remain legacy; the [pre-pivot agreement](../archive/2026-10-23-before-document-intake/docs/engineering/STOCK_TRACKING.md.txt) preserves their different permissions, decimals and endpoints.
 
 Read the [PRD](../product/prd.md), [OCR approval contract](OCR_INTAKE.md) and [integration rules](../team/integration.md). No library-specific code or migration instructions are prescribed here. Future implementation must first follow AGENTS.md Context7 rules and installed Next.js documentation.
 
 ## Data and invariants
 
-PostgreSQL is the target structured database; hosting, ORM, schema and migration are undecided. Do not convert or delete the legacy database during planning. Products have an automatic internal ID, official name, one base unit, timestamps and catalogue revision. No mandatory SKU/barcode/shelf location. Accounts distinguish a separate Manager and one shared Staff account.
+PostgreSQL through pg and the initial SQL schema are implemented; hosted migration/backup lifecycle remains open. Preserve legacy data. Products have an automatic ID, official name, one base unit, timestamps and catalogue revision. No mandatory SKU/barcode/shelf location. Opaque sessions distinguish Manager and shared Staff roles; the explicit shared-credential exception is development-only, not individual identity assurance.
 
 Every product balance must reconcile to its ledger: **Opening + Intake − Take + Return**. If materialised balances are used, they and movements must change in the same transaction and never form independent writable sources. Final quantities are integers in the product's base unit. Persist actor account/role from the server, event time, positive movement amount/direction, resulting balance or reproducible ordering, request/event identity, and source approval/line where relevant. Use stable server posting order to explain concurrent events; display MYT.
 
@@ -21,7 +21,7 @@ General adjustments, damaged goods, sales accounting, fractional stock and purch
 
 ## Permission and read contracts
 
-These are capabilities to agree before API paths/types are chosen, not implemented routes.
+These are behavior contracts for the implemented `/api/estock` routes. Exact fields are in source/schema and current test evidence. Manager History separates approved receipts grouped by draft identity from Take/Return activity and labelled Opening balances.
 
 | Capability | Server authority | Contract essentials |
 | --- | --- | --- |
