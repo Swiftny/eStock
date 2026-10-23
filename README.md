@@ -1,27 +1,27 @@
 # eStock
 
-eStock's approved direction is **document-assisted inventory for one shop and one warehouse**: turn supplier-document lines into a reviewed stock-intake draft, then update inventory only after a Manager confirms actual receipt. Staff search products and use Take or Return.
+eStock's approved direction is **document-assisted inventory for one shop and one warehouse**: turn supplier-document lines into a reviewed stock-intake draft, then send a frozen receipt to shared Staff. Staff checks physical goods and immediately posts actual received quantities once. Manager receives informational alerts for differences. Both roles search Inventory and use Take or Return.
 
 TooGoodToBeTrue · Xiamen University · SDC Hackathon 2026 · Domain 2, Orbyte Smart SME Challenge · SDG 8.2/8.3. eStock is a team proposal, not an official Orbyte module or a working Orbyte integration.
 
 ## Current demo
 
-| Layer | Status on 23 October 2026 |
+| Layer | Status on 24 October 2026 |
 | --- | --- |
-| Website | `/demo` contains separate Manager and Staff views. Staff search stock and record Take/Return. Manager can also manage products, upload documents, review drafts, approve intake and inspect History. |
-| Data and AI | New `/api/estock` backend and PostgreSQL schema implement the document-intake workflow. The image goes to Gemini from the server, and extracted lines stay in a reviewable draft until Manager approval. |
+| Website | `/demo` contains separate Manager and Staff views. Staff search stock and record Take/Return. Manager can also manage products, upload documents, prepare/send/recall drafts, Delete products and inspect History. Staff receives pending checks and confirms actual goods. |
+| Data and AI | New `/api/estock` backend and PostgreSQL schema implement the document-intake workflow. The image goes to Gemini from the server, and extracted lines stay in a reviewable draft until Staff physically checks and confirms actual receipt. |
 | Legacy code | The earlier SQLite replenishment/forecasting source remains for historical context; it is outside this demo workflow. |
-| Verification | Current types/build, retained new-demo PostgreSQL/API checks and isolated headless Chrome journeys are recorded in the [revision verification](docs/verification/MVP_REVISION_VERIFICATION_2026_10_23.md). New-demo lint passes; unrelated legacy formatting remains separate. Physical camera/mobile device, live Gemini and deployment remain unverified. The [pre-push audit](docs/verification/PRE_PUSH_PRD_AUDIT.md) is the earlier findings snapshot. |
+| Verification | Current types/build, retained new-demo PostgreSQL/API checks and isolated headless Chrome journeys are recorded in the [Staff-receiving verification](docs/verification/STAFF_RECEIVING_2026_10_24.md). New-demo lint passes; unrelated legacy formatting remains separate. Physical camera/mobile device, live Gemini and deployment remain unverified. The [pre-push audit](docs/verification/PRE_PUSH_PRD_AUDIT.md) is the earlier findings snapshot. |
 
 The [copy verification report](docs/verification/LANDING_COPY_2026_10_23.md) describes the earlier landing-copy task; it does not verify the new demo.
 
 ## Approved scope
 
-Manager alone creates/edits products, enters Opening stock, scans/uploads, reviews/edits/matches/approves/discards drafts and sees full History. Manager and Staff view/search stock and perform Take/Return. MVP has a separate Manager account and one shared Staff account; History identifies that shared account/role, not individual employees. Backend permission checks are required.
+Manager alone creates/edits products, enters Opening stock, scans/uploads, prepares/edits/matches/sends/recalls/discards drafts and sees full History. Shared Staff alone confirms receiving checks. Manager Delete archives products even with remaining stock, retaining history. Manager and Staff view/search stock and perform Take/Return. MVP has a separate Manager account and one shared Staff account; History identifies that shared account/role, not individual employees. Backend permission checks are required.
 
-Products have an official name, one base unit, Opening and generated internal ID; no mandatory user-entered SKU/barcode/shelf location. Final quantities are integers. Opening 0 is an explicit catalogue-setup clarification; unknown products created during review start at zero, then receive Intake once on approval. Intake/Take/Return quantities are positive. Concurrent Take cannot make stock negative. Return means usable goods physically returned, not a refund or linked reversal of a previous Take.
+Products have an official name, one base unit, Opening and generated internal ID; no mandatory user-entered SKU/barcode/shelf location. Final quantities are integers. Opening 0 is an explicit catalogue-setup clarification; unknown products created during review start at zero, then receive actual Intake once at Staff confirmation. Intake/Take/Return quantities are positive. Concurrent Take cannot make stock negative. Return means usable goods physically returned, not a refund or linked reversal of a previous Take.
 
-An image does not prove goods arrived. Manager must confirm actual receipt before stock increases, including for an invoice or order-detail image. Drafts persist as structured data, Approved is immutable and one draft posts only once atomically. Preserve raw versus approved fields and Document date versus server Approved at; an old printed date never backdates the ledger. Present MYT. Convert cartons manually to base units; aliases do not retrain Gemini. Low stock is strictly below 5, including zero; exactly 5 is not Low stock.
+An image does not prove goods arrived. Manager resolves expected quantities and sends to Staff; Staff must confirm actual physical receipt before stock increases, including for invoices/orders. Preparation, frozen submitted revisions and completed checks persist without images. Completion is immutable and once-only. Preserve extracted, expected and actual quantities, Document date, Manager sent time and shared Staff confirmation/posting time; an old printed date never backdates the ledger. Present MYT. Convert cartons manually to base units; aliases do not retrain Gemini. Low stock is strictly below 5, including zero; exactly 5 is not Low stock.
 
 No prices, monetary calculations, forecasting, purchasing policies, outboxes, PO management, budgets, fine-tuning, RAG, embeddings, self-hosted GPU inference or training pipeline in the new MVP. Similar-document warnings across separate uploads are P1; single-draft protection is not universal duplicate-image prevention.
 
@@ -41,20 +41,41 @@ The origin guard compares the browser Origin with the inbound Host and request s
 
 ```sh
 npm ci
-docker compose -f compose.estock.yml up -d
+docker compose -f compose.estock.yml up -d --wait
 npm run db:estock:migrate
 npm run dev
 ```
 
-Open `http://localhost:3000/demo`, sign in as Manager or Staff, and add initial products from the Manager account. Manager document upload accepts JPEG, PNG or WebP images up to 6 MB and requires a real Gemini key; the default model is `gemini-2.5-flash`. There is no mock scan path. `npm run dev` runs the website; it does not start PostgreSQL. If the database or Gemini service is unavailable, the relevant operation will display an error instead of silently using sample inventory. These commands have not been executed as part of this update.
+Run `npm ci` again after pulling dependency changes. If PostgreSQL is unavailable, open Docker Desktop and run the Compose command above; `--wait` waits for its healthcheck. The Compose project is fixed as `estock`, with database container `estock-postgres-1` and persistent named volume `estock_postgres_data`. In this working copy, the earlier database was copied from `sdc-hackathon_estock_postgres_data` without deleting that source volume. If port 3000 already serves this checkout, use that server instead of starting a second instance.
+
+Open `http://localhost:3000/demo`, sign in as Manager or Staff, and add initial products from the Manager account. Manager document upload accepts JPEG, PNG or WebP images up to 6 MB and requires a real Gemini key; the default model is `gemini-2.5-flash`. There is no mock scan path. `npm run dev` runs the website; it does not start PostgreSQL. If the database or Gemini service is unavailable, the relevant operation will display an error instead of silently using sample inventory.
+
+Local setup verified on 24 October 2026: PostgreSQL 17.11 in Docker is healthy on `127.0.0.1:55432`; schema setup, typecheck and all 20 isolated PostgreSQL/API tests pass. The running `/demo` server on port 3000 accepts Manager/Staff login and stock reads; Staff receives 403 for Manager-only History and drafts. No products, movements or drafts were added to the application database. Live Gemini was not called. See [project context](PROJECT_CONTEXT.md) for the runtime diagnosis and limits.
 
 On the Manager's **Scan receipt** page, choose **Take photo** or **Upload file**. Phones use their native camera chooser; supported desktop browsers show a live preview with **Take picture** and **Cancel camera**. Desktop preview requires HTTPS or localhost and camera permission. A phone opening a plain HTTP LAN address may need a secure preview URL for browser camera APIs. Camera errors leave Upload file available. Preview the selected image, then use **Retake photo**, **Change file**, or **Remove image** as needed. Readable camera formats such as HEIC/AVIF are converted to JPEG in memory; if the browser cannot decode them, choose JPEG, PNG or WebP. Both the original selection and prepared image must be no larger than 6 MB. Images and camera streams are temporary; there is no browser-storage or server-file save.
 
-**Create draft** sends either choice through the same server-side Gemini workflow. It does not add stock. Review the saved draft, enter quantities in the product's base unit, confirm actual usable receipt, and approve before Intake is posted. Staff have no scan menu and cannot call the draft APIs. Physical camera/permission behavior, real mobile devices and live Gemini remain Unverified; resized desktop-browser results and other checks are in the current revision report.
+**Create draft** sends either choice through the same server-side Gemini workflow. It does not add stock. Review the saved draft, enter quantities in the product's base unit, send to Staff. Staff opens a pending check or notification, chooses All items match or Report differences, and confirms physical goods. Actual quantities post immediately; no further Manager approval. Staff has no OCR or general draft access. Physical camera/permission behavior, real mobile devices and live Gemini remain Unverified; resized desktop-browser results and other checks are in the current revision report.
 
-Saved drafts have **Compare with a bon image** for temporary visual comparison. Choose/change/remove the image locally; it does not call Gemini, create a draft or change stock. A blank unreadable line can be excluded with a reason while other valid lines are approved. Extraction requests are bounded to 45 seconds and SDK retries are disabled. On provider failure/timeout, read the error and press Create draft deliberately to retry; a failed extraction saves no draft or stock.
+Saved drafts have **Compare with a bon image** for temporary visual comparison. Choose/change/remove the image locally; it does not call Gemini, create a draft or change stock. A blank unreadable line can be excluded with a reason before sending the valid included lines to Staff. Extraction requests are bounded to 45 seconds and SDK retries are disabled. On provider failure/timeout, read the error and press Create draft deliberately to retry; a failed extraction saves no draft or stock.
 
-Manager **History** starts with **Receipt history**: one approved receipt per entry, grouped by persisted draft identity, with all included products/quantities and receipt-value details. Same-date receipts stay separate. Search by product/description/quantity and filter document date. **Stock activity** separately lists Take/Return with server account attribution and discoverable **Manager opening balance** records, with search/type filtering. Pending/discarded documents stay in Drafts. Shared Staff labels never identify an individual employee.
+Manager **History** starts with **Receipt history**: one completed receipt per entry, grouped by persisted draft identity, including entirely missing deliveries. Details show extracted/expected/actual quantities and Manager sent, shared Staff checked and stock posting times. Historical Manager approvals retain their original attribution. Same-date receipts stay separate. Search by product/description/quantity and filter document date. **Stock activity** separately lists Take/Return with server account attribution and discoverable **Manager opening balance** records, with search/type filtering. Pending/discarded documents stay in Drafts. Shared Staff labels never identify an individual employee.
+
+## Apply this revision on each teammate's laptop
+
+Each teammate runs these commands against **their own** PostgreSQL Docker volume and preserves their existing ignored `.env.local`:
+
+```sh
+npm ci
+docker compose -f compose.estock.yml up -d --wait
+npm run db:estock:migrate
+npm run dev
+```
+
+The explicit command and application initialization use the same ordered transactional migration runner, with a per-schema advisory lock and `estock_schema_migrations`. `001_initial.sql` is adopted safely for existing unversioned databases; `002_staff_receiving.sql` adds receiving snapshots/checks, notifications and archive columns. Re-running setup does not repost receipts or reset stock. Existing unsent drafts remain preparation drafts; old APPROVED receipts keep their Manager attribution. Products, movements and compatible sessions persist. **Do not use database resets, truncate or `down -v`.** Stop/restart the app after updating the source. The command needs permission to apply schema changes. It neither reads images nor calls Gemini.
+
+Stockroom is the only permanent app destination. Manager task buttons open Inventory, Scan receipt, Drafts and History. Staff task buttons open Inventory/Take/Return and pending receiving checks. Each feature/detail has Back to Stockroom, including notification arrivals. Notifications refresh every eight seconds and on focus. A deleted product in a pending receipt blocks posting: Manager opens Drafts, uses Recall to correct, selects active products and sends a new version. Manager receives differences as information after stock posts.
+
+[Current verification and Delivery Gate](docs/verification/STAFF_RECEIVING_2026_10_24.md) records this revision; older reports below retain their original scope. Live OCR, physical devices/cameras, provider retention and hosted persistence remain unverified.
 
 ## Repeatable local verification
 
@@ -68,7 +89,7 @@ Only use team-created synthetic supplier documents and records for competition m
 
 ## Read and coordinate
 
-Start with [AGENTS.md](AGENTS.md), [context](PROJECT_CONTEXT.md), [English PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [stock specification](docs/engineering/STOCK_TRACKING.md), [OCR intake specification](docs/engineering/OCR_INTAKE.md), [build handoff](docs/plans/BUILD_PLAN.md) and [team integration](docs/team/integration.md). The [Indonesian source](docs/product/sources/PRD_ID_2026_10_23.md) is preserved; [superseded documentation](docs/archive/2026-10-23-before-document-intake/README.md) is historical. Existing scope scripts are unchanged and need future coordination for new modules.
+Start with [AGENTS.md](AGENTS.md), [context](PROJECT_CONTEXT.md), [English PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [stock specification](docs/engineering/STOCK_TRACKING.md), [OCR intake specification](docs/engineering/OCR_INTAKE.md), [build handoff](docs/plans/BUILD_PLAN.md) and [team integration](docs/team/integration.md). The [Indonesian source](docs/product/sources/PRD_ID_2026_10_23.md) is preserved; [superseded documentation](docs/archive/2026-10-23-before-document-intake/README.md) is historical. The coordinated scope map includes active eStock modules; shared contracts still require one editor.
 
 | Member | Assignment | University |
 | --- | --- | --- |

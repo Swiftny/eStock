@@ -12,7 +12,7 @@ const workflow = [
   ],
   [
     "Confirm receipt. Update stock.",
-    "A manager confirms what actually arrived and approves the intake. Stock and movement history update together.",
+    "Staff checks what actually arrived and confirms the receipt. Stock and movement history update together.",
   ],
 ];
 
@@ -44,12 +44,12 @@ export default function Home() {
         <section className="landing-hero container" aria-labelledby="hero-title">
           <p className="landing-eyebrow">{words("AI-assisted stock entry")}</p>
           <h1 id="hero-title">
-            <span>{words("From receipt to stock.", 80)}</span>
-            <span className="headline-accent">{words("With your approval.", 180)}</span>
+            <span>{words("Less time typing.", 80)}</span>
+            <span className="headline-accent">{words("Faster stock updates.", 180)}</span>
           </h1>
-          <p className="landing-motto">{words("Less retyping. More control.", 260)}</p>
+          <p className="landing-motto">{words("Stock entry starts with a photo.", 260)}</p>
           <p className="landing-description">
-            {words("Turn supplier documents into stock updates you can review and approve.", 320)}
+            {words("AI reads product names and quantities from your supplier documents.", 320)}
           </p>
           <div className="landing-actions">
             <a href="/demo" className="button button-primary">
@@ -88,13 +88,13 @@ export default function Home() {
             </h3>
             <p>
               {words(
-                "Upload a supplier document. Review the details, make any corrections, and approve the stock update.",
+                "Upload a supplier document. Review and correct the details, then send it to Staff for a physical check.",
               )}
             </p>
             <ul>
               <li>{words("Less retyping from receipts")}</li>
               <li>{words("Product matches you can check", 60)}</li>
-              <li>{words("A clear record of every approval", 120)}</li>
+              <li>{words("A clear record of every delivery", 120)}</li>
             </ul>
           </article>
           <article className="ai-explainer" data-reveal>
@@ -109,12 +109,12 @@ export default function Home() {
             <div className="ai-explanation">
               <p>
                 {words(
-                  "AI reads product names, quantities and dates from your documents. eStock suggests matching products, ready for your review. Stock changes only after you approve.",
+                  "AI reads product names, quantities and dates from your documents. eStock suggests matching products, ready for your review. Stock changes when Staff confirms the physical goods.",
                 )}
               </p>
               <p className="ai-demo-note">
                 {words(
-                  "In the demo, managers can upload a sample supplier document and approve the resulting stock entry.",
+                  "In the demo, managers can prepare a sample receipt and Staff can confirm the goods received.",
                 )}
               </p>
             </div>

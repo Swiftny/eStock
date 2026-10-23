@@ -1,54 +1,17 @@
-# Inventory and movement ledger: future specification
+# Inventory, archive and movement contract
 
-23 October 2026. **Behavioral specification with a local implementation.** [Current verification](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) covers isolated PostgreSQL/API and browser checks. The SQLite stock API and older evidence remain legacy; the [pre-pivot agreement](../archive/2026-10-23-before-document-intake/docs/engineering/STOCK_TRACKING.md.txt) preserves their different permissions, decimals and endpoints.
+24 October 2026. [PRD](../product/prd.md) · [receiving contract](OCR_INTAKE.md) · [actual verification](../verification/STAFF_RECEIVING_2026_10_24.md).
 
-Read the [PRD](../product/prd.md), [OCR approval contract](OCR_INTAKE.md) and [integration rules](../team/integration.md). No library-specific code or migration instructions are prescribed here. Future implementation must first follow AGENTS.md Context7 rules and installed Next.js documentation.
+Product balance = Opening + Intake − Take + usable Return. Opening is a once-only nonnegative integer recorded atomically at Manager creation; receipt-preparation product creation uses 0. Intake/Take/Return are positive safe integers in one immutable base unit. Zero actual receiving is retained in check/history and creates no movement. Generic movement APIs accept only Take/Return, never direct Intake.
 
-## Data and invariants
+Inventory/search/matching/counts/Low stock use active products only. Low stock is strictly below 5, including zero. Official-name/alias search is case insensitive, with explicit Manager matching for ambiguity; no automatic package conversions. Catalogue name edits increment product version but cannot rewrite stock, units or historical snapshots.
 
-PostgreSQL through pg and the initial SQL schema are implemented; hosted migration/backup lifecycle remains open. Preserve legacy data. Products have an automatic ID, official name, one base unit, timestamps and catalogue revision. No mandatory SKU/barcode/shelf location. Opaque sessions distinguish Manager and shared Staff roles; the explicit shared-credential exception is development-only, not individual identity assurance.
+Both roles Take/Return. Take dialog shows available stock, preserves empty intermediate editing, marks excessive typed/pasted quantities invalid and disables submission, while native max bounds stepper. Backend locks the product and rejects quantity > current stock. An insufficient-stock conflict triggers dialog availability refresh; concurrent Take cannot go negative. Return has no current-stock cap and no prior-Take/refund linkage. Both mutations persist request identity and input fingerprint inside the stock transaction; replay is safe and changed-payload reuse conflicts. Actors derive from server sessions and identify shared Staff honestly.
 
-Every product balance must reconcile to its ledger: **Opening + Intake − Take + Return**. If materialised balances are used, they and movements must change in the same transaction and never form independent writable sources. Final quantities are integers in the product's base unit. Persist actor account/role from the server, event time, positive movement amount/direction, resulting balance or reproducible ordering, request/event identity, and source approval/line where relevant. Use stable server posting order to explain concurrent events; display MYT.
+Manager `DELETE /api/estock/products/:id` requires expectedVersion + requestId. Under the same product lock used for stock movements, it sets archived_at/by and archived_stock=stock, increments version and retains the entire row/ledger/references. No stock clearing or fabricated movement. Manager UI has exactly one native modal confirmation with product name/current stock, Cancel/Delete and retained-history explanation. Busy/error states prevent duplicate submission. Staff server deletion is denied. Archived products cannot be edited, used in Take/Return or new matching and never reactivate automatically.
 
-| Type | Rule |
-| --- | --- |
-| Opening | Manager creation only, once; nonnegative integer; IC-01 permits a zero Opening for zero-balance catalogue setup |
-| Intake | Positive integer, from an approved document line only; Manager confirms actual usable goods received |
-| Take | Positive integer; both roles; transaction must reject insufficient current stock |
-| Return | Positive integer; both roles; usable goods physically returned; no refund or previous-Take link |
+If archive wins a receiving race, the complete receipt check rolls back with ARCHIVED_PRODUCT; Manager recalls/corrects/resends. If receiving wins, archive retains the resulting balance snapshot. Receipt-level once-only protection is separate from per-request identity. All inventory writes preserve ledger reconciliation, including archived remaining balances.
 
-General adjustments, damaged goods, sales accounting, fractional stock and purchasing flows are not active-MVP operations. Catalogue edits cannot rewrite balances or approved historical identity/unit snapshots. Base-unit changes that reinterpret posted stock must be rejected. Manager may edit other catalogue details with revision/audit; do not silently remap variants or aliases.
+Full History remains Manager-only. Primary Receipt history includes immutable frozen expected/actual details and all-missing deliveries, server Manager preparation/shared Staff confirmation/posting times and separate original document date. Historical Manager-approved receipts preserve original actors/times. Stock activity separately shows Take/Return and labelled Manager Opening; archive never deletes it.
 
-## Permission and read contracts
-
-These are behavior contracts for the implemented `/api/estock` routes. Exact fields are in source/schema and current test evidence. Manager History separates approved receipts grouped by draft identity from Take/Return activity and labelled Opening balances.
-
-| Capability | Server authority | Contract essentials |
-| --- | --- | --- |
-| Inventory/search | Manager, Staff | Official product ID/name/base unit/current stock, Low stock; case-insensitive names/aliases; no draft/full-History leakage |
-| Create/edit product | Manager | Name/base unit/Opening on create, generated ID, expected revision on edits; no arbitrary stock field updates |
-| Post Take/Return | Manager, Staff | Product ID, operation, positive integer quantity, persistent event/request identity; server actor/time |
-| Full History | Manager only | Opening/Intake/Take/Return, document and approval context, raw/final values, actor account/role, server time/order |
-| Draft lifecycle/Intake | Manager only | See OCR_INTAKE.md; generic movement requests cannot bypass approval |
-
-Reject missing/expired identity, wrong role, guessed inaccessible IDs and caller-supplied role escalation. Read permissions matter as well as writes. The Staff confirmation can show its successful operation/current stock without exposing full History. Shared Staff actor identifies the shared account, not a named employee. D2 permits simulated identity foundations; the future backend role checks must still be effective and the account limitations labelled honestly.
-
-## Transaction and retry contract
-
-1. Resolve the authenticated account/role server-side and validate allowed fields, product and unit semantics.
-2. Identify one intentional event with a persistent request/event ID and canonical input fingerprint, scoped to account/shop and operation as appropriate. Same ID + same input replays the saved committed result; same ID + changed input conflicts. A duplicate with a different transport request key must still match the original business event identity.
-3. Inside a database transaction, serialise changes to the product balance or use an equivalent atomic conditional update. Check available stock **in that transaction**. Two Takes of 4 against 5 cannot both succeed.
-4. Commit event identity, movement, balance and response identity together. Failure rolls back everything; an uncertain client response retains the same event ID on retry. Refetch current Inventory after replay because another event may have changed stock since the saved result.
-5. Do not treat disabled buttons or a pre-request balance check as concurrency protection. Define bounded database retry/conflict handling; retry the complete transaction with the same event identity. Do not create a new event on automatic retry.
-
-Opening/product creation is atomic and idempotent. Unknown-product creation during review uses Opening 0; the receipt quantity appears only later as Intake. Draft approval locks/checks the draft revision/status and updates all affected product balances/movements in one transaction; agree deterministic product lock order to reduce contention. Precise PostgreSQL mechanisms require current documentation and future design review.
-
-## History and UI targets
-
-Document date is metadata, separate from server Approved at and posting time. Earlier printed dates never backdate balance mutations. Approved line/name/unit snapshots are immutable even if product display names change. Empty startup has no operational fixtures. Low stock is **strictly <5**, including zero, with a textual indicator; exactly 5 is normal.
-
-Manager: Inventory, Add product, draft review and full History. Staff: searchable stock list, Take/Return, quantity, Confirm and visible updated stock. Preserve submitted inputs and event identity when requests fail/are uncertain; require a new intentional confirmation for a new event. Useful loading, empty, validation, conflict and failure states are future acceptance requirements, not verified UI.
-
-## Verification to implement later
-
-PRD AC-01–04, AC-12–17, AC-21–23, AC-25–26 cover role denial, empty startup, Opening, integer rules, simultaneous Take, persistent retries, shared-account attribution, ledger reconciliation, responsive use and deployment durability. Include real database concurrency/failure-injection cases, not only mocked UI checks. No tests were added or run in this documentation task. Historical reports remain unchanged and do not verify PostgreSQL.
+Explicit setup and app startup share versioned transactional migrations. The retained isolated PostgreSQL tests exercise fresh and populated upgrades, permissions, bounds, races, injected rollback, missing goods, notifications and reconciliation. Browser verification is resized desktop Chrome, not a physical-device/live-OCR result. See the current verification report for exact commands/results and remaining limitations.

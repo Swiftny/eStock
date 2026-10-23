@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { type HistoryMovement, matchesHistorySearch, receiptHistory } from "@/lib/estock-history";
+import type { Receipt } from "@/lib/server/estock/receiving";
 import styles from "./estock-app.module.css";
 
 export function ManagerHistory({
@@ -15,6 +16,7 @@ export function ManagerHistory({
   formatDate: (value: string | null | undefined) => string;
   formatTime: (value: string | null | undefined) => string;
 }) {
+  const [received, setReceived] = useState<Receipt[]>([]);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [section, setSection] = useState<"receipts" | "activity">("receipts");
@@ -25,7 +27,14 @@ export function ManagerHistory({
   useEffect(() => {
     let active = true;
     setRefreshing(true);
-    void onRefresh()
+    void Promise.all([
+      onRefresh(),
+      fetch("/api/estock/receiving", { cache: "no-store" }).then(async (response) => {
+        if (!response.ok) throw new Error("Could not load receipts");
+        const result = await response.json();
+        if (active) setReceived(result.receipts);
+      }),
+    ])
       .catch(() => {
         if (active) setError("History could not refresh. Try Refresh history again.");
       })
@@ -36,11 +45,21 @@ export function ManagerHistory({
       active = false;
     };
   }, [onRefresh]);
-  const receipts = receiptHistory(movements);
+  const receipts = receiptHistory(movements.filter((m) => m.actorRole === "manager"));
   const visibleReceipts = receipts.filter(
     (receipt) =>
       (!documentDate || receipt.documentDate === documentDate) &&
       receipt.lines.some((line) => matchesHistorySearch(line, receiptSearch)),
+  );
+  const visibleReceived = received.filter(
+    (r) =>
+      (!documentDate || r.documentDate === documentDate) &&
+      r.lines.some((l) =>
+        [l.productName, l.rawName, l.reviewedName, l.expected, l.actual, l.unit]
+          .join(" ")
+          .toLowerCase()
+          .includes(receiptSearch.toLowerCase()),
+      ),
   );
   const activity = movements.filter((movement) => movement.type !== "INTAKE");
   const visibleActivity = activity.filter(
@@ -53,11 +72,8 @@ export function ManagerHistory({
     <>
       <div className={styles.pageHeading}>
         <div>
-          <p className={styles.kicker}>Manager workspace</p>
           <h1>History</h1>
-          <p>
-            Approved receipts record goods received. Take, Return and Opening are listed separately.
-          </p>
+          <p>Review stock records.</p>
         </div>
         <button
           className={styles.secondaryButton}
@@ -68,6 +84,9 @@ export function ManagerHistory({
             setError("");
             try {
               await onRefresh();
+              const response = await fetch("/api/estock/receiving", { cache: "no-store" });
+              if (!response.ok) throw new Error("Could not load receipts");
+              setReceived((await response.json()).receipts);
             } catch {
               setError("History could not refresh. Try Refresh history again.");
             } finally {
@@ -86,7 +105,7 @@ export function ManagerHistory({
       <div className={styles.historySections}>
         <button
           type="button"
-          className={section === "receipts" ? styles.primaryButton : styles.secondaryButton}
+          className={section === "receipts" ? styles.navActive : styles.navItem}
           aria-pressed={section === "receipts"}
           onClick={() => setSection("receipts")}
         >
@@ -94,7 +113,7 @@ export function ManagerHistory({
         </button>
         <button
           type="button"
-          className={section === "activity" ? styles.primaryButton : styles.secondaryButton}
+          className={section === "activity" ? styles.navActive : styles.navItem}
           aria-pressed={section === "activity"}
           onClick={() => setSection("activity")}
         >
@@ -105,8 +124,7 @@ export function ManagerHistory({
         <section aria-labelledby="receipt-history-heading">
           <h2 id="receipt-history-heading">Receipt history</h2>
           <p className={styles.smallCopy}>
-            One entry per approved receipt, with all its received items. Pending and discarded
-            documents stay in Drafts.
+            Completed deliveries, including missing goods. Pending documents stay in Drafts.
           </p>
           <div className={styles.historyFilters}>
             <label className={styles.field}>
@@ -115,7 +133,7 @@ export function ManagerHistory({
                 type="search"
                 value={receiptSearch}
                 onChange={(event) => setReceiptSearch(event.target.value)}
-                placeholder="Product, bon description or quantity"
+                placeholder="Product, description or quantity"
               />
             </label>
             <label className={styles.field}>
@@ -128,15 +146,54 @@ export function ManagerHistory({
             </label>
           </div>
           <p role="status">
-            {visibleReceipts.length} of {receipts.length} approved receipts
+            {visibleReceipts.length + visibleReceived.length} of {receipts.length + received.length}{" "}
+            completed receipts
           </p>
-          {!visibleReceipts.length ? (
+          <div className={styles.historyList}>
+            {visibleReceived.map((r) => (
+              <article className={styles.historyItem} key={r.id}>
+                <h3>Document date: {formatDate(r.documentDate)}</h3>
+                <p>{r.hasDiscrepancies ? "Received with differences" : "Received"}</p>
+                <ul className={styles.receiptLines}>
+                  {r.lines.map((l) => (
+                    <li key={l.id}>
+                      <strong>{l.productName}</strong>
+                      <span>
+                        {l.actual} {l.unit} received · expected {l.expected}
+                        {l.outcome !== "MATCH"
+                          ? ` · ${l.outcome === "SHORT" ? "Short" : "Extra"} by ${l.difference}`
+                          : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <details className={styles.sourceDetails}>
+                  <summary>View receipt details</summary>
+                  <p>Manager prepared and sent: {formatTime(r.sentAt)} MYT</p>
+                  <p>Shared Staff checked: {formatTime(r.receivedAt)} MYT</p>
+                  <p>Stock posted: {formatTime(r.receivedAt)} MYT</p>
+                  {r.lines.map((l) => (
+                    <p key={l.id}>
+                      {l.productName}: read from document {l.rawName} ·{" "}
+                      {l.rawQuantity ?? "Unreadable"} {l.rawUnit} · Manager expected {l.expected}{" "}
+                      {l.unit} · Shared Staff received {l.actual} {l.unit}
+                    </p>
+                  ))}
+                </details>
+              </article>
+            ))}
+          </div>
+          {!visibleReceipts.length && !visibleReceived.length ? (
             <div className={styles.quietEmpty}>
-              <h3>{receipts.length ? "No matching receipts" : "No approved receipts yet"}</h3>
+              <h3>
+                {receipts.length + received.length
+                  ? "No matching receipts"
+                  : "No completed receipts yet"}
+              </h3>
               <p>
-                {receipts.length
+                {receipts.length + received.length
                   ? "Try another search or clear the document date."
-                  : "Approve a reviewed draft to record the goods received here."}
+                  : "Staff confirmation records the delivery here, including an entirely missing delivery."}
               </p>
             </div>
           ) : (
@@ -208,6 +265,7 @@ export function ManagerHistory({
               <span>Movement type</span>
               <select
                 value={activityType}
+                data-placeholder={activityType === "ALL"}
                 onChange={(event) => setActivityType(event.target.value)}
               >
                 <option value="ALL">All stock activity</option>

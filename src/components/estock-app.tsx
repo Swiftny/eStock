@@ -13,10 +13,11 @@ import type { HistoryMovement as Movement } from "@/lib/estock-history";
 import { DraftComparison } from "./draft-comparison";
 import { ManagerHistory } from "./manager-history";
 import styles from "./estock-app.module.css";
+import { Notifications, ReceivingWorkspace } from "./receiving-workspace";
 import { ReceiptImagePicker } from "./receipt-image-picker";
 
 type Role = "manager" | "staff";
-type Page = "overview" | "inventory" | "scan" | "drafts" | "history";
+type Page = "inventory" | "scan" | "drafts" | "history" | "receiving";
 type MovementType = "TAKE" | "RETURN";
 
 type Product = {
@@ -45,7 +46,7 @@ type DraftLine = {
 };
 type Draft = {
   id: string;
-  status: "DRAFT" | "APPROVED" | "DISCARDED";
+  status: "DRAFT" | "AWAITING_STAFF" | "RECEIVED" | "APPROVED" | "DISCARDED";
   revision: number;
   documentDate: string | null;
   extractedDocumentDate: string | null;
@@ -91,7 +92,7 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body;
 }
 
-function json(method: "POST" | "PATCH", value: unknown): RequestInit {
+function json(method: "POST" | "PATCH" | "DELETE", value: unknown): RequestInit {
   return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) };
 }
 
@@ -174,19 +175,13 @@ function EmptyState({
   );
 }
 
-const managerPages: { id: Page; label: string }[] = [
-  { id: "overview", label: "Overview" },
-  { id: "inventory", label: "Inventory" },
-  { id: "scan", label: "Scan receipt" },
-  { id: "drafts", label: "Drafts" },
-  { id: "history", label: "History" },
-];
-
 export function EStockApp() {
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
-  const [page, setPage] = useState<Page>("overview");
+  const [page, setPage] = useState<Page>("inventory");
   const [products, setProducts] = useState<Product[]>([]);
   const [dataReady, setDataReady] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -293,7 +288,7 @@ export function EStockApp() {
         if (!live) return;
         if (session.authenticated && session.role) {
           setRole(session.role);
-          setPage(session.role === "manager" ? "overview" : "inventory");
+          setPage("inventory");
           await loadData(session.role);
         }
       } catch (cause) {
@@ -318,7 +313,8 @@ export function EStockApp() {
         json("POST", { role: authRole, password }),
       );
       setRole(result.role);
-      setPage(result.role === "manager" ? "overview" : "inventory");
+      setPage("inventory");
+      window.history.replaceState(window.history.state, "", "#inventory");
       setPassword("");
       await loadData(result.role);
     } catch (cause) {
@@ -328,46 +324,69 @@ export function EStockApp() {
     }
   }
 
-  async function signOut() {
-    setError("");
-    try {
-      await api<{ ok: boolean }>("/api/estock/session", { method: "DELETE" });
-      setRole(null);
-      setProducts([]);
-      setDataReady(false);
-      setDrafts([]);
-      setHistory([]);
-      setSelectedDraftId(null);
-      setMovementTarget(null);
-      setEditTarget(null);
-      setProductDialog(false);
-      setNotice("");
-    } catch (cause) {
-      setError(message(cause));
-    }
-  }
-
   function go(next: Page) {
-    if (role === "staff" && next !== "inventory") return;
+    if (role === "staff" && !["inventory", "receiving"].includes(next)) return;
+    window.history.pushState(window.history.state, "", `#${next}`);
     setPage(next);
     setError("");
     setNotice("");
     if (next === "inventory" && role) void loadData(role);
-    requestAnimationFrame(() => mainRef.current?.focus());
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      mainRef.current?.focus({ preventScroll: true });
+    });
+  }
+
+  useEffect(() => {
+    if (!role) return;
+    const restore = () => {
+      const [destination, record] = window.location.hash.slice(1).split("/");
+      const allowed =
+        role === "manager"
+          ? ["inventory", "scan", "drafts", "history", "receiving"]
+          : ["inventory", "receiving"];
+      setPage(allowed.includes(destination) ? (destination as Page) : "inventory");
+      setSelectedReceiptId(destination === "receiving" && record ? record : null);
+      if (destination === "drafts" && record) setSelectedDraftId(record);
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "instant" });
+        mainRef.current?.focus({ preventScroll: true });
+      });
+    };
+    restore();
+    window.addEventListener("popstate", restore);
+    window.addEventListener("hashchange", restore);
+    return () => {
+      window.removeEventListener("popstate", restore);
+      window.removeEventListener("hashchange", restore);
+    };
+  }, [role]);
+  function openReceipt(id: string | null) {
+    go("receiving");
+    setSelectedReceiptId(id);
+    window.history.replaceState(window.history.state, "", `#receiving${id ? `/${id}` : ""}`);
   }
 
   const visibleProducts = useMemo(
     () => (query.trim() ? searchMatches || [] : products),
     [products, query, searchMatches],
   );
-  const lowStock = products.filter((item) => item.stock < 5);
-  const pendingDrafts = drafts.filter((item) => item.status === "DRAFT");
+  const sections: { page: Page; label: string }[] = [
+    { page: "inventory", label: "Inventory" },
+    ...(role === "manager"
+      ? ([
+          { page: "scan", label: "Scan receipt" },
+          { page: "drafts", label: "Drafts" },
+          { page: "history", label: "History" },
+        ] as const)
+      : ([{ page: "receiving", label: "Pending checks" }] as const)),
+  ];
 
   if (initializing) {
     return (
       <main className={styles.boot} role="status" aria-busy="true">
         <span className={styles.wordmark}>
-          e<span>Stock</span>
+          <span>e</span>Stock
         </span>
         <p>Opening inventory…</p>
       </main>
@@ -382,7 +401,7 @@ export function EStockApp() {
         </a>
         <header className={styles.header}>
           <a href="/" className={styles.wordmark} aria-label="eStock home">
-            e<span>Stock</span>
+            <span>e</span>Stock
           </a>
           <span className={styles.headerHint}>Warehouse inventory</span>
         </header>
@@ -391,8 +410,8 @@ export function EStockApp() {
             <p className={styles.kicker}>Your workspace</p>
             <h1>Sign in to eStock</h1>
             <p>
-              Choose the account for your work. Manager reviews receipts; Staff records stock taken
-              or returned.
+              Manager prepares receipts. Shared Staff checks deliveries and records stock taken or
+              returned.
             </p>
           </div>
           <form className={styles.signInForm} onSubmit={signIn} aria-busy={signingIn}>
@@ -411,7 +430,7 @@ export function EStockApp() {
                   />
                   <span>
                     <strong>Manager</strong>
-                    <small>Inventory and receipt approval</small>
+                    <small>Inventory and receipt preparation</small>
                   </span>
                 </label>
                 <label
@@ -426,7 +445,7 @@ export function EStockApp() {
                   />
                   <span>
                     <strong>Staff</strong>
-                    <small>Take and Return</small>
+                    <small>Check deliveries, Take and Return</small>
                   </span>
                 </label>
               </div>
@@ -455,41 +474,29 @@ export function EStockApp() {
       <a className={styles.skip} href="#estock-main">
         Skip to inventory workspace
       </a>
-      <header className={styles.header}>
+      <header className={`${styles.header} ${styles.workspaceHeader}`}>
         <a href="/" className={styles.wordmark} aria-label="eStock home">
-          e<span>Stock</span>
+          <span>e</span>Stock
         </a>
-        <span className={styles.workspaceLabel}>One shop · One warehouse</span>
-        <div className={styles.account}>
-          <span className={styles.accountRole}>{role === "manager" ? "Manager" : "Staff"}</span>
-          <button className={styles.signOut} type="button" onClick={() => void signOut()}>
-            Sign out
-          </button>
-        </div>
-      </header>
-      <div className={styles.shell}>
         <nav className={styles.navigation} aria-label="Workspace sections">
-          {(role === "manager"
-            ? managerPages
-            : [{ id: "inventory" as Page, label: "Inventory" }]
-          ).map((item) => (
+          {sections.map((section) => (
             <button
-              key={item.id}
+              key={section.page}
               type="button"
-              className={page === item.id ? styles.navActive : styles.navItem}
-              aria-current={page === item.id ? "page" : undefined}
-              onClick={() => go(item.id)}
+              className={page === section.page ? styles.navActive : styles.navItem}
+              aria-current={page === section.page ? "page" : undefined}
+              onClick={() => (section.page === "receiving" ? openReceipt(null) : go(section.page))}
             >
-              {item.label}
-              {item.id === "drafts" && pendingDrafts.length > 0 && (
-                <span className={styles.navCount}>
-                  {pendingDrafts.length}
-                  <span className={styles.srOnly}> pending drafts</span>
-                </span>
-              )}
+              {section.label}
             </button>
           ))}
         </nav>
+        <div className={styles.account}>
+          <span className={styles.accountRole}>{role === "manager" ? "Manager" : "Staff"}</span>
+          <Notifications role={role} onOpen={(id) => openReceipt(id)} />
+        </div>
+      </header>
+      <div className={styles.shell}>
         <main
           id="estock-main"
           ref={mainRef}
@@ -523,66 +530,72 @@ export function EStockApp() {
               }
             />
           )}
-          {!loadingData && dataReady && role === "manager" && page === "overview" && (
-            <Overview
-              products={products}
-              lowStock={lowStock}
-              pendingDrafts={pendingDrafts}
-              history={history}
-              onOpenDraft={(id) => {
-                setSelectedDraftId(id);
-                go("drafts");
-              }}
-              onNavigate={go}
-            />
-          )}
-          {!loadingData && dataReady && page === "inventory" && (
-            <Inventory
-              role={role}
-              products={products}
-              visibleProducts={visibleProducts}
-              query={query}
-              searchPending={searchPending}
-              searchError={searchError}
-              onQuery={setQuery}
-              onAdd={() => setProductDialog(true)}
-              onMove={(product, type) => setMovementTarget({ product, type })}
-              onEdit={setEditTarget}
-            />
-          )}
-          {!loadingData && dataReady && role === "manager" && page === "scan" && (
-            <ScanReceipt
-              onCreated={async (draft) => {
-                setDrafts((current) => [draft, ...current.filter((item) => item.id !== draft.id)]);
-                setSelectedDraftId(draft.id);
-                go("drafts");
-                void loadDrafts().catch((cause) =>
-                  setError(`Draft created, but the list could not refresh: ${message(cause)}`),
-                );
-              }}
-            />
-          )}
-          {!loadingData && dataReady && role === "manager" && page === "drafts" && (
-            <Drafts
-              drafts={drafts}
-              products={products}
-              selectedId={selectedDraftId}
-              onSelect={setSelectedDraftId}
-              onRefresh={loadDrafts}
-              onChanged={async () => {
-                await Promise.all([loadDrafts(), loadProducts(), loadHistory()]);
-                setSearchRevision((current) => current + 1);
-              }}
-              onProductCreated={(product) => {
-                setProducts((current) =>
-                  [...current, product].sort((a, b) => a.name.localeCompare(b.name)),
-                );
-                setSearchRevision((current) => current + 1);
-              }}
-            />
-          )}
-          {!loadingData && dataReady && role === "manager" && page === "history" && (
-            <History movements={history} onRefresh={loadHistory} />
+          {!loadingData && dataReady && (
+            <div key={page} className={styles.screen}>
+              {page === "receiving" && (
+                <ReceivingWorkspace
+                  role={role}
+                  selectedId={selectedReceiptId}
+                  onSelect={openReceipt}
+                  onCompleted={async () => {
+                    await loadProducts();
+                    if (role === "manager") await loadHistory();
+                  }}
+                />
+              )}
+              {page === "inventory" && (
+                <Inventory
+                  role={role}
+                  products={products}
+                  visibleProducts={visibleProducts}
+                  query={query}
+                  searchPending={searchPending}
+                  searchError={searchError}
+                  onQuery={setQuery}
+                  onAdd={() => setProductDialog(true)}
+                  onMove={(product, type) => setMovementTarget({ product, type })}
+                  onEdit={setEditTarget}
+                  onDelete={setDeleteTarget}
+                />
+              )}
+              {role === "manager" && page === "scan" && (
+                <ScanReceipt
+                  onCreated={async (draft) => {
+                    setDrafts((current) => [
+                      draft,
+                      ...current.filter((item) => item.id !== draft.id),
+                    ]);
+                    setSelectedDraftId(draft.id);
+                    go("drafts");
+                    void loadDrafts().catch((cause) =>
+                      setError(`Draft created, but the list could not refresh: ${message(cause)}`),
+                    );
+                  }}
+                />
+              )}
+              {role === "manager" && page === "drafts" && (
+                <Drafts
+                  drafts={drafts}
+                  products={products}
+                  selectedId={selectedDraftId}
+                  onSelect={setSelectedDraftId}
+                  onRefresh={loadDrafts}
+                  onChanged={async () => {
+                    await Promise.all([loadDrafts(), loadProducts(), loadHistory()]);
+                    setSearchRevision((current) => current + 1);
+                  }}
+                  onProductCreated={(product) => {
+                    setProducts((current) =>
+                      [...current, product].sort((a, b) => a.name.localeCompare(b.name)),
+                    );
+                    setSearchRevision((current) => current + 1);
+                  }}
+                />
+              )}
+              {role === "manager" && page === "history" && (
+                <History movements={history} onRefresh={loadHistory} />
+              )}
+            </div>
           )}
         </main>
       </div>
@@ -592,6 +605,10 @@ export function EStockApp() {
           product={movementTarget.product}
           type={movementTarget.type}
           onClose={() => setMovementTarget(null)}
+          onAvailability={(latest) => {
+            setProducts(latest);
+            setSearchRevision((current) => current + 1);
+          }}
           onSaved={async (updated) => {
             setMovementTarget(null);
             setNotice("Movement saved. Refreshing current stock…");
@@ -612,6 +629,19 @@ export function EStockApp() {
               void loadHistory().catch((cause) =>
                 setError(`Movement saved, but History could not refresh: ${message(cause)}`),
               );
+          }}
+        />
+      )}
+      {deleteTarget && role === "manager" && (
+        <DeleteProductDialog
+          product={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={async () => {
+            setDeleteTarget(null);
+            setNotice("Product deleted. Transaction history is retained.");
+            await loadProducts();
+            setSearchRevision((v) => v + 1);
+            requestAnimationFrame(() => mainRef.current?.focus());
           }}
         />
       )}
@@ -649,156 +679,6 @@ export function EStockApp() {
   );
 }
 
-function Overview({
-  products,
-  lowStock,
-  pendingDrafts,
-  history,
-  onOpenDraft,
-  onNavigate,
-}: {
-  products: Product[];
-  lowStock: Product[];
-  pendingDrafts: Draft[];
-  history: Movement[];
-  onOpenDraft: (id: string) => void;
-  onNavigate: (page: Page) => void;
-}) {
-  return (
-    <>
-      <div className={styles.pageHeading}>
-        <div>
-          <p className={styles.kicker}>Manager workspace</p>
-          <h1>Warehouse overview</h1>
-          <p>See what needs attention and review stock in one place.</p>
-        </div>
-        <button className={styles.primaryButton} type="button" onClick={() => onNavigate("scan")}>
-          Scan receipt
-        </button>
-      </div>
-      <div className={styles.overviewGrid}>
-        <section className={styles.overviewPrimary} aria-labelledby="pending-heading">
-          <div className={styles.sectionHeading}>
-            <div>
-              <h2 id="pending-heading">Pending review</h2>
-              <p>Receipts only update stock after your approval.</p>
-            </div>
-            <span className={styles.bigNumber}>{pendingDrafts.length}</span>
-          </div>
-          {pendingDrafts.length ? (
-            <div className={styles.simpleList}>
-              {pendingDrafts.slice(0, 4).map((draft) => (
-                <button
-                  key={draft.id}
-                  className={styles.simpleListButton}
-                  type="button"
-                  onClick={() => onOpenDraft(draft.id)}
-                >
-                  <span>
-                    <strong>
-                      {draft.lines.length} {draft.lines.length === 1 ? "item" : "items"}
-                    </strong>
-                    <small>Document date: {formatDate(draft.documentDate)}</small>
-                  </span>
-                  <span>Review</span>
-                </button>
-              ))}
-              {pendingDrafts.length > 4 && (
-                <button
-                  className={styles.textButton}
-                  type="button"
-                  onClick={() => onNavigate("drafts")}
-                >
-                  View all drafts
-                </button>
-              )}
-            </div>
-          ) : (
-            <p className={styles.quietEmpty}>No receipts waiting for review.</p>
-          )}
-        </section>
-        <section className={styles.overviewSecondary} aria-labelledby="stock-summary-heading">
-          <h2 id="stock-summary-heading">Inventory at a glance</h2>
-          <dl className={styles.summaryList}>
-            <div>
-              <dt>Products</dt>
-              <dd>{products.length}</dd>
-            </div>
-            <div>
-              <dt>Low stock</dt>
-              <dd>{lowStock.length}</dd>
-            </div>
-          </dl>
-          <p className={styles.smallCopy}>
-            Low stock means fewer than 5 units in the product’s base unit.
-          </p>
-          <button
-            className={styles.secondaryButton}
-            type="button"
-            onClick={() => onNavigate("inventory")}
-          >
-            View all inventory
-          </button>
-        </section>
-      </div>
-      {lowStock.length > 0 && (
-        <section className={styles.plainSection} aria-labelledby="low-heading">
-          <div className={styles.sectionHeading}>
-            <h2 id="low-heading">Low stock</h2>
-            <button
-              className={styles.textButton}
-              type="button"
-              onClick={() => onNavigate("inventory")}
-            >
-              Open inventory
-            </button>
-          </div>
-          <ul className={styles.lowList}>
-            {lowStock.slice(0, 6).map((item) => (
-              <li key={item.id}>
-                <span>{item.name}</span>
-                <strong>
-                  {item.stock} {item.unit}
-                </strong>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      <section className={styles.plainSection} aria-labelledby="recent-heading">
-        <div className={styles.sectionHeading}>
-          <h2 id="recent-heading">Recent activity</h2>
-          <button className={styles.textButton} type="button" onClick={() => onNavigate("history")}>
-            View history
-          </button>
-        </div>
-        {history.length ? (
-          <ul className={styles.recentList}>
-            {history.slice(0, 5).map((item) => (
-              <li key={item.id}>
-                <span>
-                  <strong>{item.productName}</strong>
-                  <small>
-                    {item.type} · {formatTime(item.createdAt)}
-                  </small>
-                </span>
-                <strong>
-                  {item.delta > 0 ? "+" : ""}
-                  {item.delta} {item.unit}
-                </strong>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={styles.quietEmpty}>
-            No stock movements yet. Add a product to record its opening balance.
-          </p>
-        )}
-      </section>
-    </>
-  );
-}
-
 function Inventory({
   role,
   products,
@@ -810,6 +690,7 @@ function Inventory({
   onAdd,
   onMove,
   onEdit,
+  onDelete,
 }: {
   role: Role;
   products: Product[];
@@ -821,18 +702,14 @@ function Inventory({
   onAdd: () => void;
   onMove: (product: Product, type: MovementType) => void;
   onEdit: (product: Product) => void;
+  onDelete: (product: Product) => void;
 }) {
   return (
     <>
       <div className={styles.pageHeading}>
         <div>
-          <p className={styles.kicker}>{role === "manager" ? "Manager" : "Staff"} workspace</p>
           <h1>Inventory</h1>
-          <p>
-            {role === "manager"
-              ? "All products and their current warehouse stock."
-              : "Find a product, then Take or Return its stock."}
-          </p>
+          <p>Search and update stock.</p>
         </div>
         {role === "manager" && (
           <button className={styles.primaryButton} type="button" onClick={onAdd}>
@@ -925,6 +802,16 @@ function Inventory({
                     Edit
                   </button>
                 )}
+                {role === "manager" && (
+                  <button
+                    className={styles.textButton}
+                    type="button"
+                    aria-label={`Delete ${item.name}`}
+                    onClick={() => onDelete(item)}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </li>
           ))}
@@ -939,15 +826,24 @@ function MovementDialog({
   type,
   onClose,
   onSaved,
+  onAvailability,
 }: {
   product: Product;
   type: MovementType;
   onClose: () => void;
   onSaved: (product: Product) => Promise<void>;
+  onAvailability: (products: Product[]) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<Element | null>(null);
   const attempt = useRef<{ signature: string; key: string } | null>(null);
+  const [available, setAvailable] = useState(product.stock);
+  const [active, setActive] = useState(true);
+  const invalid = (value: string) =>
+    value !== "" &&
+    (!Number.isSafeInteger(Number(value)) ||
+      Number(value) <= 0 ||
+      (type === "TAKE" && Number(value) > available));
   const [quantity, setQuantity] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -956,19 +852,22 @@ function MovementDialog({
     dialog.current?.showModal();
     return () => {
       dialog.current?.close();
-      if (opener.current instanceof HTMLElement) opener.current.focus();
+      if (opener.current instanceof HTMLElement && opener.current.isConnected)
+        opener.current.focus();
+      else document.getElementById("estock-main")?.focus();
     };
   }, []);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending || !active) return;
     const amount = Number(quantity);
     if (!Number.isSafeInteger(amount) || amount <= 0) {
       setError("Enter a whole number greater than zero.");
       return;
     }
-    if (type === "TAKE" && amount > product.stock) {
+    if (type === "TAKE" && amount > available) {
       setError(
-        `Only ${product.stock} ${product.unit} available. Check the current stock and try again.`,
+        `Only ${available} ${product.unit} available. Check the current stock and try again.`,
       );
       return;
     }
@@ -984,6 +883,21 @@ function MovementDialog({
       await onSaved(result.product);
     } catch (cause) {
       setError(message(cause));
+      if (
+        cause instanceof ApiError &&
+        ["INSUFFICIENT_STOCK", "ARCHIVED_PRODUCT"].includes(cause.code || "")
+      ) {
+        try {
+          const result = await api<{ products: Product[] }>("/api/estock/products");
+          onAvailability(result.products);
+          const current = result.products.find((p) => p.id === product.id);
+          setAvailable(current?.stock ?? 0);
+          setActive(Boolean(current));
+        } catch {
+          setError("Could not refresh available stock. Close and reopen this dialog.");
+          setActive(false);
+        }
+      }
     } finally {
       setPending(false);
     }
@@ -1018,7 +932,7 @@ function MovementDialog({
       <p className={styles.dialogContext}>
         Current stock:{" "}
         <strong>
-          {product.stock} {product.unit}
+          {available} {product.unit}
         </strong>
       </p>
       <form onSubmit={(event) => void submit(event)} aria-busy={pending}>
@@ -1029,7 +943,9 @@ function MovementDialog({
             type="number"
             inputMode="numeric"
             min="1"
-            max={type === "TAKE" ? product.stock : undefined}
+            max={type === "TAKE" ? available : undefined}
+            aria-invalid={invalid(quantity)}
+            aria-describedby="quantity-hint"
             step="1"
             required
             value={quantity}
@@ -1039,6 +955,15 @@ function MovementDialog({
             }}
           />
         </label>
+        <p id="quantity-hint" className={invalid(quantity) ? styles.errorNotice : styles.smallCopy}>
+          {invalid(quantity)
+            ? type === "TAKE"
+              ? `Enter a positive whole number up to ${available}.`
+              : "Enter a positive whole number."
+            : type === "TAKE"
+              ? `Available: ${available} ${product.unit}`
+              : "Enter usable goods returned."}
+        </p>
         {type === "RETURN" && (
           <p className={styles.smallCopy}>
             Only return goods that are physically back in usable warehouse stock.
@@ -1054,11 +979,105 @@ function MovementDialog({
           >
             Cancel
           </button>
-          <button className={styles.primaryButton} type="submit" disabled={pending}>
+          <button
+            className={styles.primaryButton}
+            type="submit"
+            disabled={
+              pending ||
+              !active ||
+              quantity === "" ||
+              invalid(quantity) ||
+              (type === "TAKE" && available === 0)
+            }
+          >
             {pending ? "Saving…" : `Confirm ${type === "TAKE" ? "Take" : "Return"}`}
           </button>
         </div>
       </form>
+    </dialog>
+  );
+}
+
+function DeleteProductDialog({
+  product,
+  onClose,
+  onDeleted,
+}: {
+  product: Product;
+  onClose: () => void;
+  onDeleted: () => Promise<void>;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const opener = useRef<Element | null>(null);
+  const attempt = useRef<{ signature: string; key: string } | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    opener.current = document.activeElement;
+    const element = dialog.current;
+    element?.showModal();
+    return () => {
+      element?.close();
+      if (opener.current instanceof HTMLElement) opener.current.focus();
+    };
+  }, []);
+  return (
+    <dialog
+      ref={dialog}
+      className={styles.dialog}
+      aria-labelledby="delete-product-title"
+      onCancel={(event) => {
+        if (pending) event.preventDefault();
+        else onClose();
+      }}
+    >
+      <h2 id="delete-product-title">Delete {product.name}?</h2>
+      <p>
+        Current stock:{" "}
+        <strong>
+          {product.stock} {product.unit}
+        </strong>
+        . This removes the product from active Inventory. Transaction history and the
+        remaining-stock snapshot are retained.
+      </p>
+      {error && <ErrorNotice text={error} />}
+      <div className={styles.dialogActions}>
+        <button
+          className={styles.secondaryButton}
+          type="button"
+          disabled={pending}
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+        <button
+          className={styles.dangerButton}
+          type="button"
+          disabled={pending}
+          onClick={async () => {
+            if (pending) return;
+            setPending(true);
+            setError("");
+            const payload = { expectedVersion: product.version };
+            try {
+              await api(
+                `/api/estock/products/${product.id}`,
+                json("DELETE", {
+                  ...payload,
+                  requestId: retryKey(attempt, { id: product.id, ...payload }),
+                }),
+              );
+              await onDeleted();
+            } catch (cause) {
+              setError(message(cause));
+            } finally {
+              setPending(false);
+            }
+          }}
+        >
+          {pending ? "Deleting…" : "Delete"}
+        </button>
+      </div>
     </dialog>
   );
 }
@@ -1068,11 +1087,13 @@ function ProductDialog({
   onCreated,
   initialName = "",
   openingLocked = false,
+  preparationDraftId,
 }: {
   onClose: () => void;
   onCreated: (product: Product) => Promise<void> | void;
   initialName?: string;
   openingLocked?: boolean;
+  preparationDraftId?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<Element | null>(null);
@@ -1103,7 +1124,12 @@ function ProductDialog({
     }
     setPending(true);
     setError("");
-    const payload = { name: name.trim(), unit: unit.trim(), openingStock: amount };
+    const payload = {
+      name: name.trim(),
+      unit: unit.trim(),
+      openingStock: amount,
+      preparationDraftId,
+    };
     try {
       const result = await api<{ product: Product }>(
         "/api/estock/products",
@@ -1166,7 +1192,7 @@ function ProductDialog({
         {openingLocked ? (
           <p className={styles.infoNotice}>
             This product starts at 0. The reviewed receipt quantity will be added once when you
-            approve the draft.
+            Staff confirms the receipt.
           </p>
         ) : (
           <label className={styles.field}>
@@ -1342,12 +1368,8 @@ function ScanReceipt({ onCreated }: { onCreated: (draft: Draft) => Promise<void>
     <>
       <div className={styles.pageHeading}>
         <div>
-          <p className={styles.kicker}>Manager workspace</p>
           <h1>Scan receipt</h1>
-          <p>
-            Photograph or upload a supplier document. Review the extracted draft before any stock is
-            added.
-          </p>
+          <p>Scan a supplier document.</p>
         </div>
       </div>
       <div className={styles.scanLayout}>
@@ -1362,8 +1384,8 @@ function ScanReceipt({ onCreated }: { onCreated: (draft: Draft) => Promise<void>
           </p>
           <p>
             Make sure product names, quantities and the document date are readable. A receipt,
-            invoice or order is text evidence; approval also requires you to confirm the goods
-            arrived.
+            invoice or order is text evidence. Staff must check the physical goods before stock is
+            added.
           </p>
           <ReceiptImagePicker
             file={file}
@@ -1388,7 +1410,9 @@ function ScanReceipt({ onCreated }: { onCreated: (draft: Draft) => Promise<void>
           <ol>
             <li>Gemini proposes product descriptions, quantities and a date.</li>
             <li>You correct uncertain lines and match them to products.</li>
-            <li>You confirm the usable goods received and approve the intake.</li>
+            <li>
+              You send the prepared receipt to Staff. Their physical check posts actual quantities.
+            </li>
           </ol>
           <p>
             The uploaded image is used for this request and is not kept in eStock. Reopened drafts
@@ -1426,9 +1450,8 @@ function Drafts({
     <>
       <div className={styles.pageHeading}>
         <div>
-          <p className={styles.kicker}>Manager workspace</p>
           <h1>Receipt drafts</h1>
-          <p>Review and save corrections. Only approved drafts add stock.</p>
+          <p>Prepare receipts for Staff.</p>
         </div>
         <button
           className={styles.secondaryButton}
@@ -1472,8 +1495,12 @@ function Drafts({
                     {item.status === "DRAFT"
                       ? "Draft"
                       : item.status === "APPROVED"
-                        ? "Approved"
-                        : "Discarded"}
+                        ? "Manager approved (historical)"
+                        : item.status === "AWAITING_STAFF"
+                          ? "Awaiting Staff check"
+                          : item.status === "RECEIVED"
+                            ? "Received"
+                            : "Discarded"}
                   </span>
                 </span>
                 <small>Document: {formatDate(item.documentDate)}</small>
@@ -1539,7 +1566,7 @@ function DraftReview({
   const [documentDate, setDocumentDate] = useState("");
   const [edits, setEdits] = useState<DraftEdit[]>([]);
   const [savedSignature, setSavedSignature] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
+
   const [discardConfirm, setDiscardConfirm] = useState(false);
   const [newProductLineId, setNewProductLineId] = useState<string | null>(null);
   const [newProducts, setNewProducts] = useState<Product[]>([]);
@@ -1559,7 +1586,7 @@ function DraftReview({
       setEdits(newEdits);
       setDocumentDate(newDate);
       setSavedSignature(JSON.stringify(draftPatch(newDate, newEdits)));
-      setConfirmed(false);
+
       setDiscardConfirm(false);
     } catch (cause) {
       setError(message(cause));
@@ -1575,7 +1602,7 @@ function DraftReview({
     setEdits((current) =>
       current.map((line) => (line.id === lineId ? { ...line, ...changes } : line)),
     );
-    setConfirmed(false);
+
     setFeedback("");
   }
 
@@ -1632,18 +1659,14 @@ function DraftReview({
       );
       return;
     }
-    if (!confirmed) {
-      setError("Confirm the quantities physically received before approving.");
-      return;
-    }
     setPending(true);
     setError("");
     setFeedback("");
     try {
       const saved = await saveChanges(draft);
-      const payload = { expectedRevision: saved.revision, confirmReceived: true };
+      const payload = { expectedRevision: saved.revision };
       const result = await api<{ draft: Draft }>(
-        `/api/estock/drafts/${encodeURIComponent(id)}/approve`,
+        `/api/estock/drafts/${encodeURIComponent(id)}/send`,
         json("POST", {
           ...payload,
           requestId: retryKey(approvalAttempt, { draftId: id, ...payload }),
@@ -1651,9 +1674,9 @@ function DraftReview({
       );
       approvalAttempt.current = null;
       setDraft(result.draft);
-      setFeedback("Intake approved. Inventory and History have been updated together.");
+      setFeedback("Sent to Staff. Stock will update when Staff confirms the physical goods.");
       void onChanged().catch((cause) =>
-        setError(`Intake approved, but the page could not refresh: ${message(cause)}`),
+        setError(`Receipt sent, but the page could not refresh: ${message(cause)}`),
       );
     } catch (cause) {
       setError(message(cause));
@@ -1714,10 +1737,14 @@ function DraftReview({
           <p className={styles.kicker}>Receipt review</p>
           <h2 id="review-heading">
             {draft.status === "DRAFT"
-              ? "Draft awaiting approval"
+              ? "Preparation draft"
               : draft.status === "APPROVED"
-                ? "Approved intake"
-                : "Discarded draft"}
+                ? "Historical Manager-approved intake"
+                : draft.status === "AWAITING_STAFF"
+                  ? "Awaiting Staff check"
+                  : draft.status === "RECEIVED"
+                    ? "Received"
+                    : "Discarded draft"}
           </h2>
           <p>Created {formatTime(draft.createdAt)}</p>
         </div>
@@ -1725,8 +1752,12 @@ function DraftReview({
           {draft.status === "DRAFT"
             ? "Draft"
             : draft.status === "APPROVED"
-              ? "Approved"
-              : "Discarded"}
+              ? "Manager approved (historical)"
+              : draft.status === "AWAITING_STAFF"
+                ? "Awaiting Staff check"
+                : draft.status === "RECEIVED"
+                  ? "Received"
+                  : "Discarded"}
         </span>
       </div>
       <p className={styles.infoNotice}>
@@ -1739,7 +1770,8 @@ function DraftReview({
           <strong>Possible similar document</strong>
           <p>{draft.similarDocumentWarning}</p>
           <p>
-            Check the document and delivery before approving. This warning does not block approval.
+            Check History before sending this document. Separate uploads may describe the same
+            delivery.
           </p>
         </div>
       )}
@@ -1757,7 +1789,7 @@ function DraftReview({
                 value={documentDate}
                 onChange={(event) => {
                   setDocumentDate(event.target.value);
-                  setConfirmed(false);
+
                   setFeedback("");
                 }}
               />
@@ -1852,7 +1884,7 @@ function DraftReview({
                       </button>
                       <label className={styles.field}>
                         <span>
-                          Quantity actually received {matched ? `(${matched.unit})` : "(base unit)"}
+                          Expected quantity {matched ? `(${matched.unit})` : "(base unit)"}
                         </span>
                         <input
                           type="number"
@@ -1913,7 +1945,7 @@ function DraftReview({
                         onChange={(event) =>
                           editLine(line.id, { exclusionReason: event.target.value })
                         }
-                        placeholder="For example, not delivered"
+                        placeholder="For example, a non-product document line"
                       />
                     </label>
                   )}
@@ -1921,22 +1953,10 @@ function DraftReview({
               );
             })}
           </div>
-          <div className={styles.approvalBox}>
-            <h3>Confirm physical receipt</h3>
-            <p>
-              A document alone does not prove delivery. Check that each included quantity is
-              physically in usable warehouse stock.
-            </p>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={confirmed}
-                disabled={pending}
-                onChange={(event) => setConfirmed(event.target.checked)}
-              />
-              <span>I confirm the included quantities were received and are usable.</span>
-            </label>
-          </div>
+          <p className={styles.infoNotice}>
+            Confirm product matches, document date and expected quantities in base units before
+            sending. Staff will declare what physically arrived.
+          </p>
           {error && (
             <ErrorNotice
               text={error}
@@ -1960,10 +1980,10 @@ function DraftReview({
             <button
               className={styles.primaryButton}
               type="button"
-              disabled={pending || !approvalReady || !confirmed}
+              disabled={pending || !approvalReady}
               onClick={() => void approve()}
             >
-              Approve stock intake
+              Send to Staff
             </button>
           </div>
           <div className={styles.discardArea}>
@@ -2001,6 +2021,44 @@ function DraftReview({
         </>
       ) : (
         <div className={styles.finalReview}>
+          {draft.status === "AWAITING_STAFF" && (
+            <>
+              <p>
+                Submitted details are frozen while Staff checks. Recall before correcting and
+                resending.
+              </p>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                disabled={pending}
+                onClick={async () => {
+                  setPending(true);
+                  setError("");
+                  try {
+                    const result = await api<{ draft: Draft }>(
+                      `/api/estock/drafts/${id}/recall`,
+                      json("POST", { expectedRevision: draft.revision }),
+                    );
+                    setDraft(result.draft);
+                    await load();
+                    await onChanged();
+                  } catch (cause) {
+                    setError(message(cause));
+                  } finally {
+                    setPending(false);
+                  }
+                }}
+              >
+                Recall to correct
+              </button>
+            </>
+          )}
+          {error && <ErrorNotice text={error} />}
+          {feedback && (
+            <p className={styles.notice} role="status">
+              {feedback}
+            </p>
+          )}
           <dl>
             <div>
               <dt>Document date</dt>
@@ -2034,6 +2092,7 @@ function DraftReview({
             edits.find((line) => line.id === newProductLineId)?.reviewedName || targetLine.rawName
           }
           openingLocked
+          preparationDraftId={id}
           onClose={() => setNewProductLineId(null)}
           onCreated={(product) => {
             setNewProducts((current) => [...current, product]);

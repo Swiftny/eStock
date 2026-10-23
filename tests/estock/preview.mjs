@@ -13,7 +13,7 @@ import {
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve, sep } from "node:path";
+import { basename, dirname, join, sep } from "node:path";
 import { spawn } from "node:child_process";
 
 const root = process.cwd();
@@ -129,7 +129,8 @@ async function cleanup() {
   const actual = realpathSync(folder);
   const expectedParent = realpathSync(dirname(folder));
   assert.ok(
-    actual.startsWith(`${expectedParent}${sep}estock-preview-`) && actual === resolve(folder),
+    actual.startsWith(`${expectedParent}${sep}estock-preview-`) &&
+      actual === join(expectedParent, basename(folder)),
   );
   rmSync(actual, { recursive: true });
   console.log(

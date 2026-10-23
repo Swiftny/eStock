@@ -12,7 +12,15 @@
     "src/app/demo/**",
     "src/components/demo-app.tsx",
     "src/styles/workspace.css",
-    "docs/team/demo.md"
+    "docs/team/demo.md",
+    "src/components/estock-app.tsx",
+    "src/components/estock-app.module.css",
+    "src/components/receiving-workspace.tsx",
+    "src/components/manager-history.tsx",
+    "src/components/draft-comparison.tsx",
+    "src/components/receipt-image-picker.tsx",
+    "tests/estock/browser.mjs",
+    "tests/estock/preview.mjs"
   ],
   "data": [
     "db/**",
@@ -23,7 +31,11 @@
     "scripts/database.ts",
     "public/fixtures/**",
     "docs/data/**",
-    "docs/team/data.md"
+    "docs/team/data.md",
+    "src/lib/server/estock/db.ts",
+    "src/lib/server/estock/inventory.ts",
+    "src/lib/server/estock/receiving.ts",
+    "scripts/estock-migrate.mjs"
   ],
   "backend": [
     "src/app/api/demo/**",
@@ -32,14 +44,22 @@
     "src/lib/purchasing.ts",
     "tests/workflow.test.ts",
     "tests/purchasing.test.ts",
-    "docs/team/backend.md"
+    "docs/team/backend.md",
+    "src/app/api/estock/**",
+    "src/lib/server/estock/drafts.ts",
+    "src/lib/server/estock/errors.ts",
+    "src/lib/server/estock/input.ts",
+    "src/lib/server/estock/extraction-deadline.ts",
+    "tests/estock/mvp.test.mjs"
   ],
   "system": [
     "src/app/api/session/**",
     "src/lib/server/session.ts",
     "next.config.ts",
     "scripts/http-smoke.mjs",
-    "docs/team/system.md"
+    "docs/team/system.md",
+    "src/lib/server/estock/auth.ts",
+    "compose.estock.yml"
   ],
   "ai": [
     "worker/**",

@@ -72,7 +72,11 @@ export async function requireRole(request: NextRequest, required?: Role): Promis
   const role = await currentRole(request);
   if (!role) fail("Sign in to continue.", 401, "UNAUTHENTICATED");
   if (required && role !== required)
-    fail("This action is available to Manager only.", 403, "FORBIDDEN");
+    fail(
+      `This action is available to ${required === "staff" ? "Staff" : "Manager"} only.`,
+      403,
+      "FORBIDDEN",
+    );
   return role;
 }
 

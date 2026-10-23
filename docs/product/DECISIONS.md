@@ -2,6 +2,23 @@
 
 23 October 2026. Later explicit user instructions authorised local implementation and verification of the approved MVP. [Current verification](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) distinguishes source, synthetic tests and Unverified real-device/live-provider behavior. [Complete earlier register](../archive/2026-10-23-before-document-intake/docs/product/DECISIONS.md.txt) preserves old U/R/OPEN/SUB IDs and implementation history; reused historical IDs do not override the pivot.
 
+## Latest confirmed revision: 24 October 2026
+
+| ID | Decision | Consequence |
+| --- | --- | --- |
+| U-34 | Manager prepares, sends frozen receipt; shared Staff physically checks and immediately posts actual quantities | Supersedes U-22/U-24 and old Manager-final-approval expectations for new receipts; no later approval |
+| U-35 | Match or positive Short/Extra differences; zero actual permitted | Keep extracted/expected/actual separate; no zero Intake; entirely missing delivery remains in History/Manager alerts |
+| U-36 | Persist role-scoped notifications/read state; compact drawer and lightweight refresh | Staff pending checks; Manager informational discrepancy alerts only; no external messaging |
+| U-37 | Manager Delete archives even with positive stock | Retain identity/stock snapshot/ledger/receipt references; exclude active operations/matching; pending conflicts require recall/correct/resend |
+| U-38 | Stockroom home and separate task screens; only Stockroom permanent navigation | Direct Back to Stockroom everywhere; no Recent activity feed; public hero preserved |
+| U-39 | Additive versioned migrations via one shared runner | Adopt existing 001 schemas non-destructively; preserve drafts/completed Manager receipts/sessions; test fresh and populated upgrades |
+| U-40 | Explicit Take bounds and stale availability feedback for both roles | Preserve backend locking; do not cap Return by current stock |
+| U-41 | Later 24 October UI clarification replaces Stockroom with Inventory home and header feature navigation | Supersedes U-38 navigation: no separate Stockroom or Back buttons; Manager/Staff workspace eyebrows removed; short page descriptions |
+| U-42 | Landing Sign in becomes Sign out for an authenticated session; demo shows role immediately before Notifications | Existing session endpoints and backend permissions remain authoritative |
+| U-43 | Keep the full camera visible on opening; preserve scroll while preparing photos; Retake/Remove controls | Retake Cancel retains the prior image; physical-device acceptance still needs actual evidence |
+
+One coordinated editor owns this cross-area implementation. Original user changes and all archives/evidence remain preserved. [Actual revision checks and limits](../verification/STAFF_RECEIVING_2026_10_24.md). Older decisions below are historical where superseded; IC-02 approval means historical APPROVED only, while RECEIVED is now the immutable completed state. OPEN-01 local versioned migrations is resolved; hosted lifecycle/retention/deployment remain open.
+
 ## New user decisions
 
 | ID | Decision | Basis / impact |

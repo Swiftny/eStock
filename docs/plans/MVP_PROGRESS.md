@@ -1,17 +1,16 @@
 # eStock: active MVP status
 
-23 October 2026. New direction: document-assisted inventory. **Documentation baseline prepared; implementation not started or verified.** No percentage is assigned from legacy stage counts. [Previous progress snapshot](../archive/2026-10-23-before-document-intake/docs/plans/MVP_PROGRESS.md.txt) preserves the old 29/100 checkpoint and branch instructions as history; do not execute them as current work.
+24 October 2026. Current local source implements Staff receiving, notifications, product archives, bounded Take and Stockroom navigation. [Actual verification and Delivery Gate](../verification/STAFF_RECEIVING_2026_10_24.md) distinguish synthetic local checks from unverified live/device/hosted behavior. No percentage is inferred from legacy checkpoints; [historical progress](../archive/2026-10-23-before-document-intake/docs/plans/MVP_PROGRESS.md.txt) remains preserved.
 
-| Future stage | Current status | Evidence still needed |
+| Area | Current local status | Remaining evidence |
 | --- | --- | --- |
-| PostgreSQL, roles, products, ledger | Not implemented for new MVP | Schema/migration/auth decisions, backend role denials, preservation checks |
-| Opening/Inventory/search/Low stock/Take/Return/History | Not accepted for new MVP | New integer/role/retry/concurrency acceptance, shared Staff attribution |
-| Manager upload/Gemini/saved Draft | Not implemented | Live/mock extraction distinction, validation and image non-retention evidence |
-| Matching/correction/unknown products/approval/discard | Not implemented | Alias ambiguity, Opening 0, actual receipt, atomic approval/race/rollback evidence |
-| Synthetic evaluation/responsive/Replit/submission | Not verified | Declared case set/results, deployment persistence, own-project proof and all six artifacts |
+| PostgreSQL, roles, products, ledger | Implemented with additive ordered migrations; fresh/populated upgrades and preserved local aggregate data checked | Hosted backup/retention/redeploy durability |
+| Inventory, Take/Return, archives | Both-role Take bounds/stale/concurrent checks; Manager positive-stock soft Delete; preserved History | Physical-device/pilot behavior |
+| OCR and preparation | Backend Gemini extraction, saved drafts, aliases/manual conversion, Opening 0; stubbed journeys verified | Authorised live Gemini accuracy/terms/tier; physical capture |
+| Receiving and notifications | Frozen send, shared Staff actual confirmation, zero/missing checks, once-only atomic posting and discrepancy alerts, role/read scoping | Operational-scale evaluation beyond synthetic cases |
+| UI/navigation | Blue/Manrope Stockroom tasks, direct Back, compact drawer, browser mobile/keyboard/errors/reduced-motion checks | Real devices and assistive-technology evaluation |
+| Submission/hosting | Docs/narrative/checklists aligned; original evidence retained | Replit proof, judge access, official PDFs/deck/video/signatures/portal |
 
-Existing legacy website/SQLite workflow, old stock/forecast code and historical reports are preserved, not credited as new feature acceptance. Historical RunPod training run `20261021T110320Z` is real retained usage; see [historical AI status](AI_RUNPOD_PLAN.md). It does not verify Gemini extraction or a connected Serverless application.
+Manager preparation/send has no stock effect. Shared Staff confirmation immediately posts actual quantities; no later Manager approval. Historical Manager-approved receipts retain original attribution and never repost. Archive conflicts require Manager recall/correct/resend and explicit Staff reopen. Notifications are in-app only. No forecast, purchasing, PO, budget or training in active core.
 
-Open conflicts: X-01 deadline, X-02 workshops, X-03 RunPod, X-09 verbal Orbyte workspace issue, plus remaining [compliance conflicts](../COMPLIANCE_MATRIX.md). Replit proof, actual hosting persistence, final PDFs/deck/video, signatures, committee/source accessibility and portal confirmation remain unverified. No readiness box becomes complete because a draft exists.
-
-Follow the [five-stage handoff](BUILD_PLAN.md) only after explicit implementation instruction. Do not stage, commit, push, merge, publish, purchase, provision, call paid models or change running services during this documentation task.
+Preserve independent laptop data and .env.local; use README migration/setup commands, never reset/truncate/delete volumes. No operational stock fixtures or paid live AI calls were used. Historical RunPod usage is real declarable evidence, not OCR or connected Serverless proof. X-01/02/03/09 and other competition requirements remain unresolved until genuine evidence. No commit, push, publication, cloud provision, purchase or external message is authorised.

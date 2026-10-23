@@ -1,3 +1,5 @@
+name: estock
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -17,3 +19,4 @@ services:
 
 volumes:
   estock_postgres_data:
+    name: estock_postgres_data

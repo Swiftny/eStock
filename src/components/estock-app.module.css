@@ -1,18 +1,7 @@
 .app,
 .boot {
-  --paper: #f8faf8;
-  --surface: #ffffff;
-  --surface-soft: #f1f6f4;
-  --ink: #1f2937;
-  --muted: #526170;
-  --line: #d9e1de;
-  --teal: #0f766e;
-  --teal-deep: #0c615b;
-  --teal-soft: #e5f3ef;
-  --amber: #80500c;
-  --amber-soft: #fff3d9;
-  --red: #a32d2d;
-  --red-soft: #fff0ed;
+  --surface: var(--white);
+  --surface-soft: var(--surface-subtle);
   color-scheme: light;
   color: var(--ink);
   background: var(--paper);
@@ -31,13 +20,21 @@
   box-sizing: border-box;
 }
 .app :is(button, input, select, summary, a):focus-visible {
-  outline: 3px solid var(--teal);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .app button {
   cursor: pointer;
   font: inherit;
   touch-action: manipulation;
+}
+.app :is(button, a, input, select),
+.roleChoice,
+.roleChoiceActive {
+  transition:
+    background-color 160ms,
+    border-color 160ms,
+    color 160ms;
 }
 .app button:disabled {
   opacity: 0.56;
@@ -53,7 +50,7 @@
   font-size: clamp(1.9rem, 3vw, 2.65rem);
   line-height: 1.14;
   letter-spacing: -0.045em;
-  font-weight: 750;
+  font-weight: 800;
 }
 .app h2 {
   font-size: 1.35rem;
@@ -79,8 +76,8 @@
   z-index: 100;
   padding: 10px 14px;
   background: var(--surface);
-  color: var(--teal-deep);
-  border: 2px solid var(--teal);
+  color: var(--brand-dark);
+  border: 2px solid var(--brand);
 }
 .skip:focus {
   top: 12px;
@@ -105,19 +102,29 @@
   border-bottom: 1px solid var(--line);
   background: var(--surface);
 }
+.workspaceHeader {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 80px;
+  gap: 0 32px;
+}
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   flex: none;
-  color: var(--teal);
-  font-size: 1.55rem;
-  font-weight: 780;
+  color: var(--ink);
+  font-size: 1.7rem;
+  font-weight: 750;
   line-height: 1;
-  letter-spacing: -0.07em;
+  letter-spacing: -0.075em;
   text-decoration: none;
 }
 .wordmark span {
-  color: var(--ink);
+  color: var(--brand);
+  font-weight: 550;
 }
-.workspaceLabel,
 .headerHint {
   padding-left: 20px;
   border-left: 1px solid var(--line);
@@ -135,17 +142,6 @@
   font-size: 0.9rem;
   font-weight: 650;
 }
-.signOut {
-  min-height: 44px;
-  padding: 8px 0;
-  border: 0;
-  background: transparent;
-  color: var(--teal-deep);
-  font-weight: 650;
-}
-.signOut:hover {
-  text-decoration: underline;
-}
 .shell {
   width: min(calc(100% - 40px), 1240px);
   margin-inline: auto;
@@ -154,9 +150,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
-  gap: 3px 30px;
-  min-height: 58px;
-  border-bottom: 1px solid var(--line);
+  gap: 0 24px;
 }
 .navItem,
 .navActive {
@@ -164,23 +158,33 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 58px;
+  min-height: 44px;
   padding: 10px 2px;
   border: 0;
   background: transparent;
   color: var(--muted);
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .navItem:hover,
 .navActive {
-  color: var(--teal-deep);
+  color: var(--brand-dark);
 }
+.navItem::after,
 .navActive::after {
   position: absolute;
-  inset: auto 0 -1px;
-  height: 3px;
-  background: var(--teal);
+  inset: auto 0 5px;
+  height: 2px;
+  background: var(--brand);
   content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease-out;
+}
+.navItem:hover::after,
+.navItem:focus-visible::after,
+.navActive::after {
+  transform: scaleX(1);
 }
 .navCount {
   display: inline-grid;
@@ -188,18 +192,33 @@
   height: 22px;
   place-items: center;
   padding-inline: 4px;
-  background: var(--teal-soft);
-  color: var(--teal-deep);
+  background: var(--brand-wash);
+  color: var(--brand-dark);
   border-radius: 4px;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
 .main {
-  min-height: calc(100dvh - 132px);
+  min-height: calc(100dvh - 80px);
+  scroll-margin-top: 80px;
   padding: 34px 0 80px;
 }
 .main:focus {
   outline: none;
+}
+.screen,
+.signIn {
+  animation: section-enter 500ms ease-out both;
+}
+@keyframes section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .pageHeading {
   display: flex;
@@ -218,7 +237,7 @@
 }
 .kicker {
   margin-bottom: 9px;
-  color: var(--teal-deep);
+  color: var(--brand-dark);
   font-size: 0.83rem;
   font-weight: 700;
 }
@@ -230,44 +249,44 @@
   align-items: center;
   min-height: 46px;
   padding: 9px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   border: 1px solid transparent;
   font-weight: 680;
   text-align: center;
   text-decoration: none;
   line-height: 1.35;
   transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    color 0.15s;
+    background-color 160ms,
+    border-color 160ms,
+    color 160ms;
 }
 .primaryButton {
-  background: var(--teal);
-  border-color: var(--teal);
-  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--white);
 }
 .primaryButton:hover:not(:disabled) {
-  background: var(--teal-deep);
-  border-color: var(--teal-deep);
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
 }
 .secondaryButton {
   background: var(--surface);
-  border-color: #9aaba5;
+  border-color: var(--control-border);
   color: var(--ink);
 }
 .secondaryButton:hover:not(:disabled) {
-  border-color: var(--teal);
-  color: var(--teal-deep);
-  background: var(--teal-soft);
+  border-color: var(--brand);
+  color: var(--brand-dark);
+  background: var(--brand-wash);
 }
 .dangerButton {
   background: var(--red);
   border-color: var(--red);
-  color: #fff;
+  color: var(--white);
 }
 .dangerButton:hover:not(:disabled) {
-  background: #852525;
-  border-color: #852525;
+  background: color-mix(in srgb, var(--red) 85%, var(--ink));
+  border-color: color-mix(in srgb, var(--red) 85%, var(--ink));
 }
 .textButton {
   display: inline-flex;
@@ -276,7 +295,7 @@
   padding: 6px 0;
   border: 0;
   background: transparent;
-  color: var(--teal-deep);
+  color: var(--brand-dark);
   font-weight: 680;
   text-align: left;
   text-decoration: underline;
@@ -296,7 +315,7 @@
 .errorNotice {
   border-color: #e3a6a0;
   background: var(--red-soft);
-  color: #812525;
+  color: var(--red);
 }
 .errorNotice p,
 .notice p,
@@ -304,13 +323,13 @@
   margin: 0;
 }
 .errorNotice .textButton {
-  color: #812525;
+  color: var(--red);
 }
 .notice,
 .infoNotice {
-  background: var(--teal-soft);
-  color: #0d544f;
-  border-color: #a9d6ca;
+  background: var(--brand-wash);
+  color: var(--brand-dark);
+  border-color: var(--brand-line);
 }
 .warningNotice {
   margin: 0 0 20px;
@@ -401,13 +420,17 @@
   cursor: pointer;
 }
 .roleChoiceActive {
-  border-color: var(--teal);
-  background: var(--teal-soft);
+  border-color: var(--brand);
+  background: var(--brand-wash);
+}
+.roleChoice:hover {
+  border-color: var(--brand);
+  background: var(--surface-subtle);
 }
 .roleChoice input,
 .roleChoiceActive input {
   margin: 4px 0 0;
-  accent-color: var(--teal);
+  accent-color: var(--brand);
 }
 .roleChoice strong,
 .roleChoiceActive strong {
@@ -438,7 +461,7 @@
   min-width: 0;
   min-height: 46px;
   padding: 9px 12px;
-  border: 1px solid #8e9e98;
+  border: 1px solid var(--control-border);
   border-radius: 5px;
   background: var(--surface);
   color: var(--ink);
@@ -470,7 +493,7 @@
   width: 18px;
   height: 18px;
   margin-top: 3px;
-  accent-color: var(--teal);
+  accent-color: var(--brand);
 }
 .checkbox span {
   min-width: 0;
@@ -490,7 +513,8 @@
   background: var(--surface);
 }
 .overviewPrimary {
-  border-top: 3px solid var(--teal);
+  border-top: 3px solid var(--brand);
+  background: var(--brand-wash);
 }
 .overviewSecondary h2 {
   margin-bottom: 22px;
@@ -510,7 +534,7 @@
   font-size: 0.9rem;
 }
 .bigNumber {
-  color: var(--teal-deep);
+  color: var(--brand-dark);
   font-size: 2.25rem;
   font-weight: 750;
   line-height: 1;
@@ -535,7 +559,7 @@
   color: var(--ink);
 }
 .simpleListButton:hover {
-  color: var(--teal-deep);
+  color: var(--brand-dark);
 }
 .simpleListButton strong,
 .simpleListButton small {
@@ -545,7 +569,7 @@
   color: var(--muted);
 }
 .simpleListButton > span:last-child {
-  color: var(--teal-deep);
+  color: var(--brand-dark);
   font-weight: 680;
 }
 .overviewPrimary .quietEmpty {
@@ -698,8 +722,8 @@
 }
 .stockStatus,
 .finalStatus {
-  background: var(--teal-soft);
-  color: var(--teal-deep);
+  background: var(--brand-wash);
+  color: var(--brand-dark);
 }
 .draftStatus {
   background: var(--amber-soft);
@@ -725,10 +749,21 @@
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  box-shadow: 0 14px 40px #152d2b29;
+  box-shadow: 0 14px 40px color-mix(in srgb, var(--ink) 16%, transparent);
+  animation: control-enter 180ms ease-out both;
 }
 .dialog::backdrop {
-  background: #152d2b99;
+  background: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+@keyframes control-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .dialogHead {
   display: flex;
@@ -780,7 +815,7 @@
 .scanPanel {
   padding: clamp(24px, 3vw, 36px);
   border: 1px solid var(--line);
-  border-top: 3px solid var(--teal);
+  border-top: 3px solid var(--brand);
   border-radius: 8px;
   background: var(--surface);
 }
@@ -795,10 +830,10 @@
   width: fit-content;
   margin-bottom: 16px;
   padding: 8px 10px;
-  border: 1px solid #a9d6ca;
+  border: 1px solid var(--brand-line);
   border-radius: 4px;
-  background: var(--teal-soft);
-  color: #0d544f;
+  background: var(--brand-wash);
+  color: var(--brand-dark);
   font-size: 0.88rem;
   font-weight: 650;
 }
@@ -814,7 +849,7 @@
   width: 100%;
   min-height: 48px;
   padding: 10px;
-  border: 1px dashed #829b91;
+  border: 1px dashed var(--control-border);
   border-radius: 6px;
   background: var(--surface-soft);
   color: var(--ink);
@@ -824,7 +859,7 @@
   min-height: 38px;
   margin-right: 12px;
   padding: 6px 12px;
-  border: 1px solid #9aaba5;
+  border: 1px solid var(--control-border);
   border-radius: 4px;
   background: var(--surface);
   color: var(--ink);
@@ -849,7 +884,7 @@
   margin-bottom: 12px;
 }
 .captureActions button {
-  flex: 1 1 150px;
+  flex: 1 1 110px;
   min-height: 48px;
 }
 .cameraPanel,
@@ -861,6 +896,7 @@
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 4 / 3;
   max-height: 60dvh;
   object-fit: contain;
   border: 1px solid var(--line);
@@ -872,6 +908,21 @@
   margin: 12px 0;
   color: var(--muted);
   font-size: 0.92rem;
+}
+.cameraPanel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 12px;
+}
+.cameraPanel .receiptPreview {
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+}
+.cameraPanel p,
+.cameraPanel .captureActions {
+  margin: 0;
 }
 .scanAside h2 {
   margin-bottom: 14px;
@@ -913,8 +964,12 @@
   text-align: left;
 }
 .draftListActive {
-  border-color: var(--teal);
-  background: var(--teal-soft);
+  border-color: var(--brand);
+  background: var(--brand-wash);
+}
+.draftListItem:hover {
+  border-color: var(--brand);
+  background: var(--surface-subtle);
 }
 .draftListTop {
   display: flex;
@@ -994,7 +1049,7 @@
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #fcfdfc;
+  background: var(--surface-subtle);
 }
 .lineTitle {
   display: flex;
@@ -1052,9 +1107,9 @@
 .approvalBox {
   margin: 24px 0 18px;
   padding: 20px;
-  border: 1px solid #a9d6ca;
+  border: 1px solid var(--brand-line);
   border-radius: 6px;
-  background: var(--teal-soft);
+  background: var(--brand-wash);
 }
 .approvalBox h3 {
   margin-bottom: 6px;
@@ -1168,7 +1223,7 @@
 .sourceDetails summary {
   min-height: 44px;
   padding: 10px 0;
-  color: var(--teal-deep);
+  color: var(--brand-dark);
   cursor: pointer;
   font-weight: 650;
 }
@@ -1198,13 +1253,22 @@
     flex: 0 0 min(240px, 75vw);
   }
 }
+@media (max-width: 1100px) {
+  .workspaceHeader {
+    flex-wrap: wrap;
+    gap: 0 24px;
+  }
+  .navigation {
+    order: 2;
+    width: 100%;
+  }
+}
 @media (max-width: 700px) {
   .header {
     flex-wrap: wrap;
     gap: 6px 12px;
     padding-inline: 18px;
   }
-  .workspaceLabel,
   .headerHint {
     flex: 1;
     padding-left: 12px;
@@ -1224,8 +1288,8 @@
   }
   .navItem,
   .navActive {
-    min-height: 48px;
-    font-size: 0.9rem;
+    min-height: 44px;
+    font-size: 0.8125rem;
   }
   .main {
     padding-top: 25px;
@@ -1339,6 +1403,16 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .screen,
+  .signIn,
+  .dialog {
+    animation: none;
+  }
+  .navItem::after,
+  .navActive::after,
+  .app :is(button, a, input, select),
+  .roleChoice,
+  .roleChoiceActive,
   .primaryButton,
   .secondaryButton,
   .dangerButton {
@@ -1355,7 +1429,13 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.historySections,
+.historySections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
 .historyFilters {
   display: flex;
   flex-wrap: wrap;
@@ -1368,6 +1448,25 @@
 .historyFilters .field {
   flex: 1 1 220px;
   min-width: 0;
+}
+.historyFilters input::placeholder {
+  color: var(--muted);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  opacity: 1;
+}
+.historyFilters :is(input, select) {
+  height: 46px;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.55;
+}
+.historyFilters select[data-placeholder="true"] {
+  color: var(--muted);
+}
+.historyFilters select option {
+  color: var(--ink);
 }
 .receiptLines {
   list-style: none;
@@ -1397,4 +1496,49 @@
   cursor: pointer;
   min-height: 44px;
   font-weight: 650;
+}
+
+.notificationDrawer {
+  margin: 0 0 0 auto;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: min(460px, 100%);
+  border-radius: 0;
+}
+.notificationList {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+.notificationList li {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+  overflow-wrap: anywhere;
+}
+.workspaceHeader .account {
+  width: auto;
+  flex-wrap: nowrap;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+}
+@media (max-width: 600px) {
+  .workspaceHeader {
+    gap: 0 12px;
+    padding-inline: 14px;
+  }
+  .workspaceHeader .account {
+    gap: 8px;
+  }
+  .workspaceHeader .account > button {
+    padding-inline: 10px;
+    font-size: 0.8125rem;
+  }
+  .accountRole {
+    font-size: 0.8125rem;
+  }
+  .rowActions {
+    flex-wrap: wrap;
+  }
 }

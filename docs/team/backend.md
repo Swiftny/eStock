@@ -1,13 +1,9 @@
 # Backend · William Christiansen
 
-[Team](README.md) · [System](system.md) · [Stock](../engineering/STOCK_TRACKING.md) · [OCR intake](../engineering/OCR_INTAKE.md)
+[Team](README.md) · [Integration](integration.md) · [Ledger](../engineering/STOCK_TRACKING.md) · [Receiving API](../engineering/OCR_INTAKE.md)
 
-23 October 2026. Future specification only. Existing routes/service/SQLite/forecast/purchasing code is preserved and is not new-MVP acceptance.
+24 October 2026. Current `/api/estock` implementation has server-resolved Manager/shared Staff permissions. Manager owns catalogue/archive/Opening/OCR/preparation/send/recall/full History; shared Staff alone confirms physical receipt. Both roles use active Inventory/Take/Return and role-scoped notifications. Old `/approve` returns 410. Do not trust actor fields supplied by clients.
 
-After explicit instruction, coordinate shared contracts first. Enforce Manager-only catalogue/Opening/upload/draft read/edit/match/approve/discard/full History, and both-role inventory/search/Take/Return on the backend. The shared Staff account is the only Staff actor identity available; do not claim individual attribution.
+Review `receiving.ts`: frozen submission revisions, receipt/product locks, complete line validation, positive actual Intake, one check per receipt, request fingerprints/replays, zero-received records and atomic discrepancy notification. Missing/excluded/foreign/duplicate IDs, stale revisions and archived products must fail without partial stock. Archive conflicts require Manager recall/correct/resend. Opening/reading notifications never mutates stock. Take rechecks stock under lock; Return has no current-stock cap. Shared Staff attribution is not individual identity.
 
-Implement positive integer movements and atomic nonnegative Take under concurrency. Persist event/request identity/input fingerprint for Take/Return and reliable retries. Product creation/Opening is atomic and once-only; new products in review have Opening 0. No general adjustments/damaged goods/refunds/prior-Take link.
-
-Draft revision/status checks must serialise approval/edit/discard; immutable approved snapshots, one approval per draft and line-linked Intake movements commit atomically with all balances and server Approved at, or roll back fully. Require Manager actual-receipt confirmation; document date is separate and never backdates ledger. Same-draft protection is distinct from P1 cross-document warnings.
-
-Gemini backend extraction has no stock authority. Validate structured output and allowlist non-monetary fields, preserve raw/final values, deny embedded document instructions and verify no permanent image/log/cache storage. Provider failures change no stock; mocks labelled. Coordinate schema with Maxi, extraction with Marco and response/error states with Vitto. New API paths/ORM/locking/migration details remain decisions requiring current official docs. No paid API or running-service changes now.
+Gemini extraction remains server-only, transient and non-monetary; 45-second deadline/one SDK attempt. No live paid call is authorised. Historical legacy APIs/source remain outside active demo. [Actual synthetic tests and limits](../verification/STAFF_RECEIVING_2026_10_24.md). Team must review/adapt/explain AI assistance; local tests do not establish provider accuracy, retention or hosted durability.

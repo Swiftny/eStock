@@ -40,7 +40,7 @@ function product(row: Record<string, unknown>): ProductView {
 
 export async function getProduct(productId: string, client?: PoolClient): Promise<ProductView> {
   const db = client || (await ready());
-  const rows = await db.query("SELECT * FROM estock_products WHERE id=$1", [
+  const rows = await db.query("SELECT * FROM estock_products WHERE id=$1 AND archived_at IS NULL", [
     id(productId, "Product ID"),
   ]);
   if (!rows.rows[0]) fail("Product not found.", 404, "NOT_FOUND");
@@ -54,9 +54,9 @@ export async function listProducts(query = ""): Promise<ProductView[]> {
   const normalized = normalizeName(q);
   const rows = await db.query(
     `SELECT p.* FROM estock_products p
-     WHERE $1='' OR position($1 in p.normalized_name)>0 OR EXISTS (
+     WHERE p.archived_at IS NULL AND ($1='' OR position($1 in p.normalized_name)>0 OR EXISTS (
        SELECT 1 FROM estock_aliases a WHERE a.product_id=p.id AND position($1 in a.normalized)>0
-     )
+     ))
      ORDER BY lower(p.official_name),p.id`,
     [normalized],
   );
@@ -73,7 +73,7 @@ export async function matchExactProducts(
   const exact = await db.query(
     `SELECT DISTINCT p.* FROM estock_products p
      LEFT JOIN estock_aliases a ON a.product_id=p.id
-     WHERE p.normalized_name=$1 OR a.normalized=$1
+     WHERE p.archived_at IS NULL AND (p.normalized_name=$1 OR a.normalized=$1)
      ORDER BY p.id`,
     [normalized],
   );
@@ -89,8 +89,8 @@ export async function matchProducts(name: string, client?: PoolClient): Promise<
   const fuzzy = await db.query(
     `SELECT DISTINCT p.* FROM estock_products p
      LEFT JOIN estock_aliases a ON a.product_id=p.id
-     WHERE position($1 in p.normalized_name)>0 OR position(p.normalized_name in $1)>0
-       OR position($1 in coalesce(a.normalized,''))>0
+     WHERE p.archived_at IS NULL AND (position($1 in p.normalized_name)>0 OR position(p.normalized_name in $1)>0
+       OR position($1 in coalesce(a.normalized,''))>0)
      ORDER BY p.id LIMIT 5`,
     [normalized],
   );
@@ -136,6 +136,12 @@ export async function createProduct(
   const name = str(input.name, "Product name", 120);
   const unit = str(input.unit, "Base unit", 32);
   const openingStock = integer(input.openingStock, "Opening stock", 0);
+  const preparationDraftId =
+    input.preparationDraftId === undefined
+      ? null
+      : id(input.preparationDraftId, "Preparation draft ID");
+  if (preparationDraftId && openingStock !== 0)
+    fail("Products created during receipt preparation must start with Opening 0.");
   const key = requestId(input.requestId);
   return withTransaction(async (client) =>
     withRequest(
@@ -143,8 +149,16 @@ export async function createProduct(
       key,
       "CREATE_PRODUCT",
       "manager",
-      { name, unit, openingStock },
+      { name, unit, openingStock, preparationDraftId },
       async () => {
+        if (preparationDraftId) {
+          const draft = await client.query(
+            "SELECT status FROM estock_drafts WHERE id=$1 FOR UPDATE",
+            [preparationDraftId],
+          );
+          if (draft.rows[0]?.status !== "DRAFT")
+            fail("Receipt is no longer a preparation draft.", 409, "DRAFT_CLOSED");
+        }
         const productId = randomUUID();
         await client.query(
           "INSERT INTO estock_products(id,official_name,normalized_name,unit,stock) VALUES($1,$2,$3,$4,$5)",
@@ -169,7 +183,7 @@ export async function editProduct(
   const expected = revision(input.expectedVersion);
   return withTransaction(async (client) => {
     const changed = await client.query(
-      "UPDATE estock_products SET official_name=$1,normalized_name=$2,version=version+1,updated_at=now() WHERE id=$3 AND version=$4 RETURNING *",
+      "UPDATE estock_products SET official_name=$1,normalized_name=$2,version=version+1,updated_at=now() WHERE id=$3 AND version=$4 AND archived_at IS NULL RETURNING *",
       [newName, normalizeName(newName), id(productId, "Product ID"), expected],
     );
     if (!changed.rows[0])
@@ -218,7 +232,8 @@ export async function recordMovement(
       const selected = await client.query("SELECT * FROM estock_products WHERE id=$1 FOR UPDATE", [
         productId,
       ]);
-      if (!selected.rows[0]) fail("Product not found.", 404, "NOT_FOUND");
+      if (!selected.rows[0] || selected.rows[0].archived_at)
+        fail("Product is no longer active. Refresh Inventory.", 409, "ARCHIVED_PRODUCT");
       const current = Number(selected.rows[0].stock);
       if (type === "TAKE" && quantity > current)
         fail("Not enough stock available.", 409, "INSUFFICIENT_STOCK");
@@ -255,7 +270,37 @@ export async function listHistory(): Promise<MovementView[]> {
   const result = await db.query(`SELECT m.*,l.line_order FROM estock_movements m
     LEFT JOIN estock_drafts d ON d.id=m.draft_id
     LEFT JOIN estock_draft_lines l ON l.id=m.line_id
-    WHERE m.type<>'INTAKE' OR d.status='APPROVED'
+    WHERE m.type<>'INTAKE' OR d.status IN ('APPROVED','RECEIVED')
     ORDER BY m.created_at DESC,m.id DESC`);
   return result.rows.map(movement);
+}
+
+export async function archiveProduct(productId: string, input: Record<string, unknown>) {
+  const key = id(productId, "Product ID");
+  const expected = revision(input.expectedVersion);
+  return withTransaction(async (client) =>
+    withRequest(
+      client,
+      requestId(input.requestId),
+      "ARCHIVE_PRODUCT",
+      "manager",
+      { key, expected },
+      async () => {
+        const result = await client.query("SELECT * FROM estock_products WHERE id=$1 FOR UPDATE", [
+          key,
+        ]);
+        const row = result.rows[0];
+        if (!row) fail("Product not found.", 404, "NOT_FOUND");
+        if (row.archived_at) return { archived: true, productId: key };
+        if (Number(row.version) !== expected)
+          fail("Product changed. Refresh before deleting.", 409, "STALE_PRODUCT");
+        await client.query(
+          `UPDATE estock_products SET archived_at=now(),archived_by='manager',
+        archived_stock=stock,version=version+1,updated_at=now() WHERE id=$1`,
+          [key],
+        );
+        return { archived: true, productId: key };
+      },
+    ),
+  );
 }

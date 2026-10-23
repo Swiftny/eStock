@@ -2,35 +2,28 @@
 
 23 October 2026. **Later explicit user instructions authorised local implementation and verification.** [Current evidence](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) supersedes the earlier not-started status. [PRD](../product/prd.md) and [decisions](../product/DECISIONS.md) include the latest Receipt history/Stock activity clarification. [Old dated plan](IMPLEMENTATION_2026_10_21.md) and [prior build plan](../archive/2026-10-23-before-document-intake/docs/plans/BUILD_PLAN.md.txt) remain historical.
 
-## Five stages after authorisation
+## Implemented local revision: 24 October 2026
 
-| Stage | Deliverable | Acceptance before advancing | Owners |
-| --- | --- | --- | --- |
-| 1. PostgreSQL and authority | New structured products, accounts, role-scoped access and movement ledger; migration/isolation decision | Separate Manager/shared Staff, direct backend denials, transaction/retry contract, preserve legacy data, empty startup | William + Maxi; shared contracts first |
-| 2. Basic inventory | Manager product creation/Opening, Inventory/search/Low stock, both-role Take/Return, Manager History | Integer quantities, one Opening, <5 boundary, concurrent insufficient-stock Take, replay-safe Take/Return, shared Staff attribution | Maxi/William + Vitto |
-| 3. Document capture and drafts | Manager mobile/desktop upload, backend Gemini extraction, validated allowlisted fields and saved structured Draft | No stock on extraction/failure; explicit mock/live labelling; persist Draft across restart with no retained image; re-upload explanation | Marco/William + Vitto |
-| 4. Review and approval | Official/alias matching, corrections, unknown-product Opening 0, approve/discard | Manual units, actual-receipt confirmation, atomic all-line rollback, repeated/concurrent approval/edit protection, immutable Approved, distinct dates | All areas with one shared editor |
-| 5. Evaluation and delivery | Fixed team-created synthetic evaluation, responsive checks, real Replit usage/proof, aligned submission | PRD acceptance evidence, errors reported honestly, restart/redeploy persistence/access, all six artifacts, historical resource declaration and official checks | All; Marco coordinates evidence |
+Manager extracts/corrects/matches expected base-unit quantities and sends a frozen revision to shared Staff. Staff confirms physical goods with Match/Short/Extra; actual quantities immediately post once. Required discrepancy alerts commit with results/stock/movements. Historical Manager-approved receipts are preserved without reposting. [Current source and actual verification](../verification/STAFF_RECEIVING_2026_10_24.md) are separate from older evidence.
 
-Stages 1, 2 and 4 have local implementation and retained isolated PostgreSQL/API checks. Stage 3 has stubbed browser workflow evidence; live Gemini and physical capture remain Unverified. Stage 5 is partial: narrow desktop-browser layouts are checked, while real-device testing, extraction measurements, deployment/durability and competition proof remain open. FR-16 heuristic expansion and pagination are deferred. No forecast, purchasing/outbox, PO/budget or training stage is added.
+Handoff review by workstream:
 
-## Reuse versus replacement
+- Vitto: Stockroom task navigation, direct Back controls, receiving forms/notifications, Take validation, Delete modal, responsive/keyboard/reduced-motion evidence.
+- Maxi: additive 002 schema, shared ordered runner, existing-database preservation, extracted/expected/actual separation, archive stock snapshots and ledger reconciliation.
+- William: server session role restrictions, send/recall/confirm endpoints, request/revision checks, sorted row locking, atomic rollback including notifications, archive/Take/check races.
+- Marco: unchanged backend Gemini extraction/matching boundary, synthetic fixture review, live provider/tier/retention and OCR measurement remain future verified work.
 
-| Existing area | Future treatment to review |
-| --- | --- |
-| Next.js/TypeScript foundation, plain CSS, local font, reusable labelled controls | Reuse where suitable after UI/contract review; proposed teal direction is documentation only now |
-| SQLite persistence/migrations and integer-thousandths quantities | Replace/adapt for target PostgreSQL and integer base units through an approved migration/isolation plan; no automatic conversion/deletion |
-| Session/role primitives | Review for separate Manager/shared Staff; old role selector and Staff catalogue creation cannot be accepted unchanged |
-| Inventory query/movement validation/idempotency patterns | Reuse ideas only after matching new Opening/Intake/Take/Return and read permissions; legacy endpoint behaviour differs |
-| Forecast adapter/routes, purchasing engine, policies, sales-history import, outbox/PO/receiving | Preserve historical source; outside active core; do not connect to new intake workflow |
-| Worker/training/history datasets and RunPod evidence | Preserve and declare actual historical usage; no new training/GPU requirement in product |
-| Existing tests/reports/browser captures | Preserve as legacy evidence; design meaningful new tests only after authorisation; never relabel old results as OCR/PostgreSQL checks |
+Each teammate preserves their own `.env.local` and Docker data, runs `npm ci`, `docker compose -f compose.estock.yml up -d --wait`, `npm run db:estock:migrate`, then restarts `npm run dev`. Explicit setup and application startup share `db/estock/migrate.mjs`. No `down -v`, truncate or reset. Fresh and populated initial-schema upgrade tests run in owned synthetic schemas. No cloud/GPU/new dependency is needed for this revision.
 
-## Decisions and shared contracts before code
+If a product is deleted during pending receiving, Staff receives an error and no stock posts. Manager uses Drafts → Recall to correct → active product selection → Save/Send. Frozen submission evidence remains. Opening notification details never confirms goods. Ordinary matching receipts create no urgent Manager alert.
 
-Agree product/base-unit identity, ledger types/actor/time, account/role permission matrix, draft/extracted/reviewed line schemas, alias collision rules, approval revision/atomicity, persistent event/request identity, error/conflict responses and image-lifecycle boundary. Agree extraction provenance and mock/live labels. Pick verified Gemini model/SDK/tier and PostgreSQL hosting/ORM/migrations only with current official documentation through Context7; do not buy or provision from this plan.
+The coordinated scope map now covers active eStock modules. Shared files use one editor; source/data/contracts are integrated before dependent work. Retain original history, Apache LICENSE, archives, runtime stock and credentials. No repository-wide formatter or external messages. Use current Context7/installed framework documentation for API-specific changes.
 
-Use [integration rules](../team/integration.md): one active editor per shared contract/file, disjoint tasks, separate worktrees for simultaneous sessions. Existing `scripts/work-scopes.json` and checker are unchanged and do not cover every future route/module; coordinate a later scoped map update before new-code assignment. Do not silently expand a work area's ownership.
+## Remaining acceptance
+
+Later 24 October UI clarification supersedes the Stockroom navigation above: Inventory is now home; role-appropriate feature links live in the header, followed by role and Notifications. Landing handles session-aware Sign in/Sign out. Redundant Back buttons and workspace eyebrows are removed. The camera must fit below the header on opening and preserve scroll during photo preparation; History filter placeholder styling is aligned. See the current PRD and the dated UI follow-up evidence for actual checks.
+
+Live OCR and physical camera/real mobile-device behavior, extraction accuracy/task-time measurement, provider/hosting retention, actual Replit access/durability/redeploy evidence and competition submissions remain unverified. Local synthetic tests do not close those items. Pagination and broader duplicate-document heuristics remain outside this revision. The original SQLite forecasting/purchasing/training sources and old reports stay historical, not part of the active core.
 
 ## Delivery and evidence
 
@@ -42,4 +35,4 @@ Prepare official-template proposal PDF, deck, working prototype, Technical & Too
 
 PH/earlier orientation: **25 October 2026, 07:59:59 AM MYT**; website/FAQ: **11:59 PM MYT**. Internal target: **24 October 2026, 20:00 MYT**. Use earlier deadline pending written clarification; freeze judged repository/live build/materials after it. This late pivot is a delivery risk; the five stages are a sequence, not a claim they fit the remaining time.
 
-No commit/push/merge/publication, paid API call, infrastructure or real messages are authorised. Next step: user review and explicit implementation instruction.
+No commit/push/merge/publication, paid API call, infrastructure or real messages are authorised. Next step: team review/adaptation and remaining real-service/submission evidence.

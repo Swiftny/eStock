@@ -12,19 +12,10 @@ import {
   normalizeName,
   object,
   optionalStr,
-  requestId,
   revision,
   str,
 } from "./input";
-import {
-  getProduct,
-  matchExactProducts,
-  matchProducts,
-  movement,
-  withRequest,
-  type MovementView,
-  type ProductView,
-} from "./inventory";
+import { getProduct, matchExactProducts, matchProducts, type ProductView } from "./inventory";
 
 const MAX_IMAGE = 6 * 1024 * 1024;
 const MAX_REQUEST = MAX_IMAGE + 16_384;
@@ -217,7 +208,7 @@ export interface DraftLineView {
 
 export interface DraftView {
   id: string;
-  status: "DRAFT" | "APPROVED" | "DISCARDED";
+  status: "DRAFT" | "AWAITING_STAFF" | "RECEIVED" | "APPROVED" | "DISCARDED";
   revision: number;
   documentDate: string | null;
   extractedDocumentDate: string | null;
@@ -252,7 +243,7 @@ async function similarApprovedWarning(
 ): Promise<string | null> {
   if (!date || !rawLines.length) return null;
   const candidates = await client.query(
-    "SELECT id FROM estock_drafts WHERE id<>$1 AND status='APPROVED' AND document_date=$2",
+    "SELECT id FROM estock_drafts WHERE id<>$1 AND status IN ('APPROVED','RECEIVED') AND document_date=$2",
     [draftId, date],
   );
   const signature = lineSignature(rawLines);
@@ -262,7 +253,7 @@ async function similarApprovedWarning(
       [candidate.id],
     );
     if (signature === lineSignature(lines.rows)) {
-      return "A previously approved document has the same date and item lines. Check History before approving this delivery.";
+      return "A previously approved document has the same date and item lines. Check History before sending this delivery.";
     }
   }
   return null;
@@ -286,7 +277,11 @@ export async function getDraft(draftId: string, client?: PoolClient): Promise<Dr
     const candidates = await matchProducts(String(line.reviewed_name || line.raw_name), client);
     const selectedId = line.product_id ? String(line.product_id) : null;
     if (selectedId && !candidates.some((item) => item.id === selectedId)) {
-      candidates.unshift(await getProduct(selectedId, client));
+      const active = await db.query(
+        "SELECT id FROM estock_products WHERE id=$1 AND archived_at IS NULL",
+        [selectedId],
+      );
+      if (active.rowCount) candidates.unshift(await getProduct(selectedId, client));
     }
     lines.push({
       id: String(line.id),
@@ -479,120 +474,12 @@ export async function discardDraft(
 }
 
 export async function approveDraft(
-  draftId: string,
-  input: Record<string, unknown>,
-): Promise<{ draft: DraftView; movements: MovementView[] }> {
-  const key = id(draftId, "Draft ID");
-  const expected = revision(input.expectedRevision);
-  const operationId = requestId(input.requestId);
-  if (input.confirmReceived !== true)
-    fail("Confirm the actual usable quantities received before approval.");
-  return withTransaction(async (client) =>
-    withRequest(
-      client,
-      operationId,
-      "APPROVE_DRAFT",
-      "manager",
-      { key, expected, confirmReceived: true },
-      async () => {
-        const draft = await client.query("SELECT * FROM estock_drafts WHERE id=$1 FOR UPDATE", [
-          key,
-        ]);
-        if (!draft.rows[0]) fail("Draft not found.", 404, "NOT_FOUND");
-        if (draft.rows[0].status !== "DRAFT")
-          fail("This draft is already closed.", 409, "DRAFT_CLOSED");
-        if (Number(draft.rows[0].revision) !== expected)
-          fail("Draft changed. Refresh before approval.", 409, "STALE_DRAFT");
-        if (!draft.rows[0].document_date) fail("Enter the document date before approval.");
-        const lineResult = await client.query(
-          "SELECT * FROM estock_draft_lines WHERE draft_id=$1 ORDER BY line_order FOR UPDATE",
-          [key],
-        );
-        if (!lineResult.rows.length) fail("Draft has no item lines.");
-        const included = lineResult.rows.filter((line) => !line.excluded);
-        if (!included.length) fail("Include at least one received item line.");
-        for (const line of lineResult.rows) {
-          if (line.excluded) {
-            if (!line.exclusion_reason?.trim()) fail("Explain why each excluded line is omitted.");
-          } else if (
-            !line.product_id ||
-            line.approved_quantity === null ||
-            !line.reviewed_name?.trim()
-          ) {
-            fail("Resolve each included product and quantity before approval.");
-          }
-        }
-        const productIds = [...new Set(included.map((line) => String(line.product_id)))].sort();
-        const selected = new Map<string, Record<string, unknown>>();
-        for (const productId of productIds) {
-          const row = await client.query("SELECT * FROM estock_products WHERE id=$1 FOR UPDATE", [
-            productId,
-          ]);
-          if (!row.rows[0])
-            fail("A selected product no longer exists. Refresh.", 409, "STALE_PRODUCT");
-          selected.set(productId, row.rows[0]);
-        }
-        for (const line of included) {
-          const chosen = selected.get(String(line.product_id));
-          if (!chosen || Number(chosen.version) !== Number(line.selected_product_version)) {
-            fail(
-              "A selected product changed. Refresh and save the draft again.",
-              409,
-              "STALE_PRODUCT",
-            );
-          }
-        }
-        const approvedAt = new Date().toISOString();
-        const movements: MovementView[] = [];
-        const running = new Map(
-          productIds.map((productId) => [productId, Number(selected.get(productId)?.stock)]),
-        );
-        for (const line of included) {
-          const productId = String(line.product_id);
-          const chosen = selected.get(productId);
-          if (!chosen) fail("A selected product no longer exists. Refresh.", 409, "STALE_PRODUCT");
-          const quantity = Number(line.approved_quantity);
-          if (!Number.isSafeInteger(quantity) || quantity <= 0)
-            fail("Approved quantity must be a positive whole number.");
-          const next = (running.get(productId) || 0) + quantity;
-          if (!Number.isSafeInteger(next)) fail("Stock would exceed the supported amount.");
-          running.set(productId, next);
-          const inserted = await client.query(
-            `INSERT INTO estock_movements(id,source_event_id,product_id,product_name,unit,type,quantity,delta,balance_after,actor_role,actor_account_id,
-           document_date,approved_at,draft_id,line_id,raw_name,raw_quantity,raw_unit,reviewed_name)
-           VALUES($1,$2,$3,$4,$5,'INTAKE',$6,$6,$7,'manager','manager',$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
-            [
-              randomUUID(),
-              `intake:${line.id}`,
-              productId,
-              chosen.official_name,
-              chosen.unit,
-              quantity,
-              next,
-              dateOnly(draft.rows[0].document_date),
-              approvedAt,
-              key,
-              line.id,
-              line.raw_name,
-              line.raw_quantity,
-              line.raw_unit,
-              line.reviewed_name,
-            ],
-          );
-          movements.push(movement(inserted.rows[0]));
-        }
-        for (const productId of productIds) {
-          await client.query("UPDATE estock_products SET stock=$1,updated_at=now() WHERE id=$2", [
-            running.get(productId),
-            productId,
-          ]);
-        }
-        await client.query(
-          "UPDATE estock_drafts SET status='APPROVED',revision=revision+1,updated_at=now(),approved_at=$1,approved_by='manager',approved_account_id='manager',actual_receipt_confirmed=true WHERE id=$2",
-          [approvedAt, key],
-        );
-        return { draft: await getDraft(key, client), movements };
-      },
-    ),
+  _draftId: string,
+  _input: Record<string, unknown>,
+): Promise<never> {
+  fail(
+    "Manager approval is retired. Send the prepared receipt to Staff for physical checking.",
+    410,
+    "APPROVAL_RETIRED",
   );
 }
