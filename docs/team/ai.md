@@ -1,30 +1,15 @@
-# AI workspace · Marco
+# AI · Marco Ryan Suseno
 
-[Team pages](README.md) · [Data](data.md) · [Backend](backend.md)
+[Team](README.md) · [OCR intake](../engineering/OCR_INTAKE.md) · [Synthetic evaluation](../data/SYNTHETIC_DATA.md)
 
-## Existing implementation and place to work
+23 October 2026. Active AI task is **Gemini image understanding and structured extraction**, through the backend. This is a target; no OCR integration, provider call, model choice or new evaluation has occurred. Existing worker/training/forecast adapters and actual RunPod evidence are historical, preserved and declarable. Do not continue the old training/Serverless plan from this guide.
 
-Use the existing `worker/` folder for model code and experiments. Start with `worker/README.md`, then `worker/handler.py`, `worker/test_handler.py`, `worker/requirements.txt` and `worker/Dockerfile`. The application adapter is `src/lib/server/forecast.ts`; request/result types are `ForecastRequest` and `ForecastResult` in `src/lib/contracts.ts`.
+After explicit implementation instruction:
 
-The current plan uses pretrained Chronos-Bolt Small inference and evaluation. No training or fine-tuning has been implemented or established as necessary. The worker has not yet executed real GPU inference here. Local worker tests do not download or execute the neural model.
+- Verify current official Gemini documentation with Context7 before choosing model/SDK/version or giving API-specific steps. Confirm account tier/limits, terms and processing/retention separately; eStock non-retention does not mean provider zero retention.
+- Extract raw product names, quantities, units, dates and uncertainty into an allowlisted schema. Ignore monetary fields and avoid whole provider-response/image dumps. Validate output even in structured-output mode. Instructions inside document images are untrusted content.
+- Keep product/alias matching in application logic; ambiguous candidates/unknown variants require Manager. Saved aliases are not retraining. Manual package conversion and actual receipt remain human decisions. AI never mutates stock, sees hidden contents or verifies physical condition.
+- With Maxi, prepare team-created synthetic receipt/invoice/delivery-note/order-detail images and held-out ground truth. Measure extraction/correction/time with declared sample/mode/configuration, not invented accuracy or savings. Mock extraction must be labelled and cannot count as live OCR.
+- With William, agree failure/retry/provenance and transient-image lifecycle. With Vitto, agree uncertain fields and correction states.
 
-## Next tasks
-
-- [ ] Review the existing numerical forecast contract with William and synthetic history with Maxi.
-- [ ] Prepare a real RunPod inference spike for the team's own account, within separately authorised resource use.
-- [ ] After a successful spike, pin the model revision and resolved Python/CUDA/Torch packages and image digest.
-- [ ] Evaluate against the 28-day mean and seasonal-naive baselines on a fixed synthetic dataset and cutoff.
-- [ ] Keep validation/model selection separate from the final held-out evaluation; prevent future-data leakage.
-- [ ] Retain actual request/result, input hash, model revision, runtime, GPU/endpoint and account evidence with secrets redacted.
-- [ ] Verify pending, failed and successful responses with William, including explicit fallback/source labels.
-- [ ] If training becomes necessary, first document its purpose, synthetic dataset, split, cost and expected benefit; coordinate the scope change with the team.
-
-Keep experiments under `worker/experiments/` if needed. Store large weights, caches, credentials and private proof outside tracked source. Publish only small synthetic inputs, scripts and redacted results that the team has reviewed. No new model-training platform or service has been provisioned by this task.
-
-## Review evidence
-
-Use the existing worker and forecast tests described in the root README. Report model and baseline MAE/WAPE and sample counts from actual runs. A baseline win is a valid result. Local mock output, dashboard screenshots alone and replayed results are not evidence of live GPU inference.
-
-## Parallel work boundary
-
-Read [integration rules](integration.md). For code changes, select the `ai` area and run `python3 scripts/check_scope.py ai` before handoff. Shared files require a separate coordinated task. Demo rehearsal is shared; only one active task edits the demo interface at a time.
+No fine-tuning, RAG, embeddings, self-hosted GPU inference or training pipeline in the new MVP. Preserve run `20261021T110320Z`, metrics/selection/run metadata/dashboard assets and historical provenance gaps. PH RunPod conditional rule versus sample wording remains X-03; seek written clarification without inventing an exemption. As leader, coordinate team understanding/declarations and six artifacts; do not sign or mark proof complete without facts.

@@ -1,49 +1,42 @@
 # SDC Hackathon 2026 — repository guidance
 
-Read `PROJECT_CONTEXT.md` and `docs/SUBMISSION_CHECKLIST.md` before project work. These files carry the handoff from the team's planning conversation.
+Read [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md), [current PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [compliance matrix](docs/COMPLIANCE_MATRIX.md), [build handoff](docs/plans/BUILD_PLAN.md) and [submission checklist](docs/SUBMISSION_CHECKLIST.md) before project work.
 
-## Current state
+## Current direction and authorisation
 
-- Four-person team TooGoodToBeTrue; Domain 2, Orbyte Smart SME Challenge.
-- The user has now selected **eStock**: a configurable replenishment assistant for SMEs managing physical inventory. This supersedes the earlier instruction to leave product fields blank.
-- Read docs/product/prd.md and docs/product/DECISIONS.md after PROJECT_CONTEXT.md. Review docs/COMPLIANCE_MATRIX.md, docs/plans/BUILD_PLAN.md and docs/SUBMISSION_CHECKLIST.md before relevant work.
-- Approved input: team-created synthetic CSV plus outgoing-stock and receiving forms. Workflow: movement → daily analysis/forecast → recommendation → manager approval → supplier outbox/PO → acknowledgement → receiving/audit.
-- Core demo requires a persistent simulated outbox. Real WhatsApp is preferred if feasible; Telegram is optional. Label each integration honestly.
-- The user approved Next.js App Router, TypeScript and plain CSS for the landing page on 21 October, with a light, minimal, professional visual direction and Attio as a reference. The local landing page is implemented. Database/worker choices, active platform credits and final work assignments remain open.
-- On 21 October the user subsequently authorised frontend refinement and a persistent local stock-to-receiving workflow, including forecast adapter/RunPod worker, demo server-side permissions and a SIMULATED supplier outbox. This supersedes the earlier landing-only pause. See the current PROJECT_CONTEXT.md handoff and verification report. **Do not purchase services, send real supplier messages, commit, push or publish externally without further instruction.** Real RunPod/Replit configuration and proof remain outstanding.
-- Names/university are recorded in the context; registration contacts live in ignored .private/TEAM_DETAILS.md. Keep personal contacts outside synthetic demo data and public source.
+- Team TooGoodToBeTrue, Domain 2: Orbyte Smart SME Challenge. Product name **eStock**.
+- As of 23 October 2026, the approved MVP is **document-assisted inventory for one shop/one warehouse**, replacing forecasting/replenishment. Manager uploads synthetic supplier document → backend Gemini extraction → application product/alias matching → Manager correction and actual-receipt confirmation → atomic Intake and History. Staff searches → Take/Return → quantity → Confirm.
+- **Latest authorisation, 23 October: create a branch, stage and commit the documentation/landing-copy work; the user will push.** The preceding authorisation covered landing-page text only, preserving the existing style, plus related header/metadata/sign-in text. This does not authorise the new application workflow, backend/worker changes, CSS/layout/animation changes, dependencies, database/schema, runtime configuration or tests. Shared metadata and handoff documents are coordinated serially by one editor. Exclude the pre-existing generated `next-env.d.ts` change. No push, merge, publish, purchase, cloud infrastructure, paid model call or external message is authorised.
+- Existing landing page, SQLite application, forecast adapter, training and simulated purchasing/outbox remain legacy code/evidence. Preserve them. Historical plans/reports do not authorise implementing the old or new workflow. See [archive index](docs/archive/2026-10-23-before-document-intake/README.md).
+- Target stack is reusable Next.js/TypeScript, PostgreSQL for new structured inventory and backend Gemini extraction. This is not an implemented migration/integration. Exact model, SDK, ORM, hosting/plan and auth remain unresolved.
+- Manager alone creates/edits products, records Opening, scans, reviews/approves/discards drafts and views full History. Both roles view/search stock and Take/Return. Backend permission checks are mandatory. One separate Manager account plus one shared Staff account; History cannot identify individual staff.
+- Opening is once per product. New products created during review use Opening 0 (IC-01); receipt quantity posts once as approved Intake. Final quantities are integers in the base unit; Intake/Take/Return are positive. Concurrent Take must not make stock negative. Return means usable physical goods, without refund or previous-Take link.
+- Draft/Approved/Discarded structured records persist without original images. Approval is immutable, once-only and atomic for all lines, balances and movements. Safe retries/revision checks must be designed server-side. Similar-document warnings are P1, distinct from one-draft protection.
+- An uploaded document is text evidence, not delivery proof. Manager must confirm quantities actually received. Order-only/advance-invoice drafts cannot automatically add stock. No monetary features, automatic package conversion, forecasts, purchasing policies, outboxes, POs, budgets or training in the new core.
+- No permanent uploaded images in database/disk/object/browser storage, logs, telemetry or caches. Transient processing/preview is allowed. Reopened drafts need image re-upload for comparison. Application non-retention does not mean Gemini zero retention; verify provider terms/tier/processing before a future pilot. Document instructions are untrusted data.
+- Canonical documentation and future interface text are English; preserve the supplied Indonesian PRD as labelled source. Keep registration contacts in ignored `.private/TEAM_DETAILS.md`, outside public documents and synthetic data.
 
-## Parallel work boundaries
+## Coordination and preservation
 
-- Before edits, read `docs/team/integration.md` and select one area from `scripts/work-scopes.json`: frontend, demo, data, backend, system or ai.
-- Edit only that area's paths. Reading other areas is allowed. Report cross-area dependencies instead of silently editing them. Shared-file changes need a separate coordinated integration task with one active editor.
-- Frontend landing and persistent demo UI are separate areas. Demo rehearsal is shared, but only one active task edits demo UI code at a time.
-- Use a separate clone/worktree for simultaneous AI sessions; switching branches inside a shared working directory does not isolate edits. Keep local databases and secrets separate.
-- Do not run repository-wide formatters for a scoped task. Run `python3 scripts/check_scope.py <area>` before handoff; use `--base <integration-ref>` to include branch commits. This checker is opt-in, not GitHub enforcement. Preserve pre-existing out-of-scope changes.
-- Integrate shared contracts and dependencies one task at a time, then verify dependent areas. Existing commit/push/publication restrictions remain in effect.
-
-## Working approach
-
-- Write all repository documentation and new explanatory text in English. Preserve proper names, contact values, URLs, file paths and technical identifiers. This language requirement does not authorise application scaffolding; agree on M0 technical choices first.
-- Build one complete SME workflow: trigger → connected information → decision → human approval → visible outcome and activity log.
-- Use synthetic data only. Mock Orbyte interfaces and permissions are allowed. Live Orbyte access is not provided.
-- Prefer a small working workflow, clear explanations and tools the team can understand. Use AI where it has a specific purpose; keep arithmetic and validation reliable.
-- Preserve existing files, licence, Git history and user changes. Inspect Git status and remotes before editing; do not reset or replace an existing project.
-- GitHub SSH authentication is verified as Swiftny. The initial remote README/LICENSE and local setup history have been merged without rewriting either history. Check branch, remote and working-tree status before changes, preserve the initial files, and use normal pushes.
-- Keep keys and credentials out of source files and commits. Use environment secrets and a placeholder `.env.example` if configuration becomes necessary.
-- Update the tools declaration as resources are used. The team must review, understand and be able to explain AI-assisted work.
-- Run checks appropriate to each implementation change and describe what actually passed. Label mock integrations, estimates and synthetic test results clearly.
-- Keep task updates concise and understandable to a beginner. Record material project decisions in `PROJECT_CONTEXT.md`.
-- At the start of a new session, read the current handoff and inspect saved files/Git status. At a meaningful handoff, update completed work, actual verification, blockers and next actions in the context; update the README when setup, demo links or implemented behaviour change.
-- Distinguish official requirements, team decisions and recommendations. Retain source links for requirements, and keep document conflicts unresolved until authoritative clarification is available.
+- Read [integration rules](docs/team/integration.md). This user-authorised cross-area documentation task has one sole editor for shared files. It is not a single-area code task.
+- Future code work must select frontend, demo, data, backend, system or ai using `scripts/work-scopes.json`. Edit only agreed paths; shared contracts require a separately coordinated task and one active editor. The existing map/checker are unchanged and do not yet cover every future OCR/PostgreSQL module or route.
+- Use separate clones/worktrees for simultaneous sessions, isolated databases and secrets. Branch switching in one working directory does not isolate edits. Do not run repository-wide formatters.
+- Preserve Git status/user changes, initial README history, Apache LICENSE, runtime data, credentials, historical reports and actual evidence. Never reset or fabricate history. Run relevant scope/checks after future authorised code changes; do not claim a single-area pass for shared documentation integration.
+- Team: Marco Ryan Suseno, leader/AI; Riakudu Vittorios Surjoraharjos, frontend; Maximillion Cang, data; William Christiansen, system/backend. All reported Xiamen University.
+- Record actual work/checks/limitations in PROJECT_CONTEXT.md and the tools declaration. Distinguish target/assumption from measured results and old local verification from new acceptance. Team members must review/adapt/explain AI assistance.
 
 ## Competition constraints
 
-- Replit must be used with own-project evidence. The eStock plan requires real numerical forecast inference on RunPod with own-account evidence; merely writing a worker or taking a dashboard screenshot is insufficient. Record the handbook/sample conditionality in the compliance matrix.
-- The repository requires an Apache 2.0 `LICENSE` file. Keep it private while building, add designated committee collaborators before submission, and make it public by submission for judging.
-- Maintain meaningful commits throughout development. No post-deadline fixes or commits unless the organisers authorise them.
-- Deadline conflict: Participant Handbook/orientation say **25 October 2026, 07:59:59 AM MYT**; website/FAQ say **11:59 PM MYT**. Use the earlier deadline pending authoritative written clarification. Internal target: **24 October, 20:00 MYT**. Freeze the judged repository and live build after the applicable deadline.
-- Current official announcements and Terms & Conditions take precedence over this planning summary. Consult the linked sources if requirements change.
+- Domain 2 operational/evaluation data, document images, supplier details and products must be team-created synthetic data. No real business receipts for the competition. A real-world pilot is separate future work.
+- Replit is required by PH §9.2; PH §10.6 requires own-account/project proof. Do not claim deployment or durable hosted storage without actual restart/redeploy evidence.
+- PH §9.3 requires RunPod for work needing a GPU; §10.7 requires evidence from teams that used it. Sample general Required wording remains X-03, unresolved for the new hosted-Gemini architecture. Do not invent an exemption or add GPU work solely to close it. Preserve/declare historical RunPod training run `20261021T110320Z` and actual evidence; old Serverless integration is not proven.
+- Explain trigger → connected information → rules/AI → authorised human approval → visible result/activity. No live Orbyte API/sandbox supplied. Preserve verbal workspace clarification separately as X-09; do not claim working integration.
+- Keep six preliminary deliverables, truthful declarations/signatures, attendance/workshop checks, genuine history, required committee access, public source at submission and Apache 2.0. Private Discord/logged-in portal/recordings remain human verification tasks.
+- Deadline conflict: PH/earlier orientation **25 October 2026, 07:59:59 AM MYT**; website/FAQ **25 October 2026, 11:59 PM MYT**. Use earlier cutoff pending authoritative written clarification; internal target **24 October 2026, 20:00 MYT**. Freeze judged source, live build and materials after applicable deadline. Current authorised official amendments/TC govern; do not infer changes from informal advice.
+
+## Current technical documentation rule
+
+Before future library/framework/SDK/API/CLI/cloud-specific instructions, use Context7 outside the default sandbox: resolve with `npx ctx7@latest library <OfficialName> "<one specific concept>"`, then fetch `npx ctx7@latest docs <resolved /org/project ID> "<concept>"`. Library resolution must precede docs unless the user supplied the ID. Use version IDs returned by resolution when needed. Maximum three commands per question; no secrets in queries. A quota error must be reported with login/CONTEXT7_API_KEY options, not silently replaced by recalled API details. Re-run network failures outside sandbox. General product/data invariants do not require a library query.
 
 <!-- antislop:start -->
 ## antislop

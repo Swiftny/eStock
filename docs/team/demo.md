@@ -1,34 +1,18 @@
-# Integrated demo · all members
+# Integrated demonstration · all members
 
-[Team pages](README.md) · [Pitch and video guide](../submission/PITCH_AND_DEMO.md)
+[Team](README.md) · [Pitch/demo](../submission/PITCH_AND_DEMO.md) · [Acceptance](../product/prd.md)
 
-## Where the demo runs
+23 October 2026. This is the **future demo**, not a description of the current `/demo` application. Existing website and replenishment rehearsal remain historical. No service or runtime data is changed now.
 
-The persistent application is `/demo`; `/` is the landing page. Follow the root README to run locally. This page coordinates the demonstration, not another implementation of the workflow.
-
-| Member | Prepare and explain |
+| Member | Prepare and explain after implementation |
 | --- | --- |
-| Vitto | Navigation, forms, readable purchase review and interface states |
-| Maxi | Synthetic fixture, stock balances, CSV history and repeatable data setup |
-| William | Permissions, approval transaction, persistent outbox, receiving and audit |
-| Marco | Forecast source, model/baseline evaluation, limitations and real inference evidence |
+| Vitto | Manager review and simple Staff search/Take/Return; responsive/error states |
+| Maxi | Team-created synthetic image/catalogue/aliases/ground truth and ledger balances |
+| William | Backend permission denial, atomic approval/retries/concurrent Take, durable storage |
+| Marco | Gemini extraction/uncertainty/mock-live labels, historical resource declaration, evidence narrative |
 
-## Rehearsal checklist
+Future rehearsal: begin in an isolated empty synthetic workspace; Manager creates a product with Opening; uploads a synthetic document; reviews raw versus approved fields, alias/unknown product and manual units; confirms actual receipt; approves once; Inventory and History change together. Switch to shared Staff, search/Take/Return and show updated stock/shared attribution. Show direct backend denial of Manager actions and one extraction/receipt-confirmation exception. Reopen a saved draft without original image and explain re-upload. Do not reset the user's legacy database.
 
-- [ ] Begin from a separate fresh local synthetic database using the supported database-path configuration; preserve existing work.
-- [ ] Record a sale, close a complete business day and run analysis.
-- [ ] Explain the forecast cutoff and visible source. The default local source is a labelled baseline, not neural inference.
-- [ ] Review supplier, quantity, costs, packaging, arrival and warnings as manager.
-- [ ] Approve once; verify one PO/outbox and unchanged physical stock.
-- [ ] Dispatch to the simulator and record a synthetic acknowledgement.
-- [ ] Receive partial then remaining usable stock; demonstrate damage handling if relevant.
-- [ ] Inspect activity and refresh/restart to check saved state.
-- [ ] Show that staff cannot perform manager-only operations.
-- [ ] Check the approved deployed build and own-account Replit/RunPod evidence when available.
-- [ ] Rehearse the 5–7-minute pitch/video using claims supported by actual results.
+An order-only image with no delivered goods stays Draft. Low stock below 5 is a simple indicator. Retry/repeated approval posts once; a separate duplicate upload is not guaranteed blocked (warning P1). No purchasing/outbox/PO/forecast/training demo in the active core. Historical GPU proof is separately declared, never called OCR evidence.
 
-Use the fixed PRD arithmetic example only as a rules test. Do not promise that real model output will produce the landing fixture's 60 units. Do not send real supplier messages during rehearsal. Record blockers and actual results before calling the demo ready.
-
-## Parallel work boundary
-
-Read [integration rules](integration.md). For code changes, select the `demo` area and run `python3 scripts/check_scope.py demo` before handoff. Shared files require a separate coordinated task. Demo rehearsal is shared; only one active task edits the demo interface at a time.
+Record actual synthetic case IDs/build/environment/mode, mobile/desktop checks and Replit persistence/access/proof before marking this ready. Rehearse a 5–7-minute YouTube narrative matching the implemented source/prototype; no invented results, signatures or deployment. Current status: new journey unimplemented. Await explicit instruction before building/rehearsing runtime actions.

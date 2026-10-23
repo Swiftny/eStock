@@ -1,17 +1,15 @@
-# Team work pages
+# Team work pages: document-assisted eStock
 
-Assignments confirmed by the user on 21 October 2026. These are repository work pages, not application routes. The application remains at `/` and `/demo`.
+23 October 2026. These guides describe future responsibilities. **Current task is documentation only; no implementation is authorised.** Existing website/SQLite application and evidence remain legacy. All four members reported Xiamen University.
 
-| Member | Assignment | Work page |
+| Member | Assignment | Guide |
 | --- | --- | --- |
-| Vitto | Frontend | [Frontend](frontend.md) |
-| Maxi | Data | [Data](data.md) |
-| William | System and backend | [Backend / system](backend.md) |
-| Marco | AI | [AI workspace](ai.md) |
-| All members | Integrated demonstration | [Demo](demo.md) |
+| Marco Ryan Suseno | Leader / AI | [AI](ai.md) |
+| Riakudu Vittorios Surjoraharjos (Vitto) | Frontend | [Frontend](frontend.md) |
+| Maximillion Cang (Maxi) | Data | [Data](data.md) |
+| William Christiansen | System / backend | [Backend](backend.md), [system](system.md) |
+| All | Shared rehearsal and review | [Demo](demo.md) |
 
-Read [parallel work and integration rules](integration.md) before editing. Code areas are separated in `scripts/work-scopes.json`, and `scripts/check_scope.py` checks whether changes stay inside a selected area. [System](system.md) is separated from backend; demo UI is separated from landing frontend. Rehearsal remains shared.
+Read [context](../../PROJECT_CONTEXT.md), [PRD](../product/prd.md), [build handoff](../plans/BUILD_PLAN.md) and [integration rules](integration.md). Shared contracts require one active editor; concurrent sessions use separate worktrees/clones. Existing scope scripts are unchanged and do not already cover new OCR/PostgreSQL modules. No root `pages/` documentation folder; guides belong here.
 
-These boundaries reduce conflicts but cannot guarantee conflict-free merges. Shared contracts, styles and dependencies are integrated one task at a time. Use a separate clone or worktree for simultaneous AI sessions, not the same working directory.
-
-All task lists below are remaining work, not claims of completion. Read [project context](../../PROJECT_CONTEXT.md) for current authorisation and [README](../../README.md) for existing run commands. No commit, push, publication, paid service or real supplier message is authorised by these pages.
+Product pivot does not imply any teammate completed new code. Old task/evidence snapshots are [archived](../archive/2026-10-23-before-document-intake/README.md); original reports/assets/training evidence are preserved. No commit/push/merge/publication, paid service/model call, infrastructure or external message is authorised. Keep registration contacts private. Everyone reviews/adapts/explains the AI-assisted work and the complete workflow, not only their area.

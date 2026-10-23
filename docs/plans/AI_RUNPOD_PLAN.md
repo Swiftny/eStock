@@ -1,3 +1,5 @@
+> **HISTORICAL — superseded 23 October 2026.** The active eStock MVP is document-assisted inventory with target PostgreSQL/backend Gemini. This older forecasting/purchasing/training material and its results/commands are preserved as history, not current build instructions. Do not execute its setup, model calls, deployment or next-stage tasks from the documentation-only request. No new GPU/training workflow is required by the product. Historical RunPod run `20261021T110320Z` and actual evidence remain declarable; older local “not run here” statements do not negate that separate training run. A connected application-to-Serverless inference is not proven by historical training. Existing code and evidence remain unchanged.
+
 # eStock AI and RunPod plan
 
 Updated 21 October 2026. Decisions U-17 (feature scope), U-18 (fine-tuned Chronos-2) and U-19 (two synthetic datasets) are recorded in [DECISIONS.md](../product/DECISIONS.md). Fine-tuning, evaluation and a local worker test have run on a RunPod RTX 4090 (results below). The Serverless endpoint is not deployed yet.
