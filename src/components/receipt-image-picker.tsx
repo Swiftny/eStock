@@ -100,6 +100,9 @@ export function ReceiptImagePicker({
   previewDescription?: string;
 }) {
   const cameraInput = useRef<HTMLInputElement>(null);
+  const cameraTrigger = useRef<HTMLButtonElement>(null);
+  const retryTrigger = useRef<HTMLButtonElement>(null);
+  const cameraPanel = useRef<HTMLDivElement>(null);
   const uploadInput = useRef<HTMLInputElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -109,7 +112,9 @@ export function ReceiptImagePicker({
   const [videoReady, setVideoReady] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [previewHeight, setPreviewHeight] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const cameraVisible = camera !== "closed";
 
   const releaseCamera = useCallback(() => {
     cameraVersion.current++;
@@ -131,9 +136,36 @@ export function ReceiptImagePicker({
       return;
     }
     const url = URL.createObjectURL(file);
+    const wasUsingCamera = video.current !== null;
+    setPreviewHeight(video.current?.getBoundingClientRect().height ?? null);
     setPreview(url);
+    closeCamera();
+    if (wasUsingCamera)
+      requestAnimationFrame(() => retryTrigger.current?.focus({ preventScroll: true }));
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [file, closeCamera]);
+
+  useEffect(() => {
+    if (!cameraVisible || !cameraPanel.current) return;
+    const panel = cameraPanel.current;
+    const fitCamera = () => {
+      const headerHeight = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      panel.style.height = `${Math.max(160, viewportHeight - headerHeight - 32)}px`;
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + panel.getBoundingClientRect().top - headerHeight - 16),
+        behavior: "instant",
+      });
+    };
+    fitCamera();
+    panel.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true });
+    window.addEventListener("resize", fitCamera);
+    window.visualViewport?.addEventListener("resize", fitCamera);
+    return () => {
+      window.removeEventListener("resize", fitCamera);
+      window.visualViewport?.removeEventListener("resize", fitCamera);
+    };
+  }, [cameraVisible]);
 
   useEffect(() => {
     const nativeInput = cameraInput.current;
@@ -154,9 +186,7 @@ export function ReceiptImagePicker({
 
   async function chooseImage(selected: File | undefined) {
     if (!selected || disabled) return;
-    closeCamera();
     const version = ++imageVersion.current;
-    onChange(null);
     setError("");
     setPreparing(true);
     try {
@@ -187,7 +217,6 @@ export function ReceiptImagePicker({
       );
       return;
     }
-    onChange(null);
     setCamera("opening");
     const version = cameraVersion.current;
     try {
@@ -245,7 +274,6 @@ export function ReceiptImagePicker({
       if (!context || !canvas.width || !canvas.height)
         throw new Error("The camera is not ready. Wait a moment and try again.");
       context.drawImage(video.current, 0, 0);
-      closeCamera();
       const photo = await jpegFromCanvas(canvas);
       checkSize(photo);
       if (version === imageVersion.current) {
@@ -273,12 +301,13 @@ export function ReceiptImagePicker({
       <div className={styles.captureActions}>
         {allowCamera && (
           <button
+            ref={cameraTrigger}
             className={styles.secondaryButton}
             type="button"
             disabled={disabled || preparing || camera !== "closed"}
             onClick={() => void takePhoto()}
           >
-            {file ? "Retake photo" : "Take photo"}
+            Take photo
           </button>
         )}
         <button
@@ -324,7 +353,7 @@ export function ReceiptImagePicker({
         them.
       </p>
       {camera !== "closed" && (
-        <div className={styles.cameraPanel}>
+        <div ref={cameraPanel} className={styles.cameraPanel} aria-busy={preparing}>
           <video
             ref={video}
             className={styles.receiptPreview}
@@ -346,16 +375,20 @@ export function ReceiptImagePicker({
               disabled={disabled || preparing || !videoReady}
               onClick={() => void capturePhoto()}
             >
-              Take picture
+              {preparing ? "Preparing image…" : "Take picture"}
             </button>
-            <button className={styles.secondaryButton} type="button" onClick={closeCamera}>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              disabled={preparing}
+              onClick={closeCamera}
+            >
               Cancel camera
             </button>
           </div>
         </div>
       )}
-      {preparing && <p role="status">Preparing image…</p>}
-      {preview && file && (
+      {camera === "closed" && preview && file && (
         <figure className={styles.receiptFigure}>
           {/* biome-ignore lint/performance/noImgElement: A local blob preview must stay in the browser and bypass image optimization. */}
           <img
@@ -363,6 +396,7 @@ export function ReceiptImagePicker({
             src={preview}
             width={1200}
             height={900}
+            style={previewHeight ? { height: previewHeight, maxHeight: "none" } : undefined}
             alt={previewAlt}
             onError={() => {
               onChange(null);
@@ -372,20 +406,35 @@ export function ReceiptImagePicker({
             }}
           />
           <figcaption>{previewDescription}</figcaption>
-          <button
-            className={styles.textButton}
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              imageVersion.current++;
-              onChange(null);
-              setError("");
-            }}
-          >
-            Remove image
-          </button>
+          <div className={styles.captureActions}>
+            {allowCamera && (
+              <button
+                ref={retryTrigger}
+                className={styles.secondaryButton}
+                type="button"
+                disabled={disabled || preparing}
+                onClick={() => void takePhoto()}
+              >
+                Retake photo
+              </button>
+            )}
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              disabled={disabled || preparing}
+              onClick={() => {
+                imageVersion.current++;
+                onChange(null);
+                setError("");
+                requestAnimationFrame(() => cameraTrigger.current?.focus({ preventScroll: true }));
+              }}
+            >
+              Remove image
+            </button>
+          </div>
         </figure>
       )}
+      {camera === "closed" && preparing && <p role="status">Preparing image…</p>}
       {error && (
         <div className={styles.errorNotice} role="alert">
           <p>{error}</p>

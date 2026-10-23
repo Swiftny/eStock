@@ -1,6 +1,6 @@
 # eStock: submission checklist
 
-Updated 23 October 2026 for document-assisted inventory. **Unchecked means unverified. Documentation drafts do not establish readiness.** Current task authorises documentation only; no runtime/Git/publication/account actions below may be performed from this checklist.
+Updated 24 October 2026 for document-assisted inventory. **Unchecked means unverified. Documentation drafts do not establish readiness.** The current task authorises local implementation and isolated verification only. Publication, official account actions and submission still need separate authorisation.
 
 [Compliance and conflicts](COMPLIANCE_MATRIX.md) · [source verification](submission/SOURCE_VERIFICATION_2026_10_23.md) · [PRD](product/prd.md)
 
@@ -12,7 +12,7 @@ Internal target **24 October 2026, 20:00 MYT**. PH/earlier orientation: **25 Oct
 | --- | --- | --- | --- |
 | 1 | Official-template proposal PDF | `SDC2026_TooGoodToBeTrue_Preliminary.pdf` | Updated Markdown draft only; official PDF/signature not produced here |
 | 2 | Pitch deck | Team convention: `eStock_Pitch_Deck.pptx`, backup PDF | New narrative plan only; no aligned deck verified |
-| 3 | Accessible working prototype | Working URL or accessible build plus instructions | Legacy local app exists; new document-intake journey unimplemented |
+| 3 | Accessible working prototype | Working URL or accessible build plus instructions | Local Staff-receiving implementation; hosted/judge access remains unverified |
 | 4 | Technical & Tools Declaration with actual evidence | `SDC2026_TooGoodToBeTrue_TechDeclaration.pdf` | Draft updated; proof completeness/signature/export pending |
 | 5 | Public GitHub source, Apache 2.0 and committee access | Correct submitted repo URL | Repository/LICENSE exist; public/judge/committee access not verified here |
 | 6 | 5–7-minute YouTube pitch/demo | Judge-accessible YouTube URL | New script plan only; no aligned video verified |
@@ -55,7 +55,7 @@ All six are required (PH §6.3.5). A static mockup/video does not replace intera
 
 Historical proof files exist under `submission/evidence/`; existence alone is not final proof completeness. Current sample ZIP fetch failed (404), so its older wording remains historical/unresolved. No new cloud action is authorised.
 
-## 5. New prototype acceptance: future work
+## 5. Prototype acceptance and evidence review
 
 - [ ] Entire competition catalogue/suppliers/documents/images/evaluation records team-created synthetic.
 - [ ] Manager/shared Staff roles, direct backend denial including full-History/draft reads, honest shared-account attribution.
@@ -64,18 +64,20 @@ Historical proof files exist under `submission/evidence/`; existence alone is no
 - [ ] Positive integer Take/Return, no negative stock under concurrent Take, persistent retry identity.
 - [ ] Manager backend image extraction, validated allowlisted non-monetary output, clear missing/unreadable-field correction.
 - [ ] Official-name/confirmed-alias matching, ambiguous alias/variant choice, unknown-product creation without double-counted Opening plus Intake.
-- [ ] Manual carton/base-unit conversion; preserve raw versus approved fields.
-- [ ] Draft/Approved/Discarded persistence; closure/discard changes no stock; Approved immutable.
-- [ ] Actual-receipt confirmation; order-only/advance invoice does not automatically add stock.
-- [ ] Atomic all-line approval/rollback and concurrent/repeated approval/edit protection; one draft affects stock once.
-- [ ] Preserve Document date and server Approved at, MYT presentation, no ledger backdating.
+- [ ] Manual carton/base-unit conversion; preserve extracted/Manager expected/Staff actual values separately.
+- [ ] DRAFT/AWAITING_STAFF/RECEIVED/Discarded persistence; frozen revisions; historical Approved attribution preserved without reposting.
+- [ ] Shared Staff physical-receipt declaration immediately posts actual quantities; no later Manager approval; order/invoice alone never posts stock.
+- [ ] Atomic all-line check/results/stock/notification rollback; retry/double-click/different-request/concurrent/stale checks cannot repost a receipt; missing lines/all-missing recorded without zero Intake.
+- [ ] Separate Document date, Manager sent, Shared Staff checked and stock posting times; MYT; historical approval remains original.
 - [ ] No permanent application images in DB/disk/object/browser/log/telemetry/cache; reopened draft needs re-upload. Authored synthetic assets distinguished.
 - [ ] Provider failure changes no stock; mock/replay output never described as live OCR; embedded document instructions ignored as authority.
-- [ ] Manager History reconciles Opening/Intake/Take/Return and immutable approval snapshots.
+- [ ] Manager History includes all-missing deliveries, extracted/expected/actual and historical Manager approval; Stock activity reconciles Opening/Intake/Take/Return.
 - [ ] Phone/desktop/keyboard/loading/error/conflict usability checked with actual evidence and required UI Delivery Gate.
 - [ ] Deployment/access/persistence verified on actual approved environment.
 
-FR-16 similar-document warnings are **P1**, separately tracked after core; do not present single-draft approval protection as global duplicate-upload prevention. PRD AC-01–26 are acceptance specifications, not passing test results.
+Local test execution and remaining limits are in [Staff-receiving verification](verification/STAFF_RECEIVING_2026_10_24.md); these submission boxes remain unchecked for team evidence review. Add review of role-scoped persisted/read notifications, Delete/remaining-stock archives and race corrections, both-role Take bounds/stale refresh, fresh/populated non-destructive upgrades, Stockroom/task/direct-Back controls and removed Recent activity.
+
+FR-16 similar-document warnings are **P1**, separately tracked after core; do not present single-receipt completion protection as global duplicate-upload prevention. The PRD specifies acceptance, not passing test results.
 
 ## 6. Source, history and team readiness
 

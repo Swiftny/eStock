@@ -13,12 +13,12 @@ The [earlier data card](../archive/2026-10-23-before-document-intake/docs/data/S
 | Images | Receipt, invoice, delivery note, order-detail/advance invoice; synthetic Indonesian and Malaysian wording/date/unit layouts; blur/crop/rotation and missing date/quantity |
 | Monetary exclusion | Synthetic RM/Rp, price, tax/subtotal/amount columns present in source fixture but excluded from persisted application/provider-result fields |
 | Units | Raw boxes/cartons versus final integer pcs; verified manual factors and deliberately unknown factors |
-| Receipt status | Text-readable order with no delivery; only some physically received quantities; all approved quantities require Manager confirmation |
-| Reliability | Multi-line approval failure, same-draft replay, edit race, concurrent Takes, Take/Return retry, image re-upload for comparison |
+| Receipt status | Text-readable order with no delivery; only some physically received quantities; Manager sends expected quantities; shared Staff confirms actual goods, including entirely missing deliveries |
+| Reliability | Multi-line receiving/notification rollback, same-receipt replay, edit race, concurrent Takes, Take/Return retry, image re-upload for comparison |
 | Similar documents | Identical/similar dates and lines in separate drafts, including two genuine deliveries (P1 warning) |
 | Injection | Synthetic document text asking model/app to ignore rules; treated as data without authority |
 
-For each case, record author, source-generation method, version, case ID, image hash where an authored fixture exists, expected extracted fields/uncertainty, product mapping, Manager-approved values/conversion, actual-receipt scenario and expected ledger result. Freeze evaluation cases before reporting improvements; keep prompt-development cases separate from held-out evaluation. The future asset format/location and fixture count are unresolved, not implemented by this task.
+For each case, record author, source-generation method, version, case ID, image hash where an authored fixture exists, expected extracted fields/uncertainty, product mapping, Manager-prepared expected values/conversion and Staff-confirmed actual outcomes, actual-receipt scenario and expected ledger result. Freeze evaluation cases before reporting improvements; keep prompt-development cases separate from held-out evaluation. The future asset format/location and fixture count are unresolved, not implemented by this task.
 
 Authored synthetic image assets can be retained as team-created test sources. **Application uploads, including uploaded copies of those fixtures, still follow transient-only image policy.** Do not use fixture retention to justify storing user uploads or their raw provider responses. Reopened application drafts contain structured fields only and must explain image re-upload.
 
@@ -26,7 +26,7 @@ Authored synthetic image assets can be retained as team-created test sources. **
 
 - Field/date/quantity/line extraction correctness against declared ground truth, including missing fields and invalid structured output.
 - Correct/ambiguous/incorrect product suggestions, Manager correction rate and alias-collision outcomes; do not turn ambiguity into an accuracy win by hiding it.
-- Manual entry versus upload-to-reviewed-approval time on comparable synthetic tasks, with N, participants, case mix, median/range and failure handling.
+- Manual entry versus upload-to-prepared-receipt and Staff-check time on comparable synthetic tasks, with N, participants, case mix, median/range and failure handling.
 - Ledger/permission/retry/rollback/concurrency acceptance and image-retention inspection across storage/log/cache paths.
 - Mobile/desktop/keyboard task completion and actual Replit restart/redeploy persistence/access.
 

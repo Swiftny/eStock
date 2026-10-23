@@ -1,3 +1,6 @@
+.simple-landing {
+  overflow: clip;
+}
 .simple-landing .site-header {
   background: var(--paper);
   border-color: transparent;
@@ -11,6 +14,7 @@
 }
 .simple-landing .header-inner {
   width: min(calc(100% - 2 * clamp(16px, 3vw, 40px)), 1440px);
+  flex-wrap: wrap;
   min-height: 80px;
 }
 .landing-navigation {
@@ -28,6 +32,12 @@
 }
 .landing-header-actions .button {
   min-height: 44px;
+}
+.landing-session-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--red);
+  font-size: 0.875rem;
 }
 .landing-navigation .landing-text-link,
 .hero-workflow-link {

@@ -87,6 +87,7 @@ try {
   await db.ready();
   const inv = await load("src/lib/server/estock/inventory.ts");
   const drafts = await load("src/lib/server/estock/drafts.ts");
+  const receiving = await load("src/lib/server/estock/receiving.ts");
   const input = await load("src/lib/server/estock/input.ts");
   const auth = await load("src/lib/server/estock/auth.ts");
   const { NextRequest } = await import("next/server");
@@ -129,12 +130,35 @@ try {
         lines,
       })
     ).draft;
-  const approve = (draft, requestId = key()) =>
-    drafts.approveDraft(draft.id, {
-      expectedRevision: draft.revision,
+  const send = (draft, requestId = key()) =>
+    receiving.sendReceipt(draft.id, { expectedRevision: draft.revision, requestId });
+  const confirm = (
+    receipt,
+    lines = receipt.lines.map((l) => ({ id: l.id, outcome: "MATCH" })),
+    requestId = key(),
+  ) =>
+    receiving.confirmReceipt(receipt.id, {
+      expectedRevision: receipt.revision,
       confirmReceived: true,
+      lines,
       requestId,
     });
+  const complete = async (draft, requestId = key()) => {
+    const sent = await send(draft, `send:${requestId}`);
+    const snapshot = await receiving.getReceipt(draft.id, "staff");
+    await receiving.confirmReceipt(draft.id, {
+      expectedRevision: sent.draft.revision,
+      confirmReceived: true,
+      lines: snapshot.lines.map((l) => ({ id: l.id, outcome: "MATCH" })),
+      requestId,
+    });
+    return {
+      draft: await drafts.getDraft(draft.id),
+      movements: (await inv.listHistory())
+        .filter((m) => m.draftId === draft.id)
+        .sort((a, b) => a.lineOrder - b.lineOrder),
+    };
+  };
   let base;
   await check("empty startup; one product and Opening on retried creation", async () => {
     assert.equal((await inv.listProducts()).length, 0);
@@ -204,14 +228,15 @@ try {
       assert.equal((await inv.getProduct(p.id)).stock, 0);
       await rejected(
         () =>
-          drafts.approveDraft(draft.id, {
+          receiving.confirmReceipt(draft.id, {
             expectedRevision: draft.revision,
             confirmReceived: false,
             requestId: key(),
+            lines: [],
           }),
         "INVALID_INPUT",
       );
-      await approve(draft);
+      await complete(draft);
       assert.equal((await inv.getProduct(p.id)).stock, 24);
       const movement = (await inv.listHistory()).find(
         (item) => item.productId === p.id && item.type === "INTAKE",
@@ -223,34 +248,34 @@ try {
       assert.equal(movement.reviewedName, "Reviewed Carton");
     },
   );
-  await check("atomic multi-line approval; immutable terminal draft; request replay", async () => {
+  await check("atomic multi-line receiving; immutable terminal draft; request replay", async () => {
     const before = (await inv.getProduct(base.id)).stock;
     const draft = await newDraft([line(base.name, "2"), line(base.name, "3")], "2026-10-01");
     assert.equal((await inv.getProduct(base.id)).stock, before);
     const requestId = key();
-    const result = await approve(draft, requestId);
+    const result = await complete(draft, requestId);
     assert.equal((await inv.getProduct(base.id)).stock, before + 5);
     assert.equal(result.movements.length, 2);
     assert.equal(result.movements[0].documentDate, "2026-10-01");
     assert.ok(
       result.movements.every(
-        (x) =>
-          Number.isFinite(Date.parse(x.createdAt)) && x.approvedAt && x.actorRole === "manager",
+        (x) => Number.isFinite(Date.parse(x.createdAt)) && !x.approvedAt && x.actorRole === "staff",
       ),
     );
-    const replay = await approve(draft, requestId);
+    const replay = await complete(draft, requestId);
     assert.equal(replay.draft.id, draft.id);
     assert.equal((await inv.getProduct(base.id)).stock, before + 5);
     await rejected(
       () =>
-        drafts.approveDraft(draft.id, {
-          expectedRevision: draft.revision + 1,
+        receiving.confirmReceipt(draft.id, {
+          expectedRevision: draft.revision + 2,
           confirmReceived: true,
           requestId,
+          lines: draft.lines.map((l) => ({ id: l.id, outcome: "MATCH" })),
         }),
       "REQUEST_CONFLICT",
     );
-    await rejected(() => approve(draft), "DRAFT_CLOSED");
+    await rejected(() => complete(draft), "DRAFT_CLOSED");
     await rejected(() => save(result.draft), "DRAFT_CLOSED");
     await rejected(
       () => drafts.discardDraft(draft.id, { expectedRevision: result.draft.revision }),
@@ -272,9 +297,9 @@ try {
     await pool.query(
       "CREATE TRIGGER audit_fail_line BEFORE INSERT ON estock_movements FOR EACH ROW EXECUTE FUNCTION audit_fail_line()",
     );
-    await assert.rejects(() => approve(draft, requestId));
+    await assert.rejects(() => complete(draft, requestId));
     assert.equal((await inv.getProduct(p.id)).stock, 0);
-    assert.equal((await drafts.getDraft(draft.id)).status, "DRAFT");
+    assert.equal((await drafts.getDraft(draft.id)).status, "AWAITING_STAFF");
     assert.equal(
       (
         await pool.query("SELECT count(*)::int AS n FROM estock_movements WHERE draft_id=$1", [
@@ -293,7 +318,7 @@ try {
     );
     await pool.query("DROP TRIGGER audit_fail_line ON estock_movements");
     await pool.query("DROP FUNCTION audit_fail_line()");
-    await approve(draft, requestId);
+    await complete(draft, requestId);
     assert.equal((await inv.getProduct(p.id)).stock, 5);
     const left = await product("Balance Rollback A");
     const right = await product("Balance Rollback B");
@@ -306,10 +331,10 @@ try {
     await pool.query(
       `CREATE TRIGGER audit_fail_balance AFTER UPDATE OF stock ON estock_products FOR EACH ROW EXECUTE FUNCTION audit_fail_balance('${lastProduct}')`,
     );
-    await assert.rejects(() => approve(balanceDraft, balanceKey));
+    await assert.rejects(() => complete(balanceDraft, balanceKey));
     for (const selected of [left, right])
       assert.equal((await inv.getProduct(selected.id)).stock, 0);
-    assert.equal((await drafts.getDraft(balanceDraft.id)).status, "DRAFT");
+    assert.equal((await drafts.getDraft(balanceDraft.id)).status, "AWAITING_STAFF");
     assert.equal(
       (
         await pool.query("SELECT count(*)::int AS n FROM estock_movements WHERE draft_id=$1", [
@@ -328,7 +353,7 @@ try {
     );
     await pool.query("DROP TRIGGER audit_fail_balance ON estock_products");
     await pool.query("DROP FUNCTION audit_fail_balance()");
-    await approve(balanceDraft, balanceKey);
+    await complete(balanceDraft, balanceKey);
     for (const selected of [left, right])
       assert.equal((await inv.getProduct(selected.id)).stock, 1);
   });
@@ -365,26 +390,26 @@ try {
         );
     },
   );
-  await check("concurrent approval; stale revision and catalogue edit detection", async () => {
+  await check("concurrent receiving; stale revision and catalogue edit detection", async () => {
     const p = await product("Concurrent Approval Product");
     let draft = await newDraft([line(p.name, "2")]);
-    const results = await Promise.allSettled([approve(draft), approve(draft)]);
+    const results = await Promise.allSettled([complete(draft), complete(draft)]);
     assert.equal(results.filter((x) => x.status === "fulfilled").length, 1);
     assert.equal((await inv.getProduct(p.id)).stock, 2);
     draft = await newDraft([line(p.name, "1")]);
     const old = draft;
     draft = await save(draft);
-    await rejected(() => approve(old), "STALE_DRAFT");
+    await rejected(() => complete(old), "STALE_DRAFT");
     await inv.editProduct(p.id, { name: "Renamed Synthetic Product", expectedVersion: p.version });
-    await rejected(() => approve(draft), "STALE_PRODUCT");
+    await rejected(() => complete(draft), "STALE_PRODUCT");
     draft = await save(draft);
-    await approve(draft);
+    await complete(draft);
     assert.equal((await inv.getProduct(p.id)).stock, 3);
     draft = await newDraft([line("Renamed Synthetic Product", "1")]);
-    const race = await Promise.allSettled([save(draft), approve(draft)]);
+    const race = await Promise.allSettled([save(draft), complete(draft)]);
     assert.equal(race.filter((x) => x.status === "fulfilled").length, 1);
     const afterRace = await drafts.getDraft(draft.id);
-    assert.equal((await inv.getProduct(p.id)).stock, afterRace.status === "APPROVED" ? 4 : 3);
+    assert.equal((await inv.getProduct(p.id)).stock, afterRace.status === "RECEIVED" ? 4 : 3);
   });
   await check(
     "discard persists with no stock; raw values survive corrected draft re-read",
@@ -400,7 +425,62 @@ try {
       await drafts.discardDraft(draft.id, { expectedRevision: draft.revision });
       assert.equal((await drafts.getDraft(draft.id)).status, "DISCARDED");
       assert.equal((await inv.getProduct(base.id)).stock, before);
-      await rejected(() => approve(draft), "DRAFT_CLOSED");
+      await rejected(() => complete(draft), "DRAFT_CLOSED");
+    },
+  );
+  await check(
+    "provider failures explain recovery without leaking provider data or saving drafts and stock",
+    async () => {
+      const { respondError } = await load("src/lib/server/estock/errors.ts");
+      const count = (await pool.query("SELECT count(*)::int n FROM estock_drafts")).rows[0].n;
+      const balance = (await inv.getProduct(base.id)).stock;
+      const cases = [
+        [400, "API_KEY_INVALID", "INVALID_ARGUMENT", "GEMINI_AUTH_ERROR", "API key"],
+        [400, "API_KEY_EXPIRED", "INVALID_ARGUMENT", "GEMINI_AUTH_ERROR", "API key"],
+        [401, null, "UNAUTHENTICATED", "GEMINI_AUTH_ERROR", "API key"],
+        [403, null, "PERMISSION_DENIED", "GEMINI_PERMISSION_DENIED", "permissions"],
+        [402, null, "RESOURCE_EXHAUSTED", "GEMINI_CREDITS_EXHAUSTED", "credits"],
+        [429, null, "RESOURCE_EXHAUSTED", "GEMINI_RATE_LIMITED", "quota"],
+        [404, null, "NOT_FOUND", "GEMINI_MODEL_UNAVAILABLE", "model"],
+        [400, null, "FAILED_PRECONDITION", "GEMINI_PRECONDITION_FAILED", "account"],
+        [400, null, "INVALID_ARGUMENT", "GEMINI_INVALID_REQUEST", "settings"],
+        [500, null, "INTERNAL", "GEMINI_UNAVAILABLE", "temporarily unavailable"],
+        [503, null, "UNAVAILABLE", "GEMINI_UNAVAILABLE", "temporarily unavailable"],
+      ];
+      for (const [status, reason, providerStatus, code, guidance] of cases) {
+        globalThis.__auditExtraction = Object.assign(
+          new Error(
+            JSON.stringify({
+              error: {
+                status: providerStatus,
+                message: "private-provider-key-and-document-text",
+                details: [
+                  { reason, metadata: { private: "private-provider-key-and-document-text" } },
+                ],
+              },
+            }),
+          ),
+          { name: "ApiError", status },
+        );
+        try {
+          await drafts.createDraft(imageRequest());
+          assert.fail("Provider failure must not create a draft");
+        } catch (error) {
+          assert.equal(error.code, code);
+          const response = respondError(error);
+          assert.equal(response.status, status === 429 ? 429 : 502);
+          assert.equal(response.headers.get("Cache-Control"), "no-store");
+          const body = await response.json();
+          assert.ok(body.error.includes(guidance));
+          assert.ok(body.error.includes("No draft was saved and stock has not changed."));
+          assert.ok(!JSON.stringify(body).includes("private-provider-key-and-document-text"));
+        }
+      }
+      assert.equal(
+        (await pool.query("SELECT count(*)::int n FROM estock_drafts")).rows[0].n,
+        count,
+      );
+      assert.equal((await inv.getProduct(base.id)).stock, balance);
     },
   );
   await check(
@@ -431,7 +511,7 @@ try {
     },
   );
   await check(
-    "blank unreadable line can be excluded with a reason while valid lines approve",
+    "blank unreadable line can be excluded with a reason while valid lines complete",
     async () => {
       const draft = await newDraft([line(base.name), line("", "", "")]);
       const values = edits(draft);
@@ -444,7 +524,7 @@ try {
       assert.equal(saved.lines[1].rawQuantity, null);
       assert.equal(saved.lines[1].reviewedName, "");
       assert.equal(saved.lines[1].exclusionReason, "Unreadable non-stock line");
-      await approve(saved);
+      await complete(saved);
       assert.equal((await inv.getProduct(base.id)).stock, before + 1);
       assert.equal((await inv.listHistory()).filter((x) => x.draftId === draft.id).length, 1);
       const invalid = await newDraft([line(base.name), line("", "", "")]);
@@ -472,6 +552,9 @@ try {
     const cases = [
       ["products/route.ts", "POST"],
       ["products/[id]/route.ts", "PATCH"],
+      ["products/[id]/route.ts", "DELETE"],
+      ["drafts/[id]/send/route.ts", "POST"],
+      ["drafts/[id]/recall/route.ts", "POST"],
       ["drafts/route.ts", "GET"],
       ["drafts/route.ts", "POST"],
       ["drafts/[id]/route.ts", "GET"],
@@ -536,8 +619,8 @@ try {
       const pending = await newDraft([line(b.name, "7")], "2026-10-02");
       const discarded = await newDraft([line(b.name, "8")], "2026-10-02");
       await drafts.discardDraft(discarded.id, { expectedRevision: discarded.revision });
-      await approve(first);
-      await approve(second);
+      await complete(first);
+      await complete(second);
       const history = await inv.listHistory();
       const receipts = receiptHistory(history);
       assert.equal(receipts.filter((r) => r.documentDate === "2026-10-02").length, 2);
@@ -656,13 +739,13 @@ try {
     },
   );
   await check(
-    "missing date, product and approved quantity block included-line approval; raw values survive",
+    "missing date, product and approved quantity block included-line receiving; raw values survive",
     async () => {
       let draft = await newDraft([line("Unknown unreadable", "", "")], "");
       assert.equal(draft.documentDate, null);
       assert.equal(draft.lines[0].approvedQuantity, null);
       assert.equal(draft.lines[0].needsReview, true);
-      await rejected(() => approve(draft), "INVALID_INPUT");
+      await rejected(() => complete(draft), "INVALID_INPUT");
       draft = (
         await drafts.saveDraft(draft.id, {
           expectedRevision: draft.revision,
@@ -670,10 +753,10 @@ try {
           lines: edits(draft),
         })
       ).draft;
-      await rejected(() => approve(draft), "INVALID_INPUT");
+      await rejected(() => complete(draft), "INVALID_INPUT");
       const p = await product("Resolved Unknown", 0);
       draft = await save(draft, [{ ...edits(draft)[0], productId: p.id, approvedQuantity: 6 }]);
-      const result = await approve(draft);
+      const result = await complete(draft);
       assert.equal(result.movements[0].rawQuantity, null);
       assert.equal(result.movements[0].quantity, 6);
       assert.equal((await inv.getProduct(p.id)).stock, 6);
@@ -760,7 +843,7 @@ try {
       assert.equal(draft.lines[0].rawQuantity, null);
       assert.equal(draft.lines[0].approvedQuantity, null);
       assert.equal(draft.lines[0].needsReview, true);
-      await rejected(() => approve(draft), "INVALID_INPUT");
+      await rejected(() => complete(draft), "INVALID_INPUT");
       assert.equal((await inv.getProduct(p.id)).stock, 5);
       globalThis.__auditExtraction = {
         documentDate: date,
@@ -770,6 +853,486 @@ try {
       draft = (await drafts.createDraft(imageRequest())).draft;
       assert.ok(!JSON.stringify(draft).includes("EXCLUDED_MONETARY_SENTINEL"));
       assert.equal((await inv.getProduct(p.id)).stock, 5);
+    },
+  );
+  await check(
+    "send freezes validated quantities; no stock, matching check posts once and notifications resolve",
+    async () => {
+      const p = await product("Send Freeze Product", 10);
+      const draft = await newDraft([line(p.name, "20")]);
+      const sent = await send(draft);
+      assert.equal(sent.draft.status, "AWAITING_STAFF");
+      assert.equal((await inv.getProduct(p.id)).stock, 10);
+      await rejected(() => save(sent.draft), "DRAFT_CLOSED");
+      await rejected(() => drafts.approveDraft(draft.id, {}), "APPROVAL_RETIRED");
+      const notices = await receiving.listNotifications("staff");
+      const notice = notices.notifications.find((n) => n.receiptId === draft.id);
+      assert.ok(notice.actionable);
+      assert.equal(notice.readAt, null);
+      await receiving.readNotification(notice.id, "staff");
+      assert.ok(
+        (await receiving.listNotifications("staff")).notifications.find((n) => n.id === notice.id)
+          .readAt,
+      );
+      await rejected(() => receiving.readNotification(notice.id, "manager"), "NOT_FOUND");
+      assert.equal((await inv.getProduct(p.id)).stock, 10);
+      const receipt = await receiving.getReceipt(draft.id, "staff");
+      const operation = key();
+      const first = await confirm(receipt, undefined, operation);
+      const replay = await confirm(receipt, undefined, operation);
+      assert.equal(first.receipt.receivedAt, replay.receipt.receivedAt);
+      assert.equal((await inv.getProduct(p.id)).stock, 30);
+      await rejected(() => confirm(receipt), "RECEIPT_CLOSED");
+      assert.ok(!(await receiving.listReceiving("staff")).some((r) => r.id === draft.id));
+      assert.equal(
+        (await receiving.listNotifications("staff")).notifications.find((n) => n.id === notice.id)
+          .actionable,
+        false,
+      );
+      assert.ok(
+        !(await receiving.listNotifications("manager")).notifications.some(
+          (n) => n.receiptId === draft.id,
+        ),
+      );
+    },
+  );
+  await check(
+    "Lamp shortage and extra adjust incoming quantities only; notification stores expected/actual check",
+    async () => {
+      const a = await product("Lamp 5W", 10),
+        b = await product("Lamp 10W", 0);
+      const draft = await newDraft([line(a.name, "20"), line(b.name, "20")]);
+      await send(draft);
+      const receipt = await receiving.getReceipt(draft.id, "staff");
+      await confirm(receipt, [
+        { id: receipt.lines[0].id, outcome: "SHORT", difference: 2 },
+        { id: receipt.lines[1].id, outcome: "EXTRA", difference: 3 },
+      ]);
+      assert.equal((await inv.getProduct(a.id)).stock, 28);
+      assert.equal((await inv.getProduct(b.id)).stock, 23);
+      const saved = await receiving.getReceipt(draft.id, "manager");
+      assert.deepEqual(
+        saved.lines.map((l) => [l.expected, l.actual, l.difference]),
+        [
+          [20, 18, 2],
+          [20, 23, 3],
+        ],
+      );
+      const notices = (await receiving.listNotifications("manager")).notifications.filter(
+        (n) => n.receiptId === draft.id,
+      );
+      assert.equal(notices.length, 1);
+      assert.equal(notices[0].kind, "DISCREPANCY");
+      assert.equal(
+        (await receiving.listNotifications("staff")).notifications.some(
+          (n) => n.id === notices[0].id,
+        ),
+        false,
+      );
+    },
+  );
+  await check(
+    "missing whole line and entirely missing delivery persist without zero Intake",
+    async () => {
+      const p = await product("Missing Delivery Product", 7);
+      for (const allMissing of [false, true]) {
+        const draft = await newDraft([line(p.name, "4"), line(p.name, "6")]);
+        await send(draft);
+        const r = await receiving.getReceipt(draft.id, "staff");
+        await confirm(
+          r,
+          r.lines.map((l, i) => ({
+            id: l.id,
+            outcome: allMissing || i === 0 ? "SHORT" : "MATCH",
+            ...(allMissing || i === 0 ? { difference: l.expected } : {}),
+          })),
+        );
+        const saved = await receiving.getReceipt(draft.id, "manager");
+        assert.equal(saved.lines[0].actual, 0);
+        assert.equal(
+          (await inv.listHistory()).filter((m) => m.draftId === draft.id).length,
+          allMissing ? 0 : 1,
+        );
+        assert.ok((await receiving.listReceiving("manager")).some((r) => r.id === draft.id));
+        assert.ok(
+          (await receiving.listNotifications("manager")).notifications.some(
+            (n) => n.receiptId === draft.id,
+          ),
+        );
+      }
+      assert.equal((await inv.getProduct(p.id)).stock, 13);
+    },
+  );
+  await check(
+    "invalid, duplicate, foreign, excluded and unsafe check payloads reject atomically",
+    async () => {
+      const p = await product("Invalid Check Product", 9);
+      let draft = await newDraft([line(p.name, "3"), line("excluded text")]);
+      const values = edits(draft);
+      values[1].excluded = true;
+      values[1].exclusionReason = "Non-stock";
+      draft = await save(draft, values);
+      await send(draft);
+      const r = await receiving.getReceipt(draft.id, "staff"),
+        l = r.lines[0];
+      for (const payload of [
+        [],
+        [{ id: l.id, outcome: "SHORT", difference: 0 }],
+        [{ id: l.id, outcome: "SHORT", difference: 4 }],
+        [{ id: l.id, outcome: "EXTRA", difference: 0.5 }],
+        [{ id: l.id, outcome: "EXTRA", difference: Number.MAX_SAFE_INTEGER }],
+        [{ id: l.id, outcome: "EXTRA", difference: "2" }],
+        [{ id: l.id, outcome: "SHORT", difference: -2 }],
+        [{ id: l.id, outcome: "MATCH", difference: 2 }],
+        [{ id: randomUUID(), outcome: "MATCH" }],
+        [{ id: draft.lines[1].id, outcome: "MATCH" }],
+        [
+          { id: l.id, outcome: "MATCH" },
+          { id: l.id, outcome: "MATCH" },
+        ],
+        [{ id: l.id, outcome: "INVENTED" }],
+      ])
+        await rejected(() => confirm(r, payload), "INVALID_INPUT");
+      await rejected(() => confirm({ ...r, revision: r.revision + 1 }), "STALE_DRAFT");
+      assert.equal((await inv.getProduct(p.id)).stock, 9);
+      assert.equal((await receiving.getReceipt(r.id, "staff")).lines[0].actual, null);
+    },
+  );
+  await check(
+    "simultaneous Staff confirmations different and same request IDs post once",
+    async () => {
+      const p = await product("Double Confirm Product", 0);
+      for (const same of [false, true]) {
+        const draft = await newDraft([line(p.name, "2")]);
+        await send(draft);
+        const r = await receiving.getReceipt(draft.id, "staff");
+        const operation = key();
+        const result = await Promise.allSettled([
+          confirm(r, undefined, operation),
+          confirm(r, undefined, same ? operation : key()),
+        ]);
+        assert.equal(result.filter((r) => r.status === "fulfilled").length, same ? 2 : 1);
+        assert.equal((await inv.listHistory()).filter((m) => m.draftId === draft.id).length, 1);
+      }
+      assert.equal((await inv.getProduct(p.id)).stock, 4);
+    },
+  );
+  await check(
+    "notification failure rolls back check, balances and movements; retry succeeds",
+    async () => {
+      const p = await product("Atomic Notification Product", 5);
+      const draft = await newDraft([line(p.name, "3")]);
+      await send(draft);
+      const r = await receiving.getReceipt(draft.id, "staff");
+      await pool.query(
+        "CREATE FUNCTION audit_fail_notice() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.kind='DISCREPANCY' THEN RAISE EXCEPTION 'synthetic notification failure'; END IF; RETURN NEW; END $$",
+      );
+      await pool.query(
+        "CREATE TRIGGER audit_fail_notice BEFORE INSERT ON estock_notifications FOR EACH ROW EXECUTE FUNCTION audit_fail_notice()",
+      );
+      const outcomes = [{ id: r.lines[0].id, outcome: "SHORT", difference: 1 }],
+        operation = key();
+      await assert.rejects(() => confirm(r, outcomes, operation));
+      assert.equal((await inv.getProduct(p.id)).stock, 5);
+      assert.equal((await receiving.getReceipt(r.id, "staff")).lines[0].actual, null);
+      assert.equal(
+        (await pool.query("SELECT 1 FROM estock_receipt_checks WHERE draft_id=$1", [r.id]))
+          .rowCount,
+        0,
+      );
+      assert.equal(
+        (await pool.query("SELECT 1 FROM estock_movements WHERE draft_id=$1", [r.id])).rowCount,
+        0,
+      );
+      assert.ok(
+        (await receiving.listNotifications("staff")).notifications.find((n) => n.receiptId === r.id)
+          .actionable,
+      );
+      await pool.query("DROP TRIGGER audit_fail_notice ON estock_notifications");
+      await pool.query("DROP FUNCTION audit_fail_notice()");
+      await confirm(r, outcomes, operation);
+      assert.equal((await inv.getProduct(p.id)).stock, 7);
+    },
+  );
+  await check(
+    "archive retains stock/history; excludes matching and movements; recall/resubmit repairs pending receipt",
+    async () => {
+      const p = await product("Archive Product", 12);
+      const draft = await newDraft([line(p.name, "3")]);
+      await send(draft);
+      const r = await receiving.getReceipt(draft.id, "staff");
+      const payload = { expectedVersion: p.version, requestId: key() };
+      await inv.archiveProduct(p.id, payload);
+      await inv.archiveProduct(p.id, payload);
+      const archived = (await pool.query("SELECT * FROM estock_products WHERE id=$1", [p.id]))
+        .rows[0];
+      assert.equal(Number(archived.archived_stock), 12);
+      assert.equal(Number(archived.stock), 12);
+      assert.ok(!(await inv.listProducts()).some((x) => x.id === p.id));
+      assert.equal((await inv.matchProducts(p.name)).length, 0);
+      for (const type of ["TAKE", "RETURN"])
+        await rejected(
+          () =>
+            inv.recordMovement("staff", { productId: p.id, type, quantity: 1, requestId: key() }),
+          "ARCHIVED_PRODUCT",
+        );
+      await rejected(() => confirm(r), "ARCHIVED_PRODUCT");
+      const correction = (await receiving.recallReceipt(r.id, { expectedRevision: r.revision }))
+        .draft;
+      await rejected(() => confirm(r), "RECEIPT_CLOSED");
+      const replacement = await product("Replacement Product");
+      const updated = await save(correction, [
+        { ...edits(correction)[0], productId: replacement.id },
+      ]);
+      await send(updated);
+      await rejected(() => confirm(r), "STALE_DRAFT");
+      const latest = await receiving.getReceipt(r.id, "staff");
+      await confirm(latest);
+      assert.equal((await inv.getProduct(replacement.id)).stock, 3);
+      assert.ok(
+        (await inv.listHistory()).some((m) => m.productId === p.id && m.type === "OPENING"),
+      );
+    },
+  );
+  await check(
+    "Take bounds both roles at available stock and zero; archive races serialize",
+    async () => {
+      for (const role of ["manager", "staff"]) {
+        const p = await product(`Take Boundary ${role}`, 3);
+        await rejected(
+          () =>
+            inv.recordMovement(role, {
+              productId: p.id,
+              type: "TAKE",
+              quantity: 4,
+              requestId: key(),
+            }),
+          "INSUFFICIENT_STOCK",
+        );
+        await inv.recordMovement(role, {
+          productId: p.id,
+          type: "TAKE",
+          quantity: 3,
+          requestId: key(),
+        });
+        await rejected(
+          () =>
+            inv.recordMovement(role, {
+              productId: p.id,
+              type: "TAKE",
+              quantity: 1,
+              requestId: key(),
+            }),
+          "INSUFFICIENT_STOCK",
+        );
+      }
+      const p = await product("Archive Take Race", 6);
+      const result = await Promise.allSettled([
+        inv.archiveProduct(p.id, { expectedVersion: p.version, requestId: key() }),
+        inv.recordMovement("staff", {
+          productId: p.id,
+          type: "TAKE",
+          quantity: 2,
+          requestId: key(),
+        }),
+      ]);
+      assert.equal(result[0].status, "fulfilled");
+      const saved = (await pool.query("SELECT * FROM estock_products WHERE id=$1", [p.id])).rows[0];
+      assert.ok(saved.archived_at);
+      assert.equal(Number(saved.stock), result[1].status === "fulfilled" ? 4 : 6);
+      assert.equal(saved.stock, saved.archived_stock);
+      const q = await product("Archive Confirm Race", 5),
+        draft = await newDraft([line(q.name, "2")]);
+      await send(draft);
+      const r = await receiving.getReceipt(draft.id, "staff");
+      const race = await Promise.allSettled([
+        inv.archiveProduct(q.id, { expectedVersion: q.version, requestId: key() }),
+        confirm(r),
+      ]);
+      const row = (await pool.query("SELECT * FROM estock_products WHERE id=$1", [q.id])).rows[0];
+      assert.equal(Number(row.stock), race[1].status === "fulfilled" ? 7 : 5);
+      assert.equal(row.stock, row.archived_stock);
+    },
+  );
+  await check("receiving API enforces session roles and retired Manager path", async () => {
+    const manager = await auth.signIn("manager", process.env.ESTOCK_MANAGER_PASSWORD),
+      staff = await auth.signIn("staff", process.env.ESTOCK_STAFF_PASSWORD);
+    const req = (token) =>
+      new NextRequest("http://localhost:3000/api/estock/test", {
+        method: "POST",
+        headers: { Cookie: `${auth.COOKIE}=${token}`, "Content-Type": "application/json" },
+        body: "{}",
+      });
+    const confirmRoute = await load("src/app/api/estock/receiving/[id]/confirm/route.ts");
+    assert.equal(
+      (await confirmRoute.POST(req(manager), { params: Promise.resolve({ id: randomUUID() }) }))
+        .status,
+      403,
+    );
+    const old = await load("src/app/api/estock/drafts/[id]/approve/route.ts");
+    assert.equal(
+      (await old.POST(req(manager), { params: Promise.resolve({ id: randomUUID() }) })).status,
+      410,
+    );
+    const notifications = await load("src/app/api/estock/notifications/route.ts");
+    for (const [token, role] of [
+      [manager, "manager"],
+      [staff, "staff"],
+    ]) {
+      const response = await notifications.GET(
+        new NextRequest("http://localhost:3000/api/estock/notifications", {
+          headers: { Cookie: `${auth.COOKIE}=${token}` },
+        }),
+      );
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(
+        data.notifications.some((n) =>
+          role === "staff" ? n.kind !== "RECEIVING" : n.kind !== "DISCREPANCY",
+        ),
+        false,
+      );
+    }
+  });
+  await check(
+    "fresh and old populated schemas migrate repeatably without changing credentials, stock or history",
+    async () => {
+      const { migrate } = await import("../../db/estock/migrate.mjs");
+      const { readFileSync } = await import("node:fs");
+      for (const legacy of [false, true]) {
+        const owned = `estock_upgrade_${randomBytes(8).toString("hex")}`;
+        await control.query(`CREATE SCHEMA "${owned}"`);
+        const url = new URL(process.env.DATABASE_URL);
+        url.searchParams.set("options", `-c search_path=${owned}`);
+        const c = new pg.Client({ connectionString: url.href });
+        try {
+          await c.connect();
+          if (legacy) {
+            await c.query(readFileSync(resolve(root, "db/estock/001_initial.sql"), "utf8"));
+            const productId = randomUUID(),
+              draftId = randomUUID(),
+              lineId = randomUUID();
+            await c.query(
+              "INSERT INTO estock_sessions(token_hash,account_id,role,expires_at) VALUES('synthetic-preserved','staff','staff',now()+interval '1 day')",
+            );
+            await c.query(
+              "INSERT INTO estock_products(id,official_name,normalized_name,unit,stock) VALUES($1,'Upgrade Lamp','upgrade lamp','pcs',12)",
+              [productId],
+            );
+            await c.query(
+              "INSERT INTO estock_drafts(id,status,model_id,approved_at,approved_by,approved_account_id,actual_receipt_confirmed) VALUES($1,'APPROVED','synthetic',now(),'manager','manager',true)",
+              [draftId],
+            );
+            await c.query(
+              "INSERT INTO estock_draft_lines(id,draft_id,line_order,raw_name,reviewed_name,product_id,approved_quantity) VALUES($1,$2,0,'Raw','Reviewed',$3,12)",
+              [lineId, draftId, productId],
+            );
+            await c.query(
+              "INSERT INTO estock_movements(id,source_event_id,product_id,product_name,unit,type,quantity,delta,balance_after,actor_role,actor_account_id,draft_id,line_id) VALUES($1,'legacy-intake',$2,'Upgrade Lamp','pcs','INTAKE',12,12,12,'manager','manager',$3,$4)",
+              [randomUUID(), productId, draftId, lineId],
+            );
+            await c.query("INSERT INTO estock_drafts(id,model_id) VALUES($1,'synthetic')", [
+              randomUUID(),
+            ]);
+          }
+          const before = legacy
+            ? (await c.query("SELECT row_to_json(p) AS data FROM estock_products p")).rows[0].data
+            : null;
+          await migrate(c);
+          await migrate(c);
+          assert.equal(
+            (await c.query("SELECT count(*)::int n FROM estock_schema_migrations")).rows[0].n,
+            2,
+          );
+          assert.equal(
+            (await c.query("SELECT count(*)::int n FROM estock_notifications")).rows[0].n,
+            0,
+          );
+          assert.equal(
+            (await c.query("SELECT count(*)::int n FROM estock_receipt_submissions")).rows[0].n,
+            0,
+          );
+          if (legacy) {
+            const after = (await c.query("SELECT row_to_json(p) AS data FROM estock_products p"))
+              .rows[0].data;
+            for (const [key, value] of Object.entries(before)) assert.deepEqual(after[key], value);
+            assert.equal(
+              (await c.query("SELECT count(*)::int n FROM estock_movements")).rows[0].n,
+              1,
+            );
+            assert.equal(
+              (await c.query("SELECT approved_by FROM estock_drafts WHERE status='APPROVED'"))
+                .rows[0].approved_by,
+              "manager",
+            );
+            assert.equal(
+              (await c.query("SELECT count(*)::int n FROM estock_drafts WHERE status='DRAFT'"))
+                .rows[0].n,
+              1,
+            );
+            assert.equal(
+              (await c.query("SELECT token_hash FROM estock_sessions")).rows[0].token_hash,
+              "synthetic-preserved",
+            );
+          }
+        } finally {
+          await c.end();
+          await control.query(`DROP SCHEMA "${owned}" CASCADE`);
+        }
+      }
+    },
+  );
+  await check(
+    "send notification failure rolls back submission and request; preparation Opening enforced",
+    async () => {
+      const p = await product("Send Rollback Product", 4),
+        draft = await newDraft([line(p.name, "2")]);
+      await rejected(
+        () =>
+          inv.createProduct({
+            name: "Unsafe Preparation",
+            unit: "pcs",
+            openingStock: 2,
+            preparationDraftId: draft.id,
+            requestId: key(),
+          }),
+        "INVALID_INPUT",
+      );
+      const created = await inv.createProduct({
+        name: "Zero Preparation",
+        unit: "pcs",
+        openingStock: 0,
+        preparationDraftId: draft.id,
+        requestId: key(),
+      });
+      assert.equal(created.product.stock, 0);
+      await pool.query(
+        "CREATE FUNCTION audit_fail_send() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.kind='RECEIVING' THEN RAISE EXCEPTION 'synthetic send failure'; END IF; RETURN NEW; END $$",
+      );
+      await pool.query(
+        "CREATE TRIGGER audit_fail_send BEFORE INSERT ON estock_notifications FOR EACH ROW EXECUTE FUNCTION audit_fail_send()",
+      );
+      const operation = key();
+      await assert.rejects(() => send(draft, operation));
+      assert.equal((await drafts.getDraft(draft.id)).status, "DRAFT");
+      assert.equal((await inv.getProduct(p.id)).stock, 4);
+      for (const table of [
+        "estock_receipt_submissions",
+        "estock_receipt_lines",
+        "estock_notifications",
+      ])
+        assert.equal(
+          (await pool.query(`SELECT 1 FROM ${table} WHERE draft_id=$1`, [draft.id])).rowCount,
+          0,
+        );
+      assert.equal(
+        (await pool.query("SELECT 1 FROM estock_requests WHERE request_id=$1", [operation]))
+          .rowCount,
+        0,
+      );
+      await pool.query("DROP TRIGGER audit_fail_send ON estock_notifications");
+      await pool.query("DROP FUNCTION audit_fail_send()");
+      await send(draft, operation);
     },
   );
   const discrepancies = await pool.query(

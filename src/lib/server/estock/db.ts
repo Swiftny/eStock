@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { Pool, type PoolClient } from "pg";
+import { migrate } from "../../../../db/estock/migrate.mjs";
 import { EstockError } from "./errors";
 
 let pool: Pool | null = null;
@@ -31,8 +30,12 @@ export async function ready(): Promise<Pool> {
   if (!migration) {
     migration = (async () => {
       try {
-        const sql = readFileSync(resolve(process.cwd(), "db/estock/001_initial.sql"), "utf8");
-        await database.query(sql);
+        const client = await database.connect();
+        try {
+          await migrate(client);
+        } finally {
+          client.release();
+        }
       } catch {
         throw new EstockError(
           "PostgreSQL is unavailable or the eStock schema could not be prepared.",

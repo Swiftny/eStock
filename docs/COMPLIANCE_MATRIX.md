@@ -26,9 +26,9 @@ The evidence column describes what must be produced, not what is complete.
 | --- | --- | --- | --- |
 | C-01 | Assigned domain locked; at least one SDG | D2; OH §7.1,§7.3.2 | Domain 2, SDG 8.2/8.3 in proposal/deck/video |
 | C-02 | One specific real SME problem | D2 §4,§6 | Retyping supplier-document lines and recognising supplier descriptions; problem hypothesis, no invented interviews |
-| C-03 | Trigger → data → logic → approval → outcome/log | D2 §3–4 | Upload → extracted lines + catalogue/aliases → matching/validation → Manager confirms actual receipt/approval → Intake + History |
+| C-03 | Trigger → data → logic → approval → outcome/log | D2 §3–4 | Upload → extracted lines + catalogue/aliases → matching/validation → Manager prepares/sends → shared Staff physical declaration → actual Intake + History; discrepancy alerts |
 | C-04 | Accuracy, consistency, ease of learning | D2 §4 | Manual base-unit conversion, raw/final fields, uncertainty correction and simple Staff Take/Return; future tests required |
-| C-05 | Permissions and human control | D2 §4 | Backend Manager-only setup/upload/drafts/approval/full History; shared Staff Take/Return; actual-receipt confirmation |
+| C-05 | Permissions and human control | D2 §4 | Backend Manager-only setup/archive/upload/preparation/full History; shared Staff receiving confirmation; both-role Take/Return |
 | C-06 | Orbyte fit/reuse; distinct additional capability | D2 §4,§6; OBI | Proposed reusable intake/catalogue/permission/approval/activity contracts; no working hub integration |
 | C-07 | Do not replicate Orbyte HR/admin | D2 §6 | No payroll/leave/hiring/auth platform |
 | C-08 | Only team-created synthetic data | D2 §6–7 | All images, products, suppliers and operational/evaluation records team-created synthetic; authored image fixtures distinct from uploads |

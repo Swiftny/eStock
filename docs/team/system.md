@@ -1,11 +1,9 @@
 # System · William Christiansen
 
-[Team](README.md) · [Backend](backend.md) · [Integration](integration.md)
+[Team](README.md) · [Backend](backend.md) · [Integration](integration.md) · [Setup](../../README.md)
 
-23 October 2026. Documentation-only task; do not change sessions/runtime/.env/dependencies/services/deployment. Existing access-code/role-selector prototype is legacy and does not establish separate Manager/shared Staff accounts.
+24 October 2026. Current demo uses opaque server role sessions and PostgreSQL. Preserve each laptop's ignored `.env.local`, password/session secret and Docker volume. After source update run `npm ci`, `docker compose -f compose.estock.yml up -d --wait`, `npm run db:estock:migrate`, restart `npm run dev`. Application startup uses the same migrations; existing stock/drafts/completed approvals/compatible sessions are retained. Never `down -v`, reset/truncate operational tables, or put secrets in logs/output.
 
-Future stages need server-resolved identity, role-scoped reads/writes, safe secret handling, PostgreSQL durability/backup/migration decisions and backend Gemini credentials. No client API key. Verify transient-only image behaviour across request processing, disk, object/browser storage, logs, telemetry and caches; provider retention is a separate terms/tier issue.
+Manager and shared Staff permissions are server enforced; a shared access code is permitted only under the explicitly enabled development exception. Notification state is persisted and role-scoped. Local browser restart tests do not establish hosted database/redeploy durability. Verify actual hosting request capture/log/cache/transient image policy separately from Gemini provider retention/tier.
 
-Replit must form part of the hackathon solution, with own-account/project evidence. Check actual refresh/restart/redeploy persistence and judge access before claiming deployment. Exact plan/region/hosting/auth/SDK/limits remain unresolved; do not provision or buy from these instructions. Use current official docs through Context7 before technical steps.
-
-Preserve historical RunPod proof and usage; X-03 needs written clarification for hosted Gemini, without forced GPU work or invented exemption. Keep X-09 verbal Orbyte workspace issue separate; do not claim supplied API/live connection. Coordinate future new-path ownership before script/map edits; scripts are unchanged here. Signatures, latest Discord/portal and attendance remain human checks.
+Replit remains required with own-project evidence and real restart/redeploy/judge-access checks. Historical RunPod usage remains declarable; X-03 and X-09 need written clarification/evidence, without invented exemption or working Orbyte connection. No cloud provision, purchase, paid model call, publish, commit/push or external message is authorised. [Current verification](../verification/STAFF_RECEIVING_2026_10_24.md) lists actual local checks and limits.
