@@ -1,6 +1,8 @@
 # eStock: documentation status and verification
 
-23 October 2026, MYT. **Documentation-only handoff complete; new workflow unimplemented.** This report does not establish application acceptance or submission readiness. The [earlier status](docs/archive/2026-10-23-before-document-intake/DOCUMENT_STATUS.md.txt) is preserved as history; its no-application status and old totals no longer describe the repository.
+For the current implemented MVP, use [revision verification](docs/verification/MVP_REVISION_VERIFICATION_2026_10_23.md). This page preserves the earlier documentation-only task and its historical claims; it is not the current test summary.
+
+23 October 2026, MYT. **Historical documentation-only handoff report.** A later user-authorised task added source for the new `/demo` workflow; see [current project context](PROJECT_CONTEXT.md) and [local setup](README.md). This report's documentation checks do not establish application acceptance or submission readiness. The [earlier status](docs/archive/2026-10-23-before-document-intake/DOCUMENT_STATUS.md.txt) is preserved as history; its no-application status and old totals no longer describe the repository.
 
 ## Files changed
 

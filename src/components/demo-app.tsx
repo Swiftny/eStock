@@ -906,6 +906,10 @@ function Review({
               <dd>{app.suppliers.find((s) => s.id === p.supplierId)?.name}</dd>
             </div>
             <div>
+              <dt>Estimated total</dt>
+              <dd>{validAmount ? money(total) : "Enter a quantity"}</dd>
+            </div>
+            <div>
               <dt>Stock / confirmed incoming</dt>
               <dd>
                 {fmt(product.stock)} / {fmt(product.confirmedIncoming)} {product.unit}
@@ -940,6 +944,10 @@ function Review({
               <dt>Supplier delivery time</dt>
               <dd>{p.leadTimeDays} days</dd>
             </div>
+            <div>
+              <dt>Approval limit</dt>
+              <dd>{money(p.maxOrderSen)}</dd>
+            </div>
           </dl>
           {incoming.length > 0 && (
             <ul className={styles.incomingList} aria-label="Confirmed deliveries">
@@ -964,6 +972,9 @@ function Review({
           )}
           <ForecastEvidence analysis={analysis} rec={rec} unit={product.unit} />
           <p className="subtle">
+            {total === null
+              ? "Unpriced demo order; supplier cost is unknown. "
+              : "Reference prices, not a supplier quotation. "}
             Approval creates a PO and queues a SIMULATED request. Supplier confirmation and receipt
             follow separately; stock stays unchanged.
           </p>
@@ -1874,6 +1885,7 @@ export function DemoApp() {
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [orderProductId, setOrderProductId] = useState<string | null>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
+  const [loginRole, setLoginRole] = useState<Role>("manager");
   const refresh = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
@@ -2079,9 +2091,10 @@ export function DemoApp() {
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = values(event.currentTarget);
-    await chooseRole("manager", String(data.accessCode || ""));
+    await chooseRole(data.role as Role, String(data.accessCode || ""));
   }
   async function chooseRole(role: Role, accessCode = "") {
+    setLoginRole(role);
     setPendingRole(role);
     setBusy(true);
     setError("");
@@ -2168,6 +2181,7 @@ export function DemoApp() {
             </a>
             {app && !needsSession && (
               <span className={styles.workspaceName}>
+                {app.organisation.name}
                 <span className={styles.workspaceDate}>{day(app.demoDate)} · MYT</span>
               </span>
             )}
@@ -2250,8 +2264,13 @@ export function DemoApp() {
           {needsSession ? (
             <main id="app-main" className="session-panel" tabIndex={-1}>
               <h1>Open inventory</h1>
-              <p>This demo requires an access code.</p>
-              <form className="app-form" onSubmit={login} aria-busy={busy}>
+              <p>Enter the demo access code and choose a role to use saved stock records.</p>
+              <p className={styles.demoLabel}>Synthetic data · Demo sign-in</p>
+              <form key={loginRole} className="app-form" onSubmit={login} aria-busy={busy}>
+                <Select label="Demo role" name="role" value={loginRole}>
+                  <option value="manager">Manager · review and approve</option>
+                  <option value="staff">Stock staff · record and receive</option>
+                </Select>
                 <Field label="Access code" name="accessCode" type="password" />
                 {error && (
                   <p className="form-error" role="alert">
@@ -2278,6 +2297,7 @@ export function DemoApp() {
                       : "Day open · Record today’s sales"}
                   </span>
                   <div className={styles.demoControls}>
+                    <span className={styles.demoLabel}>Synthetic data · Saved demo workspace</span>
                     <button
                       type="button"
                       className="button button-text"
@@ -2381,15 +2401,13 @@ export function DemoApp() {
                         Add an item and its starting stock. Use synthetic records for this
                         workspace.
                       </p>
-                      {
-                        <button
-                          type="button"
-                          className="button button-primary"
-                          onClick={() => setAddItemOpen(true)}
-                        >
-                          Add Item
-                        </button>
-                      }
+                      <button
+                        type="button"
+                        className="button button-primary"
+                        onClick={() => setAddItemOpen(true)}
+                      >
+                        Add Item
+                      </button>
                     </section>
                   </>
                 )}
@@ -2719,9 +2737,14 @@ function ReplenishmentView({
                     </td>
                     <td data-label={`Order quantity (${item.unit})`} className={styles.numeric}>
                       {suggestion?.calculation ? (
-                        <strong>{fmt(suggestion.calculation.suggestedQuantity)}</strong>
+                        <>
+                          <strong>{fmt(suggestion.calculation.suggestedQuantity)}</strong>
+                          {suggestion.calculation.estimatedCostSen !== null && (
+                            <small>{money(suggestion.calculation.estimatedCostSen)}</small>
+                          )}
+                        </>
                       ) : (
-                        "N/A"
+                        "—"
                       )}
                     </td>
                     <td className={styles.rowAction}>
@@ -3052,11 +3075,9 @@ function InventoryView({
           <h1>Inventory</h1>
         </div>
         <div className="form-actions">
-          {
-            <button type="button" className="button button-primary" onClick={addItem}>
-              Add Item
-            </button>
-          }
+          <button type="button" className="button button-primary" onClick={addItem}>
+            Add Item
+          </button>
           {(app.role === "staff" || suggestions.length > 0) && (
             <button
               type="button"

@@ -388,7 +388,20 @@ export async function processAnalysis(id: string, poll = false) {
   let result: Analysis["forecast"];
   let failure: string | null = null;
   try {
-    if (input.providerIdentity && input.providerIdentity !== forecastConfigIdentity())
+    const providerIdentity = forecastConfigIdentity();
+    // A revision change may still retrieve the saved job from the same endpoint.
+    // Its pinned result is retained as stale evidence, never a fresh recommendation.
+    const samePollingEndpoint =
+      poll &&
+      analysis.jobId &&
+      input.providerIdentity?.startsWith("RUNPOD:") &&
+      providerIdentity.startsWith("RUNPOD:") &&
+      input.providerIdentity.split(":")[1] === providerIdentity.split(":")[1];
+    if (
+      input.providerIdentity &&
+      input.providerIdentity !== providerIdentity &&
+      !samePollingEndpoint
+    )
       fail("Forecast provider configuration changed. Start a new analysis.", 503, "CONFIGURATION");
     result =
       input.values.length < 28

@@ -1,6 +1,6 @@
 # Document extraction, saved drafts and approved Intake
 
-23 October 2026 · Future backend specification · **Unimplemented**
+23 October 2026 · Behavioral specification with a local implementation. [Current verification](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) records synthetic tests; live Gemini/camera behavior and hosted retention remain Unverified.
 
 [PRD](../product/prd.md) · [Ledger contract](STOCK_TRACKING.md) · [Synthetic evaluation](../data/SYNTHETIC_DATA.md)
 
@@ -8,7 +8,7 @@
 
 Only Manager captures/uploads, reads or edits drafts, matches products, approves or discards. Backend checks every capability. Gemini runs behind the backend with a server-secret key and proposes fields only; no model action directly changes inventory. Receipt, invoice, delivery note and order-detail images are text sources. The Manager must separately confirm that approved usable quantities have actually arrived. Order-only/advance-invoice data stays unapproved until physical receipt; no PO-management subsystem is required.
 
-Exact Gemini model/SDK/version, PostgreSQL ORM/hosting, authentication mechanism, request limits and endpoint paths remain open. Before library-specific implementation instructions, resolve/fetch official current documentation through Context7 under AGENTS.md. This spec is a behavioural contract, not verified vendor API syntax.
+The implementation uses backend Google Gen AI SDK, pg without an ORM, opaque role sessions and `/api/estock`. Images are limited to 6 MiB in JPEG/PNG/WebP; the browser can convert decodable alternatives. Extraction has a 45-second cancellation deadline and one SDK attempt. Hosting and provider retention still need real-service evidence. Exact source/schema and executed checks control implementation claims. Follow AGENTS.md Context7 rules for future SDK changes.
 
 ## Allowlisted structured data
 
@@ -21,7 +21,7 @@ Exact Gemini model/SDK/version, PostgreSQL ORM/hosting, authentication mechanism
 | Approval/movement | Unique draft approval identity, immutable approved snapshot and Intake source line; see ledger spec |
 | Extraction provenance | Mock/live mode, provider/model identifier actually used, request correlation, timing/failure category and schema/prompt version without image/body dumps |
 
-These are proposed contracts; no tables have been created. Keep extracted and approved values separate. A missing value is unknown, never quantity zero by default. Persist only necessary non-monetary fields; no entire raw provider response, encoded image, price/subtotal/tax/amount/payment text or unnecessary document text dump. Do not retain excluded data in exception logs or tracing. Team synthetic test-image assets are separately authored fixtures, not retained application uploads.
+These are behavioral contracts; the implemented schema is `db/estock/001_initial.sql`. Keep extracted and approved values separate. A missing value is unknown, never quantity zero by default. Persist only necessary non-monetary fields; no entire raw provider response, encoded image, price/subtotal/tax/amount/payment text or unnecessary document text dump. Do not retain excluded data in exception logs or tracing. Team synthetic test-image assets are separately authored fixtures, not retained application uploads.
 
 ## Upload/extraction and image lifecycle
 

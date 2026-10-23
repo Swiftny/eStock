@@ -1,16 +1,15 @@
-import type { NextRequest } from "next/server";
-import { forecastError, forecastJson, forecastSession } from "@/lib/server/forecasting/http";
-import { forecastAnalysis } from "@/lib/server/forecasting/queries";
-
+/** Legacy forecast/purchasing endpoint retired after the eStock document-intake pivot. */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  try {
-    const role = forecastSession(request);
-    const { id } = await context.params;
-    return forecastJson(forecastAnalysis(role, id));
-  } catch (error) {
-    return forecastError(error);
-  }
+function retired() {
+  return Response.json(
+    { error: "This legacy demo endpoint is retired. Use /api/estock.", code: "LEGACY_RETIRED" },
+    { status: 410, headers: { "Cache-Control": "no-store" } },
+  );
 }
+
+export const GET = retired;
+export const POST = retired;
+export const PATCH = retired;
+export const DELETE = retired;

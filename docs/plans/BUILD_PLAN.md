@@ -1,6 +1,6 @@
-# eStock: future implementation handoff
+# eStock: implementation handoff and remaining acceptance
 
-23 October 2026. **Planning only; implementation is not authorised by this document.** Finish documentation, stop and await explicit user instruction. The existing website/application and runtime remain legacy and unchanged. [PRD](../product/prd.md) and [decisions](../product/DECISIONS.md) define the new scope. [Old dated plan](IMPLEMENTATION_2026_10_21.md) and [prior build plan](../archive/2026-10-23-before-document-intake/docs/plans/BUILD_PLAN.md.txt) are superseded.
+23 October 2026. **Later explicit user instructions authorised local implementation and verification.** [Current evidence](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) supersedes the earlier not-started status. [PRD](../product/prd.md) and [decisions](../product/DECISIONS.md) include the latest Receipt history/Stock activity clarification. [Old dated plan](IMPLEMENTATION_2026_10_21.md) and [prior build plan](../archive/2026-10-23-before-document-intake/docs/plans/BUILD_PLAN.md.txt) remain historical.
 
 ## Five stages after authorisation
 
@@ -12,7 +12,7 @@
 | 4. Review and approval | Official/alias matching, corrections, unknown-product Opening 0, approve/discard | Manual units, actual-receipt confirmation, atomic all-line rollback, repeated/concurrent approval/edit protection, immutable Approved, distinct dates | All areas with one shared editor |
 | 5. Evaluation and delivery | Fixed team-created synthetic evaluation, responsive checks, real Replit usage/proof, aligned submission | PRD acceptance evidence, errors reported honestly, restart/redeploy persistence/access, all six artifacts, historical resource declaration and official checks | All; Marco coordinates evidence |
 
-Every stage is **not started for the new workflow**. Reusing code does not prove acceptance. FR-16 similarity warnings are P1, after core acceptance; they do not block stages 1–4. No forecast, policy, purchasing/outbox, PO/budget or training stage is included.
+Stages 1, 2 and 4 have local implementation and retained isolated PostgreSQL/API checks. Stage 3 has stubbed browser workflow evidence; live Gemini and physical capture remain Unverified. Stage 5 is partial: narrow desktop-browser layouts are checked, while real-device testing, extraction measurements, deployment/durability and competition proof remain open. FR-16 heuristic expansion and pagination are deferred. No forecast, purchasing/outbox, PO/budget or training stage is added.
 
 ## Reuse versus replacement
 

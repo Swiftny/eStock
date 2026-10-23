@@ -1,6 +1,6 @@
-# eStock: proposed document-intake visual direction
+# eStock: document-intake visual direction
 
-23 October 2026. This records the supplied PRD's **proposed future direction only**. The existing light-blue landing/application/CSS is unchanged. No website redesign, new UI review, contrast measurement or Delivery Gate is claimed. [Earlier visual rationale/evidence](docs/archive/2026-10-23-before-document-intake/DESIGN.md.txt) remains historical.
+23 October 2026. The local document-intake demo follows the supplied calm English/teal direction. This revision preserves that design while separating receipt/activity history and adding temporary draft comparison. Actual tokens are in `src/components/estock-app.module.css`; the palette below preserves the original proposal. [Current UI verification and limits](docs/verification/MVP_REVISION_VERIFICATION_2026_10_23.md) distinguish desktop-width checks from physical devices/cameras. [Earlier visual rationale/evidence](docs/archive/2026-10-23-before-document-intake/DESIGN.md.txt) remains historical.
 
 ## User-provided direction
 

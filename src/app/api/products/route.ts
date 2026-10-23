@@ -1,14 +1,15 @@
-import type { NextRequest } from "next/server";
-import { inventoryError, inventoryJson, inventorySession } from "@/lib/server/inventory/http";
-import { inventoryProducts } from "@/lib/server/inventory/queries";
-
+/** Legacy forecast/purchasing endpoint retired after the eStock document-intake pivot. */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export function GET(request: NextRequest) {
-  try {
-    return inventoryJson(inventoryProducts(inventorySession(request)));
-  } catch (error) {
-    return inventoryError(error);
-  }
+function retired() {
+  return Response.json(
+    { error: "This legacy demo endpoint is retired. Use /api/estock.", code: "LEGACY_RETIRED" },
+    { status: 410, headers: { "Cache-Control": "no-store" } },
+  );
 }
+
+export const GET = retired;
+export const POST = retired;
+export const PATCH = retired;
+export const DELETE = retired;

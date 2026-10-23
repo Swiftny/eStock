@@ -1,6 +1,6 @@
 # Third-party notices
 
-Status updated 23 October 2026. New PostgreSQL/Gemini architecture is a target only; dependencies, source, lockfiles and assets are unchanged. Existing package/version notes below are historical inspection records, not a new dependency audit.
+Status updated 23 October 2026. The new demo source adds PostgreSQL and Gemini dependencies. Versions and licence identifiers below were read from installed package metadata; this is not a full transitive dependency or deployment licence audit.
 
 The repository's original Apache 2.0 [LICENSE](LICENSE) remains unchanged. Dependencies and tools retain their own licences.
 
@@ -18,9 +18,20 @@ Versions and licence identifiers below were read from the installed packages on 
 | @types/node | 26.6.5 | MIT |
 | @types/react / @types/react-dom | 19.3.0 | MIT |
 
+## New demo dependencies
+
+| Package | Installed version | Licence | Purpose |
+| --- | --- | --- | --- |
+| `@google/genai` | 2.31.0 | Apache-2.0 | Server-side Gemini document extraction |
+| `pg` | 8.23.1 | MIT | PostgreSQL connection pool |
+| `@types/pg` | 8.23.1 | MIT | Development types |
+| `playwright-core` | 1.64.1 | Apache-2.0 | Development-only isolated browser verification; installed Chrome is used, no browser binary downloaded |
+
+The optional local Compose file uses the `postgres:17-alpine` image. Its image/base-layer notices and the full installed dependency tree require inspection before final packaging. No database service or Gemini API was started/called during this source update.
+
 ## Local backend and worker candidates
 
-The application uses `node:sqlite`, `node:crypto`, `node:fs` and other Node.js built-ins; no database ORM, native addon, animation, chart or new JavaScript runtime dependency was added. Node.js 22.23.3 was used locally; Node and bundled SQLite retain their upstream licences (Node's MIT licence plus third-party notices; SQLite public-domain dedication). Keep the runtime distribution's notices when packaging it.
+The preserved legacy application uses `node:sqlite`, `node:crypto`, `node:fs` and other Node.js built-ins. The new demo uses Node built-ins and `pg` without an ORM. Node.js 22.23.3 was used in earlier local work; Node and bundled SQLite retain their upstream licences (Node's MIT licence plus third-party notices; SQLite public-domain dedication). Keep the runtime distribution's notices when packaging it.
 
 `worker/requirements.txt` and Dockerfile name Chronos, RunPod and a PyTorch CUDA image as **deployment candidates**. The earlier local worker-contract task did not download or execute those candidate packages/models. Separately, preserved historical RunPod training/evaluation artifacts record actual Chronos-2/AutoGluon/PyTorch use; see the clarification below. Their exact resolved packages/image digest, licences and model commit must be checked and locked after a real GPU spike; do not declare candidate ranges as installed versions. Chronos upstream is Apache 2.0; preserve its model/library notices if deployed. The repository contains original adapter/worker code, not copied model weights.
 
@@ -36,10 +47,10 @@ The unmodified font is supplied through Fontsource and served locally. Its copyr
 
 The installed antislop plugin and repository-provided ui-ux-pro-max instructions informed development. They are development tools, not bundled website assets. Actual usage and remaining skill provenance/licence verification are recorded in [the tools declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md). Preserve the team's separately installed `.agents/` files and their upstream notices.
 
-## Planned services and historical model usage
+## Demo service and historical model usage
 
-Gemini API (Google) is planned for backend document extraction and PostgreSQL for structured inventory. No Gemini model/SDK/version, ORM, hosting plan/tier or licence/terms selection has been made or installed by this update. Verify current official documentation through Context7 and actual service/model terms/account tier/processing/retention before implementation or any real-world pilot. App transient-image policy does not establish provider zero retention. No paid model API was called.
+The demo source selects the `@google/genai` SDK with `gemini-2.5-flash` as the default model and PostgreSQL for structured inventory. Hosting plan/region, account tier, actual service terms and provider processing/retention require verification before a real-world pilot. App transient-image policy does not establish provider zero retention. No live or paid model API call was made in this source update.
 
 Historical RunPod run `20261021T110320Z` records `autogluon/chronos-2` revision `60088152a34e242427b44c3100014473a0157d53`, AutoGluon 1.6.3 and torch 2.13.0+cu130 on RTX 4090. Preserve actual package/model notices and resolved-lock evidence in `training/` and `submission/evidence/`; historical source describes Chronos-2 as Apache 2.0. Final licence/proof inventory must follow actual artifacts, including transitive licences. This is old forecasting/training use, not an active-MVP dependency or OCR result. No Serverless app integration is proven by training alone.
 
-Codex assisted this documentation pivot using local file/Git inspection, Python documentation checks, Google Drive read tools and public web source reads. No code, dependencies, runtime service or uploaded receipt assets were created/changed, and no runtime Gemini call was made. Existing AI/skill/design/verification usage remains in the [prior declaration snapshot](docs/archive/2026-10-23-before-document-intake/docs/submission/TECH_DECLARATION_DRAFT.md.txt) and current [declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md). Team review remains required.
+Codex assisted the earlier documentation pivot and later demo source implementation. The source update changed code, dependencies and local setup; it made no runtime Gemini call or deployment. Existing AI/skill/design/verification usage remains in the [prior declaration snapshot](docs/archive/2026-10-23-before-document-intake/docs/submission/TECH_DECLARATION_DRAFT.md.txt) and current [declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md). Team review remains required.

@@ -17,6 +17,7 @@ import { recordStockMovement } from "../src/lib/server/inventory/mutations.ts";
 import { executeAction, processAnalysis } from "../src/lib/server/service.ts";
 import { policy, savePolicy, state } from "../src/lib/server/store.ts";
 import { addDays, DomainError } from "../src/lib/server/validation.ts";
+import { syntheticFixture } from "./synthetic-fixture.ts";
 
 const fields = [
   "ESTOCK_DB_PATH",
@@ -39,6 +40,14 @@ function key() {
 }
 function start(productId = cartons, role: Role = "manager", requestKey = key()) {
   return startForecast(role, { productId }, requestKey);
+}
+function reviewPolicy() {
+  const current = policy(cartons);
+  executeAction("manager", "updatePolicy", {
+    ...current,
+    productId: cartons,
+    expectedVersion: current.version,
+  }, key());
 }
 function runpod() {
   process.env.FORECAST_MODE = "RUNPOD";
@@ -117,6 +126,7 @@ beforeEach(() => {
   provider(() => {
     throw new Error("Synthetic provider unavailable");
   });
+  syntheticFixture();
   forecastAnalyses("manager");
 });
 afterEach(() => {
@@ -152,12 +162,13 @@ test("MOCK returns saved-history provenance, synthetic context and frozen covera
   assert.equal(calls.length, 0);
 });
 
-test("insufficient history saves NEEDS_DATA with no forecast or fabricated coverage", async () => {
+test("absent history saves NEEDS_DATA with no forecast or fabricated coverage", async () => {
+  getDb().prepare("DELETE FROM daily_sales WHERE org_id=? AND product_id=?").run(ORG, "product-lids");
   const { result } = await start("product-lids");
   assert.equal(result.analysis.status, "NEEDS_DATA");
   assert.equal(result.analysis.forecast, null);
   assert.equal(result.coverage, null);
-  assert.match(result.coverageUnavailableReason!, /28 consecutive complete days/);
+  assert.match(result.coverageUnavailableReason!, /complete sales records/);
   assert.equal(calls.length, 0);
 });
 
@@ -179,7 +190,7 @@ test("a missing observation blocks demand estimation instead of becoming zero", 
   const { result } = await start();
   assert.equal(result.analysis.status, "NEEDS_DATA");
   assert.equal(result.coverage, null);
-  assert.match(result.analysis.error!, /missing day/);
+  assert.match(result.analysis.error!, /missing sales days/);
 });
 
 test("unchanged inputs and duplicate request keys reuse one run and preserve provenance", async () => {
@@ -450,7 +461,7 @@ test("changing provider configuration never polls an old job against a new endpo
   assert.equal(calls.length, 1);
 });
 
-test("missing credentials fail without fallback, then a configured retry can succeed", async () => {
+test("missing credentials fail without fallback, then a reviewed configured retry can succeed", async () => {
   runpod();
   delete process.env.RUNPOD_API_KEY;
   const failed = await start();
@@ -459,6 +470,9 @@ test("missing credentials fail without fallback, then a configured retry can suc
   assert.equal(calls.length, 0);
   runpod();
   completed();
+  assert.equal((await start()).result.analysis.id, failed.result.analysis.id);
+  assert.equal(calls.length, 0);
+  reviewPolicy();
   const success = await start();
   assert.equal(success.result.analysis.status, "COMPLETED");
   assert.notEqual(success.result.analysis.id, failed.result.analysis.id);
@@ -481,12 +495,14 @@ test("outages use a labelled mean fallback only when fallback is enabled", async
 test("provider authentication failures and invalid JSON do not silently become a baseline", async () => {
   runpod();
   for (const status of [401, 403, 404]) {
+    reviewPolicy();
     provider(() => new Response("Synthetic rejected request", { status }));
     const { result } = await start();
     assert.equal(result.analysis.status, "FAILED");
     assert.equal(result.analysis.forecast, null);
     assert.match(result.analysis.error!, /credentials or endpoint/);
   }
+  reviewPolicy();
   provider(() => new Response("not-json", { status: 200 }));
   const { result } = await start();
   assert.equal(result.analysis.status, "FAILED");
@@ -565,6 +581,8 @@ test("interrupted submissions do not resubmit automatically and can be retried a
   const failed = await pollSavedForecast("manager", saved.entityId!, key());
   assert.equal(failed.result.analysis.status, "FAILED");
   assert.match(failed.result.analysis.error!, /unknown after interruption/);
+  assert.equal((await start()).result.analysis.id, saved.entityId);
+  reviewPolicy();
   const next = await start();
   assert.notEqual(next.result.analysis.id, saved.entityId);
   assert.equal(next.result.analysis.status, "COMPLETED");

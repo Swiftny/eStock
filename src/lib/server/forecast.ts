@@ -74,8 +74,6 @@ export function baselineResult(
     requestId: request.requestId,
     productId: request.productId,
     status: "COMPLETED",
-    requestId: request.requestId,
-    productId: request.productId,
     source,
     modelId: method === "mean28" ? "baseline/28-day-mean" : "baseline/7-day-seasonal-naive",
     modelRevision: "estock-baseline-v1",
@@ -153,8 +151,6 @@ export function validateResult(raw: unknown, request: ForecastRequest): Forecast
     result.requestId !== request.requestId ||
     result.productId !== request.productId ||
     !["RUNPOD", "BASELINE_SELECTED", "BASELINE_FALLBACK"].includes(result.source) ||
-    result.requestId !== request.requestId ||
-    result.productId !== request.productId ||
     result.inputHash !== request.inputHash ||
     result.cutoffDate !== request.cutoffDate ||
     result.modelRevision !== (request.modelRevision || configuration().revision) ||
@@ -268,20 +264,13 @@ export async function submitForecast(request: ForecastRequest): Promise<Forecast
       ...validateResult(job.output, request),
       ...(typeof job.id === "string" ? { jobId: job.id } : {}),
     };
-  if (
-    ["IN_QUEUE", "IN_PROGRESS"].includes(job.status) &&
-    (typeof job.id !== "string" || !/^[a-zA-Z0-9_-]{1,200}$/.test(job.id))
-  )
-    fail("Provider returned an invalid job identifier.", 502, "FORECAST_INVALID");
-  if (!["IN_QUEUE", "IN_PROGRESS"].includes(job.status))
+  if (job.status !== "IN_QUEUE" && job.status !== "IN_PROGRESS")
     throw new Error("RunPod did not accept the forecast job.");
   return {
     requestId,
     productId,
     status: "PENDING",
-    requestId: request.requestId,
-    productId: request.productId,
-    jobId: job.id,
+    jobId: providerJobId(job.id),
     source: "RUNPOD",
     modelId: MODEL_ID,
     modelRevision: revision,
@@ -303,7 +292,7 @@ export async function pollForecast(
   const job = await provider(`status/${jobId}`);
   if (job.id && job.id !== jobId)
     fail("Provider job identity does not match the saved job.", 502, "FORECAST_INVALID");
-  if (["IN_QUEUE", "IN_PROGRESS"].includes(job.status)) return null;
+  if (job.status === "IN_QUEUE" || job.status === "IN_PROGRESS") return null;
   if (job.status !== "COMPLETED") throw new Error("RunPod forecast job failed or expired.");
   return { ...validateResult(job.output, request), jobId };
 }

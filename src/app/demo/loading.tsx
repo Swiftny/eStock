@@ -1,13 +1,10 @@
-import styles from "./demo.module.css";
+import styles from "@/components/estock-app.module.css";
 
 export default function Loading() {
   return (
-    <main className={`${styles.demo} ${styles.loading}`} lang="en-MY" aria-busy="true">
-      <span className={styles.brand}>
-        <span>e</span>Stock
-      </span>
+    <main className={styles.boot} lang="en-MY" aria-busy="true">
       <h1>Inventory workspace</h1>
-      <p role="status">Opening saved stock records…</p>
+      <p role="status">Opening stock records…</p>
     </main>
   );
 }
