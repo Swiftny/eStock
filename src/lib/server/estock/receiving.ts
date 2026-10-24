@@ -9,7 +9,7 @@ import { withRequest } from "./inventory";
 
 export interface ReceiptLine {
   id: string;
-  productId: string;
+  productId: string | null;
   productName: string;
   unit: string;
   expected: number;
@@ -21,15 +21,24 @@ export interface ReceiptLine {
   rawUnit?: string | null;
   reviewedName?: string;
 }
+export interface ReceiptExcludedLine {
+  id: string;
+  lineOrder: number;
+  rawName: string;
+  reviewedName: string;
+  exclusionReason: string;
+}
 export interface Receipt {
   id: string;
   revision: number;
   status: string;
   documentDate: string | null;
+  documentType: string;
   sentAt: string;
   receivedAt: string | null;
   hasDiscrepancies: boolean;
   lines: ReceiptLine[];
+  excludedLines?: ReceiptExcludedLine[];
 }
 const iso = (value: unknown) => (value ? new Date(String(value)).toISOString() : null);
 
@@ -53,14 +62,22 @@ export async function getReceipt(
       "NOT_FOUND",
     );
   const lines = await db.query(
-    "SELECT s.*,l.raw_name,l.raw_quantity,l.raw_unit,l.reviewed_name FROM estock_receipt_lines s JOIN estock_draft_lines l ON l.id=s.line_id WHERE s.draft_id=$1 AND s.revision=$2 ORDER BY s.line_order",
+    "SELECT s.*,l.raw_name,l.raw_quantity,l.raw_unit,coalesce(s.reviewed_name_snapshot,l.reviewed_name) AS reviewed_name FROM estock_receipt_lines s JOIN estock_draft_lines l ON l.id=s.line_id WHERE s.draft_id=$1 AND s.revision=$2 ORDER BY s.line_order",
     [receiptId, row.submitted_revision],
   );
+  const exclusions =
+    role === "manager"
+      ? await db.query(
+          "SELECT e.line_id,e.line_order,e.reviewed_name,e.exclusion_reason,l.raw_name FROM estock_receipt_exclusions e JOIN estock_draft_lines l ON l.id=e.line_id WHERE e.draft_id=$1 AND e.revision=$2 ORDER BY e.line_order",
+          [receiptId, row.submitted_revision],
+        )
+      : null;
   return {
     id: receiptId,
     revision: Number(row.submitted_revision),
     status: row.status,
     documentDate: dateOnly(row.submitted_date),
+    documentType: row.document_type,
     sentAt: new Date(row.submitted_at).toISOString(),
     receivedAt: iso(row.received_at),
     hasDiscrepancies: row.has_discrepancies,
@@ -82,6 +99,17 @@ export async function getReceipt(
       outcome: l.outcome,
       difference: l.difference === null ? null : Number(l.difference),
     })),
+    ...(exclusions
+      ? {
+          excludedLines: exclusions.rows.map((line) => ({
+            id: line.line_id,
+            lineOrder: Number(line.line_order),
+            rawName: line.raw_name,
+            reviewedName: line.reviewed_name,
+            exclusionReason: line.exclusion_reason,
+          })),
+        }
+      : {}),
   };
 }
 export async function listReceiving(role: Role): Promise<Receipt[]> {
@@ -159,8 +187,8 @@ export async function sendReceipt(receiptId: string, input: Record<string, unkno
           const p = products.get(line.product_id);
           if (!p) fail("Selected product is unavailable.", 409, "STALE_PRODUCT");
           await client.query(
-            `INSERT INTO estock_receipt_lines(draft_id,revision,line_id,line_order,product_id,product_name,unit,expected_quantity)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+            `INSERT INTO estock_receipt_lines(draft_id,revision,line_id,line_order,product_id,product_name,unit,expected_quantity,reviewed_name_snapshot)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
             [
               key,
               submitted,
@@ -170,7 +198,15 @@ export async function sendReceipt(receiptId: string, input: Record<string, unkno
               p.official_name,
               p.unit,
               line.approved_quantity,
+              line.reviewed_name,
             ],
+          );
+        }
+        for (const line of result.rows.filter((candidate) => candidate.excluded)) {
+          await client.query(
+            `INSERT INTO estock_receipt_exclusions(draft_id,revision,line_id,line_order,reviewed_name,exclusion_reason)
+             VALUES($1,$2,$3,$4,$5,$6)`,
+            [key, submitted, line.id, line.line_order, line.reviewed_name, line.exclusion_reason],
           );
         }
         await client.query(
@@ -216,20 +252,34 @@ export async function confirmReceipt(receiptId: string, input: Record<string, un
   if (input.confirmReceived !== true) fail("Confirm that you checked the physical goods.");
   if (!Array.isArray(input.lines) || !input.lines.length || input.lines.length > 60)
     fail("Check every included receipt line.");
+  type SubmittedLine =
+    | { id: string; actualQuantity: number }
+    | { id: string; outcome: "MATCH" | "SHORT" | "EXTRA"; difference: number | null };
   const outcomes = input.lines
-    .map((entry) => {
+    .map((entry): SubmittedLine => {
       const line = object(entry);
+      if ("actualQuantity" in line) {
+        if ("outcome" in line || "difference" in line)
+          fail("Submit the received quantity without a difference or result.");
+        return {
+          id: id(line.id, "Line ID"),
+          actualQuantity: integer(line.actualQuantity, "Actual received quantity", 0),
+        };
+      }
       if (!["MATCH", "SHORT", "EXTRA"].includes(String(line.outcome)))
         fail("Choose a valid result for every line.");
       if (line.outcome === "MATCH" && line.difference !== null && line.difference !== undefined)
         fail("Matching lines cannot have a difference.");
       return {
         id: id(line.id, "Line ID"),
-        outcome: line.outcome as string,
+        outcome: line.outcome as "MATCH" | "SHORT" | "EXTRA",
         difference: line.outcome === "MATCH" ? null : integer(line.difference, "Difference"),
       };
     })
     .sort((a, b) => a.id.localeCompare(b.id));
+  const usesActualQuantities = "actualQuantity" in outcomes[0];
+  if (outcomes.some((line) => "actualQuantity" in line !== usesActualQuantities))
+    fail("Use one quantity format for every receipt line.");
   if (new Set(outcomes.map((line) => line.id)).size !== outcomes.length)
     fail("Receipt lines are duplicated.");
   return withTransaction(async (client) =>
@@ -261,7 +311,14 @@ export async function confirmReceipt(receiptId: string, input: Record<string, un
         )
           fail("Submit exactly the included lines from this receipt.");
         const products = new Map<string, Record<string, unknown>>();
+        if (receipt.lines.some((line) => !line.productId))
+          fail(
+            "A receipt product was deleted. Ask Manager to correct and resend the draft.",
+            409,
+            "ARCHIVED_PRODUCT",
+          );
         for (const productId of [...new Set(receipt.lines.map((line) => line.productId))].sort()) {
+          if (!productId) fail("Receipt product is unavailable.", 409, "ARCHIVED_PRODUCT");
           const p = await client.query("SELECT * FROM estock_products WHERE id=$1 FOR UPDATE", [
             productId,
           ]);
@@ -276,23 +333,28 @@ export async function confirmReceipt(receiptId: string, input: Record<string, un
         const confirmedAt = new Date().toISOString();
         let discrepancy = false;
         for (const line of receipt.lines) {
-          const outcome = outcomes.find((o) => o.id === line.id);
-          if (!outcome) fail("Check every included line.");
+          const submitted = outcomes.find((o) => o.id === line.id);
+          if (!submitted) fail("Check every included line.");
           const actual =
-            outcome.outcome === "SHORT"
-              ? line.expected - (outcome.difference || 0)
-              : outcome.outcome === "EXTRA"
-                ? line.expected + (outcome.difference || 0)
-                : line.expected;
+            "actualQuantity" in submitted
+              ? submitted.actualQuantity
+              : submitted.outcome === "SHORT"
+                ? line.expected - (submitted.difference || 0)
+                : submitted.outcome === "EXTRA"
+                  ? line.expected + (submitted.difference || 0)
+                  : line.expected;
           integer(actual, "Actual received quantity", 0);
-          discrepancy ||= outcome.outcome !== "MATCH";
+          const outcome =
+            actual < line.expected ? "SHORT" : actual > line.expected ? "EXTRA" : "MATCH";
+          const difference = actual === line.expected ? null : Math.abs(actual - line.expected);
+          discrepancy ||= outcome !== "MATCH";
           await client.query(
             "UPDATE estock_receipt_lines SET actual_quantity=$4,outcome=$5,difference=$6 WHERE draft_id=$1 AND revision=$2 AND line_id=$3",
-            [key, expected, line.id, actual, outcome.outcome, outcome.difference],
+            [key, expected, line.id, actual, outcome, difference],
           );
           // Missing lines remain in the check, without a zero or negative Intake.
           if (actual === 0) continue;
-          const p = products.get(line.productId);
+          const p = line.productId ? products.get(line.productId) : undefined;
           if (!p) fail("Selected product is unavailable.", 409, "STALE_PRODUCT");
           const next = Number(p.stock) + actual;
           integer(next, "Resulting stock", 0);
@@ -379,4 +441,10 @@ export async function readNotification(notificationId: string, role: Role) {
   );
   if (!result.rowCount) fail("Notification not found.", 404, "NOT_FOUND");
   return { read: true };
+}
+
+export async function clearNotifications(role: Role): Promise<{ deletedNotifications: number }> {
+  const db = await ready();
+  const removed = await db.query("DELETE FROM estock_notifications WHERE role=$1", [role]);
+  return { deletedNotifications: removed.rowCount || 0 };
 }

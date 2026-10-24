@@ -6,6 +6,7 @@ import { Wordmark } from "./ui";
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [sessionPending, setSessionPending] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
@@ -13,6 +14,8 @@ export function SiteHeader() {
   const signInLink = useRef<HTMLAnchorElement>(null);
   const signOutButton = useRef<HTMLButtonElement>(null);
   const signedOut = useRef(false);
+  const sessionRevision = useRef(0);
+  const signingOutRef = useRef(false);
 
   useEffect(() => {
     const scroll = () => setScrolled(window.scrollY > 16);
@@ -25,7 +28,8 @@ export function SiteHeader() {
     const controller = new AbortController();
     let busy = false;
     const refreshSession = async () => {
-      if (busy) return;
+      if (busy || signingOutRef.current) return;
+      const revision = sessionRevision.current;
       busy = true;
       try {
         const response = await fetch("/api/estock/session", {
@@ -34,24 +38,35 @@ export function SiteHeader() {
         });
         if (!response.ok) throw new Error("Account status unavailable. Reload to try again.");
         const session = await response.json();
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && revision === sessionRevision.current) {
           setAuthenticated(session.authenticated === true);
           setError("");
         }
       } catch (cause) {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted && revision === sessionRevision.current)
           setError(cause instanceof Error ? cause.message : "Account status unavailable.");
       } finally {
         busy = false;
+        if (!controller.signal.aborted && revision === sessionRevision.current)
+          setSessionPending(false);
       }
     };
+    const restoreSession = (event: PageTransitionEvent) => {
+      if (event.persisted) setSessionPending(true);
+      void refreshSession();
+    };
+    const visible = () => {
+      if (document.visibilityState === "visible") void refreshSession();
+    };
     void refreshSession();
-    window.addEventListener("pageshow", refreshSession);
+    window.addEventListener("pageshow", restoreSession);
     window.addEventListener("focus", refreshSession);
+    document.addEventListener("visibilitychange", visible);
     return () => {
       controller.abort();
-      window.removeEventListener("pageshow", refreshSession);
+      window.removeEventListener("pageshow", restoreSession);
       window.removeEventListener("focus", refreshSession);
+      document.removeEventListener("visibilitychange", visible);
     };
   }, []);
 
@@ -72,7 +87,9 @@ export function SiteHeader() {
   }, [authenticated]);
 
   async function signOut() {
-    if (signingOut) return;
+    if (signingOutRef.current) return;
+    signingOutRef.current = true;
+    sessionRevision.current += 1;
     setSigningOut(true);
     setError("");
     try {
@@ -82,16 +99,18 @@ export function SiteHeader() {
       signedOut.current = true;
       setConfirming(false);
       setAuthenticated(false);
+      setSessionPending(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not sign out. Try again.");
     } finally {
+      signingOutRef.current = false;
       setSigningOut(false);
     }
   }
 
   return (
     <header className={`site-header ${scrolled ? "is-scrolled" : ""}`}>
-      <div className="header-inner container">
+      <div className="site-header-frame">
         <a href="#page-top" aria-label="eStock home" className="home-link">
           <Wordmark />
         </a>
@@ -107,7 +126,17 @@ export function SiteHeader() {
           </a>
         </nav>
         <div className="landing-header-actions">
-          {authenticated ? (
+          {sessionPending ? (
+            <button
+              className="button button-small button-outline landing-signin"
+              type="button"
+              disabled
+              aria-busy="true"
+              aria-label="Checking account"
+            >
+              Account…
+            </button>
+          ) : authenticated ? (
             <button
               ref={signOutButton}
               className="button button-small button-outline landing-signin"

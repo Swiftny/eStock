@@ -3,16 +3,36 @@
 import { useEffect, useState } from "react";
 import { type HistoryMovement, matchesHistorySearch, receiptHistory } from "@/lib/estock-history";
 import type { Receipt } from "@/lib/server/estock/receiving";
+import { ClearRecordsControl } from "./clear-records-control";
 import styles from "./estock-app.module.css";
+
+type DiscardedDraft = {
+  id: string;
+  status: string;
+  documentDate: string | null;
+  extractedDocumentDate: string | null;
+  updatedAt: string;
+  lines: {
+    id: string;
+    reviewedName?: string | null;
+    rawName: string;
+    rawQuantity: number | null;
+    rawUnit: string | null;
+  }[];
+};
 
 export function ManagerHistory({
   movements,
+  drafts,
   onRefresh,
+  onDraftsRefresh,
   formatDate,
   formatTime,
 }: {
   movements: HistoryMovement[];
+  drafts: DiscardedDraft[];
   onRefresh: () => Promise<void>;
+  onDraftsRefresh: () => Promise<void>;
   formatDate: (value: string | null | undefined) => string;
   formatTime: (value: string | null | undefined) => string;
 }) {
@@ -29,6 +49,7 @@ export function ManagerHistory({
     setRefreshing(true);
     void Promise.all([
       onRefresh(),
+      onDraftsRefresh(),
       fetch("/api/estock/receiving", { cache: "no-store" }).then(async (response) => {
         if (!response.ok) throw new Error("Could not load receipts");
         const result = await response.json();
@@ -44,8 +65,9 @@ export function ManagerHistory({
     return () => {
       active = false;
     };
-  }, [onRefresh]);
+  }, [onRefresh, onDraftsRefresh]);
   const receipts = receiptHistory(movements.filter((m) => m.actorRole === "manager"));
+  const discarded = drafts.filter((draft) => draft.status === "DISCARDED");
   const visibleReceipts = receipts.filter(
     (receipt) =>
       (!documentDate || receipt.documentDate === documentDate) &&
@@ -61,6 +83,19 @@ export function ManagerHistory({
           .includes(receiptSearch.toLowerCase()),
       ),
   );
+  const visibleDiscarded = discarded.filter(
+    (draft) =>
+      (!documentDate || (draft.documentDate || draft.extractedDocumentDate) === documentDate) &&
+      draft.lines.some((line) =>
+        [line.reviewedName, line.rawName, line.rawQuantity, line.rawUnit]
+          .join(" ")
+          .toLowerCase()
+          .includes(receiptSearch.trim().toLowerCase()),
+      ),
+  );
+  const receiptCount = receipts.length + received.length + discarded.length;
+  const visibleReceiptCount =
+    visibleReceipts.length + visibleReceived.length + visibleDiscarded.length;
   const activity = movements.filter((movement) => movement.type !== "INTAKE");
   const visibleActivity = activity.filter(
     (movement) =>
@@ -83,7 +118,7 @@ export function ManagerHistory({
             setRefreshing(true);
             setError("");
             try {
-              await onRefresh();
+              await Promise.all([onRefresh(), onDraftsRefresh()]);
               const response = await fetch("/api/estock/receiving", { cache: "no-store" });
               if (!response.ok) throw new Error("Could not load receipts");
               setReceived((await response.json()).receipts);
@@ -122,10 +157,42 @@ export function ManagerHistory({
       </div>
       {section === "receipts" ? (
         <section aria-labelledby="receipt-history-heading">
-          <h2 id="receipt-history-heading">Receipt history</h2>
-          <p className={styles.smallCopy}>
-            Completed deliveries, including missing goods. Pending documents stay in Drafts.
-          </p>
+          <div className={styles.historySectionHeading}>
+            <div>
+              <h2 id="receipt-history-heading">Receipt history</h2>
+              <p className={styles.smallCopy}>
+                Completed and discarded receipts. Pending documents stay in Drafts.
+              </p>
+            </div>
+          </div>
+          <ClearRecordsControl
+            key="receipts"
+            label="Clear history"
+            phrase="Clear History"
+            description={`Permanently delete ${receiptCount} completed or discarded receipt records and their notifications. Current stock is preserved. Deleted receipts can no longer be used for duplicate-document warnings.`}
+            disabled={!receiptCount || refreshing}
+            confirmLabel="Delete receipt history permanently"
+            onClear={async (confirmation) => {
+              setError("");
+              const response = await fetch("/api/estock/history/receipts", {
+                method: "DELETE",
+                cache: "no-store",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirmation }),
+              });
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || "Could not clear receipt history.");
+              setReceived([]);
+              try {
+                await Promise.all([onRefresh(), onDraftsRefresh()]);
+              } catch {
+                setError(
+                  "History was cleared, but the list could not refresh. Use Refresh history.",
+                );
+              }
+              return `${result.deletedReceipts} receipt records permanently deleted.`;
+            }}
+          />
           <div className={styles.historyFilters}>
             <label className={styles.field}>
               <span>Search receipts</span>
@@ -146,9 +213,34 @@ export function ManagerHistory({
             </label>
           </div>
           <p role="status">
-            {visibleReceipts.length + visibleReceived.length} of {receipts.length + received.length}{" "}
-            completed receipts
+            {visibleReceiptCount} of {receiptCount} receipt records
           </p>
+          <div className={styles.historyList}>
+            {visibleDiscarded.map((draft) => (
+              <article className={styles.historyItem} key={draft.id}>
+                <div className={styles.historyTop}>
+                  <h3>
+                    Discarded · {formatDate(draft.documentDate || draft.extractedDocumentDate)}
+                  </h3>
+                  <span className={styles.finalStatus}>Discarded</span>
+                </div>
+                <p className={styles.smallCopy}>Discarded {formatTime(draft.updatedAt)} MYT</p>
+                <details className={styles.sourceDetails}>
+                  <summary>View scanned items</summary>
+                  <ul className={styles.receiptLines}>
+                    {draft.lines.map((line) => (
+                      <li key={line.id}>
+                        <strong>{line.reviewedName || line.rawName || "Unreadable item"}</strong>
+                        <span>
+                          {line.rawQuantity ?? "?"} {line.rawUnit || "units"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </article>
+            ))}
+          </div>
           <div className={styles.historyList}>
             {visibleReceived.map((r) => (
               <article className={styles.historyItem} key={r.id}>
@@ -183,17 +275,13 @@ export function ManagerHistory({
               </article>
             ))}
           </div>
-          {!visibleReceipts.length && !visibleReceived.length ? (
+          {!visibleReceiptCount ? (
             <div className={styles.quietEmpty}>
-              <h3>
-                {receipts.length + received.length
-                  ? "No matching receipts"
-                  : "No completed receipts yet"}
-              </h3>
+              <h3>{receiptCount ? "No matching receipts" : "No receipt history yet"}</h3>
               <p>
-                {receipts.length + received.length
+                {receiptCount
                   ? "Try another search or clear the document date."
-                  : "Staff confirmation records the delivery here, including an entirely missing delivery."}
+                  : "Completed and discarded receipts will appear here."}
               </p>
             </div>
           ) : (
@@ -251,6 +339,31 @@ export function ManagerHistory({
           <p className={styles.smallCopy}>
             Take and usable Return events, plus Manager opening balances.
           </p>
+          <ClearRecordsControl
+            key="activity"
+            label="Clear stock activity"
+            phrase="Clear Stock Activity"
+            description="Permanently delete all Opening, Take and Return activity details. Current stock and receipt history are preserved."
+            disabled={!activity.length || refreshing}
+            onClear={async (confirmation) => {
+              const response = await fetch("/api/estock/history/activity", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirmation }),
+                cache: "no-store",
+              });
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || "Could not clear stock activity.");
+              try {
+                await onRefresh();
+              } catch {
+                throw new Error(
+                  "Activity was cleared, but the list could not refresh. Use Refresh history.",
+                );
+              }
+              return `${result.deletedEvents} stock activity records permanently deleted.`;
+            }}
+          />
           <div className={styles.historyFilters}>
             <label className={styles.field}>
               <span>Search stock activity</span>

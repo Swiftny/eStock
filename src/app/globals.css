@@ -6,6 +6,7 @@
   box-sizing: border-box;
 }
 html {
+  scrollbar-gutter: stable;
   scroll-behavior: smooth;
   scroll-padding-top: 7rem;
 }
@@ -191,11 +192,17 @@ table,
   height: 1.05rem;
 }
 .wordmark {
+  display: inline-flex;
+  align-items: center;
   font-size: 1.7rem;
   font-weight: 750;
   letter-spacing: -0.075em;
   line-height: 1;
   white-space: nowrap;
+}
+.wordmark img {
+  display: block;
+  flex: none;
 }
 .wordmark > span {
   color: var(--green);

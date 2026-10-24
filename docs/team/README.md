@@ -5,7 +5,7 @@
 | Member | Assignment | Guide |
 | --- | --- | --- |
 | Marco Ryan Suseno | Leader / AI | [AI](ai.md) |
-| Riakudu Vittorios Surjoraharjos (Vitto) | Frontend | [Frontend](frontend.md) |
+| Riakudu Vittorios Surjoraharjo (Vitto) | Frontend | [Frontend](frontend.md) |
 | Maximillion Cang (Maxi) | Data | [Data](data.md) |
 | William Christiansen | System / backend | [Backend](backend.md), [system](system.md) |
 | All | Shared rehearsal and review | [Demo](demo.md) |

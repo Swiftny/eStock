@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Receipt } from "@/lib/server/estock/receiving";
+import { ClearRecordsControl } from "./clear-records-control";
 import styles from "./estock-app.module.css";
 
 class ReceivingError extends Error {
@@ -62,6 +63,9 @@ export function Notifications({
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [clearing, setClearing] = useState(false);
+  const clearingRef = useRef(false);
+  const notificationRevision = useRef(0);
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: refresh restarts polling after an explicit user action.
@@ -71,7 +75,8 @@ export function Notifications({
     let active = true,
       busy = false;
     const poll = async () => {
-      if (busy) return;
+      if (busy || clearingRef.current) return;
+      const revision = notificationRevision.current;
       busy = true;
       try {
         const result = await request<{ notifications: Notification[]; unread: number }>(
@@ -79,16 +84,17 @@ export function Notifications({
           undefined,
           controller.signal,
         );
-        if (active) {
+        if (active && revision === notificationRevision.current) {
           setItems(result.notifications);
           setUnread(result.unread);
           setError("");
         }
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : "Notifications unavailable.");
+        if (active && revision === notificationRevision.current)
+          setError(cause instanceof Error ? cause.message : "Notifications unavailable.");
       } finally {
         busy = false;
-        if (active) setLoading(false);
+        if (active && revision === notificationRevision.current) setLoading(false);
       }
     };
     void poll();
@@ -101,7 +107,7 @@ export function Notifications({
       clearInterval(timer);
       window.removeEventListener("focus", focus);
     };
-  }, [refresh]);
+  }, [refresh, role]);
   useEffect(() => {
     if (!open) return;
     opener.current = document.activeElement as HTMLElement;
@@ -116,14 +122,19 @@ export function Notifications({
     <>
       <button
         type="button"
-        className={styles.secondaryButton}
+        className={`${styles.secondaryButton} ${styles.notificationTrigger}`}
         onClick={() => {
           setOpen(true);
           setRefresh((n) => n + 1);
         }}
         aria-label={`Notifications, ${unread} unread`}
       >
-        Notifications {unread > 0 && <span className={styles.navCount}>{unread}</span>}
+        Notifications{" "}
+        {unread > 0 && (
+          <span className={styles.navCount} aria-hidden="true">
+            {unread}
+          </span>
+        )}
       </button>
       {open && (
         <dialog
@@ -143,6 +154,36 @@ export function Notifications({
               ×
             </button>
           </div>
+          <ClearRecordsControl
+            label="Clear notifications"
+            phrase="Clear Notifications"
+            description="Permanently delete this account's notifications. Pending receiving checks remain available."
+            disabled={!items.length || loading || clearing}
+            onClear={async (confirmation) => {
+              if (clearingRef.current) throw new Error("Notifications are already being cleared.");
+              clearingRef.current = true;
+              notificationRevision.current += 1;
+              setClearing(true);
+              setError("");
+              try {
+                const response = await fetch("/api/estock/notifications", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ confirmation }),
+                  cache: "no-store",
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || "Could not clear notifications.");
+                setItems([]);
+                setUnread(0);
+                return `${result.deletedNotifications} notifications permanently deleted.`;
+              } finally {
+                clearingRef.current = false;
+                setClearing(false);
+                setRefresh((value) => value + 1);
+              }
+            }}
+          />
           {loading && <p role="status">Loading notifications…</p>}
           {error && (
             <div className={styles.errorNotice} role="alert">
@@ -185,14 +226,17 @@ export function Notifications({
                     <button
                       type="button"
                       className={styles.secondaryButton}
+                      disabled={clearing}
                       onClick={async () => {
+                        const revision = notificationRevision.current;
                         try {
                           await request(`notifications/${n.id}/read`, {});
+                          if (revision !== notificationRevision.current) return;
                           setRefresh((v) => v + 1);
                           setOpen(false);
                           onOpen(n.receiptId);
                         } catch (cause) {
-                          setError(String(cause));
+                          if (revision === notificationRevision.current) setError(String(cause));
                         }
                       }}
                     >
@@ -203,12 +247,15 @@ export function Notifications({
                     <button
                       type="button"
                       className={styles.textButton}
+                      disabled={clearing}
                       onClick={async () => {
+                        const revision = notificationRevision.current;
                         try {
                           await request(`notifications/${n.id}/read`, {});
+                          if (revision !== notificationRevision.current) return;
                           setRefresh((v) => v + 1);
                         } catch (cause) {
-                          setError(String(cause));
+                          if (revision === notificationRevision.current) setError(String(cause));
                         }
                       }}
                     >
@@ -241,10 +288,7 @@ export function ReceivingWorkspace({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-  const [report, setReport] = useState(false);
-  const [differences, setDifferences] = useState<
-    Record<string, { outcome: string; difference: string }>
-  >({});
+  const [actualQuantities, setActualQuantities] = useState<Record<string, string>>({});
   const attempt = useRef<{ signature: string; key: string } | null>(null);
   const [stale, setStale] = useState(false);
   const displayedRevision = useRef<number | null>(null);
@@ -286,8 +330,7 @@ export function ReceivingWorkspace({
     setLoading(true);
     setReceipt(null);
     setError("");
-    setReport(false);
-    setDifferences({});
+    setActualQuantities({});
     setStale(false);
     displayedRevision.current = null;
     attempt.current = null;
@@ -320,25 +363,25 @@ export function ReceivingWorkspace({
   }, [refresh]);
   const lines =
     receipt?.lines.map((line) => {
-      const diff = report ? differences[line.id] : undefined;
-      const amount = Number(diff?.difference);
-      const valid =
-        !diff ||
-        (Number.isSafeInteger(amount) &&
-          amount > 0 &&
-          (diff.outcome !== "SHORT" || amount <= line.expected) &&
-          Number.isSafeInteger(line.expected + (diff.outcome === "SHORT" ? -amount : amount)));
+      const quantityText = actualQuantities[line.id] ?? String(line.expected);
+      const actual = Number(quantityText);
       return {
         ...line,
-        diff,
-        valid,
-        actual: diff
-          ? line.expected + (diff.outcome === "SHORT" ? -amount : amount)
-          : line.expected,
+        quantityText,
+        valid: quantityText.trim() !== "" && Number.isSafeInteger(actual) && actual >= 0,
+        enteredActual: actual,
       };
     }) || [];
   async function confirm() {
-    if (!receipt || pending || stale || lines.some((l) => !l.valid)) return;
+    if (
+      !receipt ||
+      checking.current ||
+      pending ||
+      stale ||
+      !lines.length ||
+      lines.some((l) => !l.valid)
+    )
+      return;
     checking.current = true;
     mutationRevision.current += 1;
     setPending(true);
@@ -348,8 +391,7 @@ export function ReceivingWorkspace({
       confirmReceived: true,
       lines: lines.map((l) => ({
         id: l.id,
-        outcome: l.diff?.outcome || "MATCH",
-        difference: l.diff ? Number(l.diff.difference) : null,
+        actualQuantity: l.enteredActual,
       })),
     };
     const signature = JSON.stringify(payload);
@@ -432,8 +474,7 @@ export function ReceivingWorkspace({
             disabled={pending}
             onClick={async () => {
               displayedRevision.current = null;
-              setDifferences({});
-              setReport(false);
+              setActualQuantities({});
               attempt.current = null;
               try {
                 await refresh();
@@ -454,133 +495,112 @@ export function ReceivingWorkspace({
           <p>
             Document date: {receipt.documentDate} · Manager sent {time(receipt.sentAt)}
           </p>
+          {role === "staff" &&
+            receipt.status === "AWAITING_STAFF" &&
+            (receipt.documentType === "surat_pesanan" || receipt.documentType === "proforma") && (
+              <div className={styles.warningNotice} role="status">
+                <strong>Order document: confirm the goods arrived</strong>
+                <p>Check each item against the physical delivery before confirming this receipt.</p>
+              </div>
+            )}
           {receipt.status === "RECEIVED" && (
             <p className={styles.notice} role="status">
               Shared Staff checked {time(receipt.receivedAt)}. Stock posted at confirmation
               {receipt.hasDiscrepancies ? " with differences" : ""}.
             </p>
           )}
-          {role === "staff" && receipt.status === "AWAITING_STAFF" && (
-            <div className={styles.reviewActions}>
-              <button
-                className={!report ? styles.primaryButton : styles.secondaryButton}
-                type="button"
-                aria-pressed={!report}
-                disabled={pending || stale}
-                onClick={() => setReport(false)}
-              >
-                All items match
-              </button>
-              <button
-                className={report ? styles.primaryButton : styles.secondaryButton}
-                type="button"
-                aria-pressed={report}
-                disabled={pending || stale}
-                onClick={() => setReport(true)}
-              >
-                Report differences
-              </button>
-            </div>
-          )}
           <div className={styles.draftLines}>
-            {lines.map((line) => (
-              <article key={line.id} className={styles.draftLine}>
-                <h2>{line.productName}</h2>
-                <p>
-                  Expected:{" "}
-                  <strong>
-                    {line.expected} {line.unit}
-                  </strong>
-                </p>
-                {receipt.status === "RECEIVED" ? (
+            {lines.map((line) =>
+              role === "staff" && receipt.status === "AWAITING_STAFF" ? (
+                <details
+                  key={`${receipt.id}:${receipt.revision}:${line.id}`}
+                  className={`${styles.draftLine} ${styles.receivingLine}`}
+                >
+                  <summary className={styles.receivingSummary}>
+                    <span className={styles.receivingArrow}>
+                      <svg
+                        className={styles.receivingChevron}
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <path d="m9 5 7 7-7 7" />
+                      </svg>
+                    </span>
+                    <span className={styles.receivingSummaryText}>
+                      <strong>{line.productName}</strong>
+                      <span className={styles.receivingExpected}>
+                        Expected: {line.expected} {line.unit}
+                      </span>
+                      {!line.valid ? (
+                        <span className={styles.receivingInvalid}>Check received quantity</span>
+                      ) : line.enteredActual !== line.expected ? (
+                        <span>
+                          Received: {line.enteredActual} {line.unit}
+                        </span>
+                      ) : null}
+                    </span>
+                  </summary>
+                  <div className={styles.receivingEditor}>
+                    <label className={styles.field}>
+                      <span>How much did you receive? ({line.unit})</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={Number.MAX_SAFE_INTEGER}
+                        step="1"
+                        inputMode="numeric"
+                        value={line.quantityText}
+                        disabled={pending || stale}
+                        aria-label={`How much did you receive for ${line.productName}?`}
+                        aria-invalid={!line.valid}
+                        aria-describedby={!line.valid ? `received-error-${line.id}` : undefined}
+                        onChange={(e) =>
+                          setActualQuantities((current) => ({
+                            ...current,
+                            [line.id]: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    {!line.valid && (
+                      <p
+                        id={`received-error-${line.id}`}
+                        className={styles.errorNotice}
+                        role="alert"
+                      >
+                        Enter a whole number of 0 or more.
+                      </p>
+                    )}
+                  </div>
+                </details>
+              ) : (
+                <article key={line.id} className={styles.draftLine}>
+                  <h2>{line.productName}</h2>
                   <p>
-                    {line.outcome === "MATCH"
-                      ? "Matches"
-                      : `${line.outcome === "SHORT" ? "Short" : "Extra"} by ${line.difference}`}{" "}
-                    · Actually received:{" "}
+                    Expected:{" "}
                     <strong>
-                      {receipt.lines.find((l) => l.id === line.id)?.actual} {line.unit}
+                      {line.expected} {line.unit}
                     </strong>
                   </p>
-                ) : (
-                  <>
-                    {role === "staff" && report && (
-                      <>
-                        <label className={styles.checkbox}>
-                          <input
-                            type="checkbox"
-                            disabled={pending || stale}
-                            checked={Boolean(line.diff)}
-                            onChange={(e) =>
-                              setDifferences((current) => {
-                                const next = { ...current };
-                                if (e.target.checked)
-                                  next[line.id] = { outcome: "SHORT", difference: "" };
-                                else delete next[line.id];
-                                return next;
-                              })
-                            }
-                          />
-                          <span>Report a difference for {line.productName}</span>
-                        </label>
-                        {line.diff && (
-                          <div className={styles.dateFields}>
-                            <label className={styles.field}>
-                              <span>Difference for {line.productName}</span>
-                              <select
-                                disabled={pending || stale}
-                                aria-label={`Difference for ${line.productName}`}
-                                value={line.diff.outcome}
-                                onChange={(e) =>
-                                  setDifferences((d) => ({
-                                    ...d,
-                                    [line.id]: { ...d[line.id], outcome: e.target.value },
-                                  }))
-                                }
-                              >
-                                <option value="SHORT">Short</option>
-                                <option value="EXTRA">Extra</option>
-                              </select>
-                            </label>
-                            <label className={styles.field}>
-                              <span>Difference quantity for {line.productName}</span>
-                              <input
-                                type="number"
-                                min="1"
-                                max={line.diff.outcome === "SHORT" ? line.expected : undefined}
-                                step="1"
-                                inputMode="numeric"
-                                value={line.diff.difference}
-                                disabled={pending || stale}
-                                aria-invalid={!line.valid}
-                                onChange={(e) =>
-                                  setDifferences((d) => ({
-                                    ...d,
-                                    [line.id]: { ...d[line.id], difference: e.target.value },
-                                  }))
-                                }
-                              />
-                            </label>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {!line.valid ? (
-                      <p className={styles.errorNotice} role="alert">
-                        Enter a positive whole difference. Shortage cannot exceed {line.expected}.
-                      </p>
-                    ) : (
-                      <p>
-                        Actually received:{" "}
-                        <strong>
-                          {line.actual} {line.unit}
-                        </strong>
-                      </p>
-                    )}
-                  </>
-                )}
-              </article>
-            ))}
+                  {receipt.status === "RECEIVED" && (
+                    <p>
+                      {line.outcome === "MATCH"
+                        ? "Matches"
+                        : `${line.outcome === "SHORT" ? "Short" : "Extra"} by ${line.difference}`}{" "}
+                      · Actually received:{" "}
+                      <strong>
+                        {line.actual} {line.unit}
+                      </strong>
+                    </p>
+                  )}
+                </article>
+              ),
+            )}
           </div>
           {role === "staff" && receipt.status === "AWAITING_STAFF" && (
             <div className={styles.approvalBox}>
@@ -592,7 +612,7 @@ export function ReceivingWorkspace({
               <button
                 type="button"
                 className={styles.primaryButton}
-                disabled={pending || stale || lines.some((l) => !l.valid)}
+                disabled={pending || stale || !lines.length || lines.some((l) => !l.valid)}
                 onClick={() => void confirm()}
               >
                 {pending ? "Confirming…" : "Confirm received goods"}

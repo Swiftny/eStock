@@ -3,7 +3,7 @@ export interface HistoryMovement {
   type: "OPENING" | "INTAKE" | "TAKE" | "RETURN";
   quantity: number;
   delta: number;
-  productId: string;
+  productId: string | null;
   productName: string;
   unit: string;
   actorRole: "manager" | "staff";

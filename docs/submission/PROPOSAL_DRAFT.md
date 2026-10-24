@@ -13,7 +13,7 @@
 | Leader | Marco Ryan Suseno |
 | Leader email/phone | Private team record; phone still needs completion |
 | University | Xiamen University, as reported; verify portal spelling privately |
-| Members | 4: Marco Ryan Suseno; Riakudu Vittorios Surjoraharjos; Maximillion Cang; William Christiansen |
+| Members | 4: Marco Ryan Suseno; Riakudu Vittorios Surjoraharjo; Maximillion Cang; William Christiansen |
 
 Assignments: Marco leader/AI; Riakudu frontend; Maximillion data; William system/backend. No registration emails or credentials in public documents.
 

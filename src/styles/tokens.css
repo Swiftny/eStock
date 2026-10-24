@@ -1,6 +1,11 @@
 :root {
   color-scheme: light;
   --font-body: "Manrope Variable", Arial, sans-serif;
+  --site-header-width: 1440px;
+  --site-gutter: clamp(16px, 3vw, 40px);
+  --site-nav-gap: 32px;
+  --workspace-page-width: 1240px;
+  --workspace-gutter: 20px;
   --paper: #fcfdff;
   --white: #ffffff;
   --ink: #202d40;

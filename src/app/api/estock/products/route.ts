@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { requireRole } from "@/lib/server/estock/auth";
-import { json, respondError } from "@/lib/server/estock/errors";
+import { fail, json, respondError } from "@/lib/server/estock/errors";
 import { readJson, sameOrigin } from "@/lib/server/estock/input";
-import { createProduct, listProducts } from "@/lib/server/estock/inventory";
+import { createProduct, deleteAllInventory, listProducts } from "@/lib/server/estock/inventory";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +24,19 @@ export async function POST(request: NextRequest) {
     sameOrigin(request);
     await requireRole(request, "manager");
     return json(await createProduct(await readJson(request)), 201);
+  } catch (error) {
+    return respondError(error);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    sameOrigin(request);
+    await requireRole(request, "manager");
+    const input = await readJson(request, 1024);
+    if (input.confirmation !== "Delete All Inventory")
+      fail('Type "Delete All Inventory" exactly to continue.', 400, "CONFIRMATION_REQUIRED");
+    return json(await deleteAllInventory(input));
   } catch (error) {
     return respondError(error);
   }

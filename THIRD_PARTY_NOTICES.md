@@ -41,6 +41,8 @@ Copyright 2019 The Manrope Project Authors (https://github.com/sharanda/manrope)
 
 The unmodified font is supplied through Fontsource and served locally. Its copyright notice and full SIL Open Font License 1.1 are preserved in [public/licenses/manrope-OFL.txt](public/licenses/manrope-OFL.txt), also served at `/licenses/manrope-OFL.txt`.
 
+`public/estock-logo.svg` embeds the same unmodified Manrope Latin WOFF2 font to reproduce the existing eStock wordmark as a self-contained image. The font notice and licence above also apply to that embedded copy.
+
 ## Reference and development assistance
 
 [Attio](https://attio.com/) was inspected as a visual reference at the user's request. No Attio logo, image, font file, source code or copy was imported. The eStock text identity, CSS and contextual SVG symbols were created for this project with Codex assistance.
