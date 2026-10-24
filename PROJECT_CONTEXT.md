@@ -2,6 +2,14 @@
 
 Updated 24 October 2026, MYT. This is the active handoff. [Earlier complete context](docs/archive/2026-10-23-before-document-intake/PROJECT_CONTEXT.md.txt) is preserved as history, including prior authorisations, reported checks and contradictory GPU status notes. It must not drive new work.
 
+## Skip navigation visibility: 24 October 2026
+
+The user reported that pulling the landing page down exposed "Skip to content". Its shared CSS previously hid it only by translating it above the viewport. One frontend editor added a closed clipping region while inactive and restores it only on `:focus-visible`, retaining the existing keyboard skip destination, focus ring, palette and layout. Shared `src/app/globals.css` and these evidence/declaration notes are a coordinated allowlist, not a single-area scope-check claim.
+
+Actual checks: scoped CSS Biome and production build including TypeScript pass. Six local headless Chrome configurations cover 320/375/768/1440px, 812px landscape and reduced motion. Wheel scrolling keeps the link clipped; Tab/Shift+Tab reveal it, Enter focuses `#main`, and pointer-origin focus stays clipped. All eight other landing links reach their intended sections or sign-in screen, with no page/console errors. The visible skip text has measured 13.90:1 contrast; desktop/mobile screenshots were inspected. Generated `next-env.d.ts` changes were restored. [Evidence and scoped Delivery Gate](docs/verification/SKIP_LINK_2026_10_24.md). Physical Safari/iOS elastic overscroll was not automated. No dependency, operational data, provider call, commit, push or deployment changed.
+
+Subsequent handoff authorisation: the user requested the local branch `fix/skip-link-visibility`, explicit staging of the four allowlisted files and a local commit for their own push and PR merge. The verification-phase no-commit statements above remain historical. Git whitespace/path checks and commit metadata are checked for this handoff; no AI co-author trailer is added. No push or merge is performed by the assistant.
+
 ## Replit import preparation: 24 October 2026
 
 The user subsequently chose direct GitHub import and explicitly authorised staging and committing the complete pending local version so they can push it themselves. The snapshot includes the earlier application changes, migrations, verification reports, team-name correction and Replit preparation. Private environment files, reference photos, operational databases and ignored import/build artifacts remain excluded. A pre-stage scan of all 57 pending paths (56 existing files and one deletion) found no configured long secret or common API/private-key credential pattern. Earlier no-commit/no-push statements below describe their original tasks; this later instruction authorises a local commit only. A GitHub push and actual Replit deployment remain for the next step.
