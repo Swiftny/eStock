@@ -179,7 +179,10 @@ async function extract(image: { bytes: Uint8Array; mimeType: string }): Promise<
       503,
       "GEMINI_NOT_CONFIGURED",
     );
-  const modelId = process.env.ESTOCK_GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+  const modelId = process.env.ESTOCK_GEMINI_MODEL?.trim();
+  if (modelId !== "gemini-3.8-flash") {
+    fail("Set ESTOCK_GEMINI_MODEL to gemini-3.8-flash.", 503, "GEMINI_CONFIG");
+  }
   const resolution = process.env.ESTOCK_GEMINI_MEDIA_RESOLUTION?.trim().toLowerCase();
   if (resolution && resolution !== "medium" && resolution !== "high") {
     fail("Set ESTOCK_GEMINI_MEDIA_RESOLUTION to medium or high.", 503, "GEMINI_CONFIG");
@@ -212,7 +215,6 @@ async function extract(image: { bytes: Uint8Array; mimeType: string }): Promise<
           responseMimeType: "application/json",
           responseJsonSchema: EXTRACTION_SCHEMA,
           mediaResolution,
-          thinkingConfig: modelId === "gemini-2.5-flash" ? { thinkingBudget: 0 } : undefined,
         },
       }),
     );

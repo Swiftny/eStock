@@ -1,6 +1,8 @@
 # eStock: synthetic document and inventory evaluation plan
 
-23 October 2026. **New dataset/evaluation specification, not generated assets or measured results.** Domain 2 permits only team-created synthetic operational/evaluation data. All document images, supplier details, products and test records must be synthetic; do not recommend real Indonesian or Malaysian business receipts for the competition. A real-world pilot is separate future work after privacy/provider review.
+**Reference collection confirmed 25 October 2026:** The user confirmed 122 team-created synthetic supplier-document JPEGs, including the five images used for exploratory live Gemini QA. The collection is stored under ignored `.private/ocr-reference/`; selected calls are exploratory observations, separate from automated fixtures and the controlled benchmark planned below. Synthetic descriptions, names and contact fields are test content.
+
+23 October 2026. **New dataset/evaluation specification, not generated assets or measured results.** Domain 2 permits only team-created synthetic operational/evaluation data. All document images, supplier details, products and test records must be team-created synthetic material, including Indonesian and Malaysian supplier-document examples. A real-world pilot is separate future work after privacy/provider review.
 
 The [earlier data card](../archive/2026-10-23-before-document-intake/docs/data/SYNTHETIC_DATA.md.txt), existing fixtures, CSV files and reports remain historical and unchanged. Normal new-MVP startup should be empty; load synthetic fixtures explicitly only in isolated evaluation environments. No CSV primary-storage/import requirement is carried into the new core.
 
@@ -15,7 +17,7 @@ The [earlier data card](../archive/2026-10-23-before-document-intake/docs/data/S
 | Units | Raw boxes/cartons versus final integer pcs; verified manual factors and deliberately unknown factors |
 | Receipt status | Text-readable order with no delivery; only some physically received quantities; Manager sends expected quantities; shared Staff confirms actual goods, including entirely missing deliveries |
 | Reliability | Multi-line receiving/notification rollback, same-receipt replay, edit race, concurrent Takes, Take/Return retry, image re-upload for comparison |
-| Similar documents | Identical/similar dates and lines in separate drafts, including two genuine deliveries (P1 warning) |
+| Similar documents | Identical/similar dates and lines in separate drafts, including two distinct synthetic delivery scenarios (P1 warning) |
 | Injection | Synthetic document text asking model/app to ignore rules; treated as data without authority |
 
 For each case, record author, source-generation method, version, case ID, image hash where an authored fixture exists, expected extracted fields/uncertainty, product mapping, Manager-prepared expected values/conversion and Staff-confirmed actual outcomes, actual-receipt scenario and expected ledger result. Freeze evaluation cases before reporting improvements; keep prompt-development cases separate from held-out evaluation. The future asset format/location and fixture count are unresolved, not implemented by this task.
@@ -36,4 +38,4 @@ Report provider/model/configuration, schema/prompt version, mock/live mode, date
 
 Preserve `data/DATA_CARD.md`, generated 168-day DEMO series (seed 20261021) and team 2020–2026 SYN daily/weekly/monthly files. These served old forecasting/training, not receipt extraction. Team-history generator/seed/author provenance remains pending; do not silently claim it is verified synthetic merely because the filename or previous plan says so. Resolve before submission declarations/evaluation claims.
 
-Historical `submission/evidence/run_info.json`, `metrics.csv`, `selection.json` and RunPod proof remain unchanged. Run `20261021T110320Z` used Chronos-2 LoRA/RTX 4090. Declare actual historical usage even though training is outside active MVP. No data generation, regeneration, training or paid model API call occurred in this documentation task.
+Historical run `20261021T110320Z` used Chronos-2 LoRA/RTX 4090. Current RunPod proof is supplied in [RunPod POU PDF](../../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). The original raw metadata, metrics and selection remain in Git history rather than the PDF-only submission folder. Historical usage remains declarable even though training is outside the active MVP; no new data generation, training or paid model call is authorised by this evidence update.

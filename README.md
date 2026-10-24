@@ -19,11 +19,10 @@ Document-assisted inventory for small shops: a Manager reviews supplier-document
 | --- | --- |
 | GitHub Repository | https://github.com/Swiftny/eStock |
 | Live Demo | https://e-stock-maximillionc.replit.app |
-| RunPod Endpoint | |
-| Slide Deck | |
-| Demo Video | |
+| Slide Deck | [eStock Pitch Deck](https://drive.google.com/file/d/1S-VjjdvYyiEJGxHZgxegV2yD4TMivAoN/view?usp=drive_link) |
+| Demo Video | [eStock Pitching Video, 5:14](https://docs.google.com/document/d/1f2744grusTxyCZ9dpsQiQ4UE7lH2FszPg2SYox-0qlo/edit?usp=drive_link) |
 
-
+The pitching video is **5 minutes 14 seconds**, within the Participant Handbook's 5–7-minute requirement. Before submission, review the full recording for the prototype demonstration and agreement with the deck, repository and live build. Confirm that judges can open both links without the team's login or an access request.
 
 ### Demo Access
 
@@ -74,10 +73,12 @@ The intended benefit is less repeated typing with a physical check before invent
 
 | Measurement | Value or method |
 | --- | --- |
-| Core KPI | Seconds from starting document entry to confirmed receipt, compared with manual entry on the same synthetic delivery |
-| Manual-entry baseline | Not yet measured. |
+| Core KPI | Median end-to-end completion time per synthetic 10-line document, including AI waiting time, Staff confirmation and correct stock posting; manual versus assisted |
+| Manual-entry baseline | Proposal planning assumption: 10 minutes per synthetic 10-line document; not a measured result |
 | Measured prototype result and sample size | Not yet measured; no timing study conducted. |
-| Phase 2 improvement target (%) | To be defined after baseline measurement. |
+| Phase 2 improvement target (%) | At least 30% less median completion time versus the measured manual baseline; a target, not an achieved result. Planned evaluation: at least 10 synthetic documents |
+
+These planning values follow the [Preliminary proposal, §4](submission/SDC2026_TooGoodToBeTrue_Preliminary.pdf). No timing study or achieved improvement is claimed.
 
 ### Tech Stack
 
@@ -86,11 +87,13 @@ The intended benefit is less repeated typing with a physical check before invent
 | Frontend | Next.js 16, React 19, TypeScript, CSS and Manrope |
 | Backend | Next.js server routes under `/api/estock` |
 | Database | PostgreSQL, `pg`, ordered SQL migrations |
-| AI | Server-side Google Gemini API via `@google/genai`; default model `gemini-2.5-flash` |
+| AI | Server-side Google Gemini API via `@google/genai`; explicitly required model `gemini-3.8-flash`, with no model fallback |
 | Hosting | Replit live demo; repository includes `.replit` configuration |
 | Local verification | Biome, TypeScript, Node tests, Playwright with Chrome/Edge |
 
 The earlier SQLite forecasting/purchasing code and worker/training material are preserved as historical work. They are outside the active document-assisted inventory workflow. Actual historical tools and AI-assisted development belong in the Technical & Tools Declaration.
+
+RunPod was used earlier in this project for Chronos-2 model training and evaluation. Evidence of that use is included in `submission/`: the [RunPod POU PDF](submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). The current receipt-extraction workflow uses Gemini.
 
 ## Project Structure
 
@@ -172,7 +175,7 @@ Fill in these server variables in the ignored `.env.local` file:
 | `ESTOCK_MANAGER_PASSWORD` | Manager account password |
 | `ESTOCK_STAFF_PASSWORD` | Shared Staff account password; different from Manager in production |
 | `ESTOCK_SESSION_SECRET` | Stable random session secret, at least 32 characters |
-| `ESTOCK_GEMINI_MODEL` | Optional; blank uses `gemini-2.5-flash` |
+| `ESTOCK_GEMINI_MODEL` | Required; set exactly to `gemini-3.8-flash`. Blank or other model IDs are rejected |
 | `ESTOCK_GEMINI_MEDIA_RESOLUTION` | Optional; blank, `medium` or `high` |
 
 For the supplied local Compose service, use `postgresql://estock:estock_local_only@127.0.0.1:55432/estock` as `DATABASE_URL`, then run:
@@ -196,7 +199,7 @@ npm run test:estock
 npm run test:estock:browser
 ```
 
-The API/browser suites require a reachable test PostgreSQL database and permission to create their own temporary schemas. Set `ESTOCK_TEST_DATABASE_URL`, or use the configured local database. They create synthetic records in isolated schemas and clean up those owned schemas; browser OCR uses a test-only provider stub. Browser checks require installed Chrome, or Edge with `ESTOCK_BROWSER_CHANNEL=msedge`. These tests do not establish real-document OCR accuracy or hosted durability.
+The API/browser suites require a reachable test PostgreSQL database and permission to create their own temporary schemas. Set `ESTOCK_TEST_DATABASE_URL`, or use the configured local database. They create synthetic records in isolated schemas and clean up those owned schemas; browser OCR uses a test-only provider stub. Browser checks require installed Chrome, or Edge with `ESTOCK_BROWSER_CHANNEL=msedge`. These tests do not establish broad document OCR accuracy or hosted durability.
 
 ## How We Use Replit
 
@@ -205,18 +208,7 @@ The API/browser suites require a reachable test PostgreSQL database and permissi
 - **Server secrets:** database credentials, Gemini credentials and account/session secrets are configured outside source control.
 - **Release workflow:** pull the intended GitHub revision into the Replit project, check its configuration, publish, and verify the published version.
 
-Proof of use: [SDC2026_TooGoodToBeTrue_Replit_POU.pdf](submission/SDC2026_TooGoodToBeTrue_Replit_POU.pdf). This local PDF still needs team review and inclusion in the submitted GitHub files and Technical & Tools Declaration. A reachable homepage alone does not verify receiving, database persistence or restart/redeploy behavior.
-
-## How We Use RunPod
-
-| Field | Details |
-| --- | --- |
-| Workload and purpose | |
-| Pod ID or Serverless endpoint | |
-| GPU type and runtime | |
-| Own-account proof of use | |
-
-Reserved for team completion. The active receipt-extraction path uses Gemini; this README does not claim a working application-to-RunPod connection. Historical work remains in the repository documentation and must still be declared where applicable.
+Proof of use: [SDC2026_TooGoodToBeTrue_Replit_POU.pdf](submission/SDC2026_TooGoodToBeTrue_Replit_POU.pdf). This PDF is tracked in the repository; review it and include the proof in the final Technical & Tools Declaration. A reachable homepage alone does not verify receiving, database persistence or restart/redeploy behavior.
 
 ## Verification and Data Handling
 
@@ -253,24 +245,29 @@ Assignments and GitHub accounts follow the team's latest confirmation. Registrat
 
 | Document | File or completion field | Status |
 | --- | --- | --- |
-| Preliminary proposal, official template | [Preliminary PDF](submission/SDC2026_TooGoodToBeTrue_Preliminary.pdf) | Local file present; template, word limits, signature and Git upload pending review |
-| Technical & Tools Declaration, official template | `submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf` | Final PDF to be added |
-| Replit proof of use | [Replit POU PDF](submission/SDC2026_TooGoodToBeTrue_Replit_POU.pdf) | Local file present; team review and Git upload pending |
-| RunPod proof of use | [RunPod POU PDF](submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) | Local file present; team review, Git upload and inclusion in the declaration pending |
+| Preliminary proposal, official template | [Preliminary PDF](submission/SDC2026_TooGoodToBeTrue_Preliminary.pdf) | Local PDF present; final template/word-limit/signature review and Git inclusion pending |
+| Technical & Tools Declaration, official template | [Technical & Tools Declaration PDF](submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf) | Local PDF present, including Appendix C RunPod proof; final signature/evidence review and Git inclusion pending |
+| Replit proof of use | [Replit POU PDF](submission/SDC2026_TooGoodToBeTrue_Replit_POU.pdf) | Tracked PDF present; final evidence review and declaration inclusion pending |
+| RunPod proof of use | [RunPod POU PDF](submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf) | Both PDFs are in `submission/`; final ownership/runtime proof review and declaration signature review remain pending |
+| Pitch deck | [eStock Pitch Deck](https://canva.link/8u8hjvd6aode0fg) | Link supplied; anonymous judge access and alignment with the final pitch remain to verify |
+| YouTube pitching video | [eStock Pitching Video](https://youtu.be/ntcX81K0TeE) | Link and 5:14 duration confirmed; full content, audio and prototype demonstration review pending |
 
-The [proposal draft](docs/submission/PROPOSAL_DRAFT.md) and [declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md) are working material, not signed final submissions. Blank fields in this README are editing placeholders; the official final forms require complete, truthful answers, including actual AI-development assistance and sponsor/tool use.
+The [proposal draft](docs/submission/PROPOSAL_DRAFT.md) and [declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md) are working material, not signed final submissions. Review the final PDFs and remaining proof/access checks before submitting; official final forms require complete, truthful answers, including actual AI-development assistance and sponsor/tool use.
 
 ## Submission Checklist
 
 - [x] Team name, Domain 2, SDG track and current responsibilities filled in.
 - [x] GitHub repository and live demo links added.
 - [x] Apache 2.0 LICENSE file retained.
-- [ ] Slide deck link added and aligned with the pitch.
-- [ ] Accessible 5–7-minute YouTube pitch/demo video linked.
+- [x] Slide deck link added.
+- [x] YouTube pitching video linked; reported duration 5:14, within 5–7 minutes.
+- [ ] Full video reviewed for a prototype demonstration, readable screens, clear audio and agreement with the final deck/source/live build.
+- [ ] Canva deck opens for judges without requesting edit access or requiring the team's login.
 - [ ] Judge access instructions completed and tested in a fresh browser.
 - [ ] Published demo checked against the intended GitHub revision, including receiving and database persistence.
 - [ ] Replit own-account/project proof reviewed, committed and included in the declaration.
-- [ ] RunPod details and applicable own-account proof completed and declared.
+- [x] Historical RunPod use stated; proof PDFs included in `submission/`.
+- [ ] RunPod ownership/runtime proof reviewed and included in the final declaration.
 - [ ] Official preliminary PDF completed within word limits and genuinely signed.
 - [ ] Official Technical & Tools Declaration completed, reviewed and genuinely signed.
 - [ ] Required submission PDFs named with `TooGoodToBeTrue` and added to `submission/`.

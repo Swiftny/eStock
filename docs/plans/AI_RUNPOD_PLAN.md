@@ -2,6 +2,8 @@
 
 # eStock AI and RunPod plan
 
+Current evidence location, 25 October 2026: the user selected PDF-only proof, supplied in [RunPod POU PDF](../../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). Original raw records remain in Git history. Commands/output trees below describe the earlier Pod workflow; unexecuted Serverless instructions do not prove a deployed endpoint.
+
 Updated 21 October 2026. Decisions U-17 (feature scope), U-18 (fine-tuned Chronos-2) and U-19 (two synthetic datasets) are recorded in [DECISIONS.md](../product/DECISIONS.md). Fine-tuning, evaluation and a local worker test have run on a RunPod RTX 4090 (results below). The Serverless endpoint is not deployed yet.
 
 ## Feature scope and components
@@ -26,7 +28,7 @@ Expect baselines to win some SKUs, especially the short `DEMO-*` series. The PRD
 
 ## Results of the first GPU run
 
-Run `20261021T110320Z` on 21 October 2026: RunPod Pod with an NVIDIA GeForce RTX 4090, AutoGluon 1.6.3, torch 2.13.0+cu130, base revision `60088152a34e242427b44c3100014473a0157d53`. The three fine-tunes took 141, 132 and 131 seconds, and the whole run took 6 minutes 48 seconds. Source files: `metrics.csv`, `selection.json` and `run_info.json` in `submission/evidence/`.
+Run `20261021T110320Z` on 21 October 2026 used an NVIDIA GeForce RTX 4090, AutoGluon 1.6.3, torch 2.13.0+cu130 and base revision `60088152a34e242427b44c3100014473a0157d53`. Three fine-tunes took 141, 132 and 131 seconds; the recorded job took 6 minutes 48 seconds. Those historical values originate from the original `metrics.csv`, `selection.json` and `run_info.json` in Git commit `9407ac5`; those raw files are not included in the current PDF-only submission. Current RunPod proof is supplied in [RunPod POU PDF](../../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf).
 
 Pooled over all 10 SKUs. MAE is in units per day; WAPE is the absolute error as a share of actual sales.
 
@@ -118,7 +120,7 @@ cd /workspace
 python -m zipfile -c estock-model.zip estock/production estock/evidence
 ```
 
-Download the three files in `/workspace/estock/evidence` into `submission/evidence/`, `requirements-lock.txt` into `training/`, and `estock-model.zip` to a folder outside the repository. Save the terminal output and redacted screenshots of the Pod page and the billing page in `submission/evidence/runpod/`. Then stop the Pod. Do not terminate it: termination deletes the volume disk. A stopped Pod still bills about $0.01 per hour for its disk.
+This earlier export procedure produced raw run records, terminal output and dashboard screenshots. The user has selected PDF-only evidence for the current submission: [RunPod POU PDF](../../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). Original raw records remain in Git history; the model archive and local environment are not a deployed Serverless service. These historical setup instructions do not authorise new Pod operations.
 
 ### 6. Build and push the worker image (local)
 
@@ -150,7 +152,7 @@ curl -X POST "https://api.runpod.ai/v2/ENDPOINT_ID/runsync" \
      -d @test_input.json
 ```
 
-The first call is slow because the worker starts cold and loads the model. If `/runsync` times out, poll `https://api.runpod.ai/v2/ENDPOINT_ID/status/JOB_ID` instead of resending, since a resend can create a duplicate billed job. Save the response as `submission/evidence/runpod/serverless-response.json` and a screenshot of the endpoint page as `serverless-endpoint.png`.
+This was a proposed Serverless acceptance step, not an executed or verified endpoint call. No Serverless response or endpoint screenshot is included as current proof. The submitted historical Pod-use evidence is supplied in [RunPod POU PDF](../../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf).
 
 ### 9. Hand over to the app track
 

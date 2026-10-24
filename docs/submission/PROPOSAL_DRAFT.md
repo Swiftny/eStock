@@ -26,7 +26,7 @@ Small shops receive supplier documents whose product descriptions may differ fro
 
 eStock focuses on one shop managing one warehouse. The recurring burden is recording actual incoming goods accurately while keeping everyday stock withdrawal and return simple for staff. Document text alone cannot prove that goods arrived, so Manager must prepare expected quantities and shared Staff must check physical goods before inventory increases.
 
-The team proposes a document-assisted workflow that combines extraction, the shop catalogue and confirmed aliases, with human approval and a movement history. It will use only team-created synthetic documents, supplier details, products and evaluation records for the hackathon. No real Indonesian or Malaysian business receipts will be used.
+The team proposes a document-assisted workflow that combines extraction, the shop catalogue and confirmed aliases, with human approval and a movement history. It will use only team-created synthetic documents, supplier details, products and evaluation records for the hackathon. The 122 reference images and selected OCR QA examples are also team-created synthetic documents, as confirmed by the user.
 
 This problem is a team hypothesis; interviews, field losses, time savings and customer adoption have not been established. Evaluation will compare manual entry with reviewed intake on declared synthetic tasks and report correction rates, completion times and limitations without claiming real-store impact.
 <!-- END_WORDCOUNT -->
@@ -49,7 +49,7 @@ The team intends to apply GenAI, database and cloud practices without claiming w
 
 ### 3.1 Conceptual stack and block diagram
 
-Target: reusable existing Next.js/TypeScript foundation → role-scoped backend → PostgreSQL products/aliases/drafts/ledger, plus backend Gemini image extraction. Model, SDK/version, ORM, database hosting/plan/region and authentication remain unresolved. Existing SQLite/forecast/purchasing modules are legacy, not the target migration. Replit involvement is mandatory; actual own-project proof, deployment/access and restart/redeploy durability remain unverified.
+Target: reusable existing Next.js/TypeScript foundation → role-scoped backend → PostgreSQL products/aliases/drafts/ledger, plus backend Gemini image extraction. Current source selects the Google Gen AI SDK and requires `gemini-3.8-flash` explicitly, without an alternate-model fallback. Model access/quality, database hosting/plan/region and hosted authentication acceptance require separate evidence. Existing SQLite/forecast/purchasing modules are legacy, not the target migration. Replit involvement is mandatory; actual own-project proof, deployment/access and restart/redeploy durability remain unverified.
 
 ```text
 Synthetic document image → Manager upload → backend Gemini extraction

@@ -2,6 +2,8 @@
 
 # RunPod forecasting worker
 
+Historical-use clarification, 25 October 2026: current proof of the earlier Pod training/evaluation is supplied in [RunPod POU PDF](../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). Raw run artifacts remain in Git history and are not included in the PDF-only submission folder. Local-verification statements and unexecuted Serverless instructions below retain their historical scope.
+
 This worker is implemented but **has not run on RunPod or downloaded/executed Chronos here**. Seven local Python tests validate its request/evaluation logic and serialization; one substitutes simulated CUDA/pipeline modules. No real Torch, CUDA or RunPod package is executed by those tests. A successful mocked HTTP contract test is not a real GPU round trip.
 
 The server uses RunPod's queue API: [`POST /run`, then `GET /status/{jobId}`](https://docs.runpod.io/serverless/endpoints/send-requests). The numerical model interface follows the upstream [Chronos code](https://github.com/amazon-science/chronos-forecasting/blob/main/src/chronos/chronos_bolt.py). No chatbot or training is involved.

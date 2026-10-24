@@ -36,6 +36,9 @@ if ((process.env.ESTOCK_SESSION_SECRET || "").length < 32) {
 if (!process.env.GEMINI_API_KEY?.trim()) {
   errors.push("Set GEMINI_API_KEY for server-side receipt extraction.");
 }
+if (process.env.ESTOCK_GEMINI_MODEL?.trim() !== "gemini-3.8-flash") {
+  errors.push("Set ESTOCK_GEMINI_MODEL to gemini-3.8-flash; no model fallback is allowed.");
+}
 
 if (errors.length) {
   console.error("eStock deployment configuration needs attention:");

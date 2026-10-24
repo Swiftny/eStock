@@ -1,5 +1,7 @@
 # Third-party notices
 
+Current RunPod proof is supplied in [RunPod POU PDF](submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). The user selected PDF-only submission evidence. Original raw run files remain historical Git records, not files included in the current submission folder.
+
 Status updated 23 October 2026. The new demo source adds PostgreSQL and Gemini dependencies. Versions and licence identifiers below were read from installed package metadata; this is not a full transitive dependency or deployment licence audit.
 
 The repository's original Apache 2.0 [LICENSE](LICENSE) remains unchanged. Dependencies and tools retain their own licences.
@@ -51,8 +53,8 @@ The installed antislop plugin and repository-provided ui-ux-pro-max instructions
 
 ## Demo service and historical model usage
 
-The demo source selects the `@google/genai` SDK with `gemini-2.5-flash` as the default model and PostgreSQL for structured inventory. Hosting plan/region, account tier, actual service terms and provider processing/retention require verification before a real-world pilot. App transient-image policy does not establish provider zero retention. No live or paid model API call was made in this source update.
+The demo source uses the `@google/genai` SDK with explicitly configured `gemini-3.8-flash` and PostgreSQL for structured inventory. `ESTOCK_GEMINI_MODEL` must name that model exactly; no implicit selection or alternate-model fallback is allowed. Hosting plan/region, account tier, actual service terms and provider processing/retention require verification before a real-world pilot. App transient-image policy does not establish provider zero retention. No live or paid model API call was made in this source update.
 
-Historical RunPod run `20261021T110320Z` records `autogluon/chronos-2` revision `60088152a34e242427b44c3100014473a0157d53`, AutoGluon 1.6.3 and torch 2.13.0+cu130 on RTX 4090. Preserve actual package/model notices and resolved-lock evidence in `training/` and `submission/evidence/`; historical source describes Chronos-2 as Apache 2.0. Final licence/proof inventory must follow actual artifacts, including transitive licences. This is old forecasting/training use, not an active-MVP dependency or OCR result. No Serverless app integration is proven by training alone.
+Historical RunPod run `20261021T110320Z` records `autogluon/chronos-2` revision `60088152a34e242427b44c3100014473a0157d53`, AutoGluon 1.6.3 and torch 2.13.0+cu130 on RTX 4090. The current proof is supplied in [RunPod POU PDF](submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). Original raw metadata/metrics and run assets remain in Git history; the training environment lock remains source under `training/`. Historical source describes Chronos-2 as Apache 2.0; final licence inventory must follow actual upstream/transitive notices. This earlier forecasting use does not establish active OCR or a deployed Serverless integration.
 
 Codex assisted the earlier documentation pivot and later demo source implementation. The source update changed code, dependencies and local setup; it made no runtime Gemini call or deployment. Existing AI/skill/design/verification usage remains in the [prior declaration snapshot](docs/archive/2026-10-23-before-document-intake/docs/submission/TECH_DECLARATION_DRAFT.md.txt) and current [declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md). Team review remains required.

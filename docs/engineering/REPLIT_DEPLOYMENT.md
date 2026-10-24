@@ -1,6 +1,6 @@
 # Deploy eStock to Replit
 
-Prepared 24 October 2026. The import ZIP contains the current local application source, including uncommitted changes. It excludes credentials, private photos, runtime data, Git metadata, dependencies and build output. Importing creates a separate copy. Hosted deployment and database durability still need the checks below.
+Prepared 24 October 2026. The import ZIP contains the current local application source, including uncommitted changes. It excludes credentials, local synthetic reference images, runtime data, Git metadata, dependencies and build output. Importing creates a separate copy. Hosted deployment and database durability still need the checks below.
 
 ## Import and configure
 
@@ -16,10 +16,10 @@ Prepared 24 October 2026. The import ZIP contains the current local application 
 | `ESTOCK_MANAGER_PASSWORD` | A private Manager password, different from Staff |
 | `ESTOCK_STAFF_PASSWORD` | A private shared Staff password |
 | `ESTOCK_SESSION_SECRET` | A random secret of at least 32 characters, stable across restarts and updates |
-| `ESTOCK_GEMINI_MODEL` | Optional; blank uses the app's current default, `gemini-2.5-flash` |
+| `ESTOCK_GEMINI_MODEL` | Required; set exactly to `gemini-3.8-flash` in both development and production. Blank or other model IDs are rejected; no model fallback |
 | `ESTOCK_GEMINI_MEDIA_RESOLUTION` | Optional; blank, `medium` or `high` |
 
-The shared-password development exception does not apply to production. Do not add `NEXT_PUBLIC_` to any secret name. Existing inventory is not included in the ZIP; a fresh database starts empty. Do not upload the local `.env.local`, data folder or private reference receipts.
+The shared-password development exception does not apply to production. Do not add `NEXT_PUBLIC_` to any secret name. Existing inventory is not included in the ZIP; a fresh database starts empty. Do not upload the local `.env.local`, data folder or local synthetic reference images.
 
 In Replit Shell, prepare the development database and preview:
 
