@@ -1,5 +1,7 @@
 # Superseded eStock documentation snapshots
 
+Current evidence mapping, 25 October 2026: the user selected PDF-only RunPod proof, supplied in [RunPod POU PDF](../../../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../../../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). Old raw-artifact filenames in the plain-text snapshots are historical references, not claims that those files exist in the current submission folder. Snapshot bodies remain unchanged.
+
 Captured 23 October 2026, before the document-assisted inventory documentation update. These are byte-for-byte plain-text snapshots of the prior files, including old decisions, setup instructions and historical verification claims. They are records, not current instructions. Relative references inside a snapshot use its original repository location. Existing missing references remain historical gaps.
 
 Use the [current PRD](../../product/prd.md), [context](../../../PROJECT_CONTEXT.md) and [build plan](../../plans/BUILD_PLAN.md) for the new product. Do not execute old commands or treat old tests as OCR/PostgreSQL evidence. No original verification report, application file, training artifact or usage evidence was changed.

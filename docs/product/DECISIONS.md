@@ -2,6 +2,10 @@
 
 23 October 2026. Later explicit user instructions authorised local implementation and verification of the approved MVP. [Current verification](../verification/MVP_REVISION_VERIFICATION_2026_10_23.md) distinguishes source, synthetic tests and Unverified real-device/live-provider behavior. [Complete earlier register](../archive/2026-10-23-before-document-intake/docs/product/DECISIONS.md.txt) preserves old U/R/OPEN/SUB IDs and implementation history; reused historical IDs do not override the pivot.
 
+## Gemini model selection: 25 October 2026
+
+The user requires `gemini-3.8-flash` as the only extraction model. `ESTOCK_GEMINI_MODEL` is mandatory and must equal that ID. Blank or different values fail validation without a provider call; no alternate-model fallback is allowed. Historical live/stub checks retain their original scope and do not verify the current model's access, latency or accuracy.
+
 ## Latest confirmed revision: 24 October 2026
 
 | ID | Decision | Consequence |
@@ -29,7 +33,7 @@ One coordinated editor owns this cross-area implementation. Original user change
 | U-23 | Official name/base unit/Opening/generated ID; integer operations | No mandatory entered SKU, barcode or shelf; positive Intake/Take/Return, concurrent nonnegative Take |
 | U-24 | Actual-receipt confirmation before Intake; atomic immutable once-only approval | Image/invoice/order text is not physical-delivery evidence; no PO-management addition |
 | U-25 | Preserve raw/final names, quantities, units and dates; manual conversion and confirmed aliases | No silent variant merge, automatic conversion or Gemini retraining |
-| U-26 | Target PostgreSQL + backend Gemini, reuse existing Next.js/TypeScript where appropriate | Model/SDK/hosting/ORM unresolved; no migration/live integration claimed |
+| U-26 | Target PostgreSQL + backend Gemini, reuse existing Next.js/TypeScript where appropriate | Historical target-stage status; model selection is superseded by the 25 October decision above. Hosting acceptance remains separate |
 | U-27 | No permanent uploaded images or monetary features | Structured drafts persist without image; re-upload needed later; verify provider retention separately |
 | U-28 | Low stock strictly below 5; similar-document warnings P1 | Zero is Low stock, 5 is not; no forecast; same-draft protection is narrower than duplicate uploads |
 | U-29 | Preserve original Indonesian source; canonical English working docs | English instruction U-10 retained; source corrections documented in current PRD |
@@ -58,7 +62,7 @@ These are behavioural clarifications, not quotations from the supplied PRD. Curr
 | OPEN-01 | pg and initial SQL implemented; versioned upgrades/hosted migration lifecycle remain open | Isolated schema tests and legacy preservation verified locally; no operational data reset |
 | OPEN-02 | Replit own project/account/usage and deployment arrangement | PH §9.2/10.6 evidence; restart/redeploy persistence, not assumptions |
 | OPEN-03 | X-03 RunPod clarification and historical proof completeness | Written organiser interpretation for hosted Gemini; actual historical own-account proof |
-| OPEN-04 | Backend Google Gen AI SDK/default model implemented; live accuracy, tier/limits and retention remain open | No configured key or live call in this verification. Supported timeout/cancellation read via Context7; provider checks use test-only stubs |
+| OPEN-04 | Backend Google Gen AI SDK implemented; only `gemini-3.8-flash` is permitted. Live accuracy, tier/limits and retention remain open | No configured key or live call in this verification. Supported timeout/cancellation read via Context7; provider checks use test-only stubs |
 | OPEN-05 | PostgreSQL hosting/plan/region, backups and judge access | Verify actual service, persistence and approved costs; no provisioning now |
 | OPEN-06 | Opaque role sessions and development exception implemented; hosted lifecycle remains open | Retained backend permission tests; shared-account limitation explicit |
 | OPEN-07 | New API/types/errors/idempotency/revisions/ownership map | One shared-contract editor; existing scripts need future scoped extension |
@@ -66,7 +70,7 @@ These are behavioural clarifications, not quotations from the supplied PRD. Curr
 | OPEN-09 | Confirm required skill locations in future session | Resolve current catalog; preserve ui-ux-pro-max and antislop during |
 | OPEN-10 | Bounds for image size/types, extraction schema and safe integer quantities | Actual synthetic cases/provider constraints; no invented performance claims |
 | OPEN-11 | Alias collision/normalisation and P1 similarity contract | Explicit Manager selection and no variant merge; no image retention |
-| OPEN-12 | Synthetic receipt fixture authorship/version and measurement plan | Team-created assets/ground truth; no real receipts or pilot claims |
+| OPEN-12 | Synthetic receipt fixture authorship/version and measurement plan | Team-created synthetic assets/ground truth; no business-pilot claims |
 
 Historical OPEN-05/06 messaging options are superseded by the pivot; no WhatsApp/Telegram feature is needed. Assignments are resolved, but task availability/reviewers and submission artifact owners need confirmation.
 
@@ -81,6 +85,6 @@ Historical OPEN-05/06 messaging options are superseded by the pivot; no WhatsApp
 
 Retain SUB-01 leader contact/phone, SUB-02 portal identity matching, SUB-03 Discord/reveal attendance, SUB-04 workshop facts, SUB-05 deadline clarification, SUB-06 committee usernames, SUB-07 six final artifact/access links, SUB-08 platform proof, SUB-09 actual evaluation/timing, SUB-10 full tools/resources inventory, SUB-11 prior-work/licence/employment-IP answers, SUB-12 leader signature/date and SUB-13 latest portal/announcement checks. All require actual evidence; no unknown becomes None and no AI signs on behalf of the team. Private contacts stay in ignored `.private/TEAM_DETAILS.md`.
 
-Historical RunPod run `20261021T110320Z` and `submission/evidence/` remain declarable, despite no training in the new MVP. Existing data provenance gaps stay open. [Compliance IDs C-01–44 and conflicts X-01–09](../COMPLIANCE_MATRIX.md) remain separate from product decisions.
+Historical RunPod run `20261021T110320Z` remains declarable despite no training in the current receipt MVP. Current proof is supplied in [RunPod POU PDF](../../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf); raw run records remain Git history, not current submission files. Existing provenance gaps remain open. [Compliance IDs C-01–44 and conflicts X-01–09](../COMPLIANCE_MATRIX.md) stay separate from product decisions.
 
 Record future decisions with date, decision maker, reason, status, impact and linked files. Update context, PRD, build handoff and submission narrative together. Documentation completion does not authorise code or establish submission readiness.

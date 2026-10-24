@@ -4,7 +4,7 @@
 
 The reported message was a catch-all for non-timeout SDK failures, not evidence that Gemini found the photo unreadable. It occurs after application image validation. The original upstream status was discarded, so the exact cause of that past request cannot be recovered from the message.
 
-The configured API key is present. A metadata-only GET for `gemini-2.5-flash` returned HTTP 200 and generation support. This does **not** establish generation quota, successful OCR, extraction accuracy or retention behavior. No user image/prompt or live generation was sent.
+At that historical revision, the configured API key was present and a metadata-only GET for its selected model returned HTTP 200 and generation support. This historical request does not verify the current explicit `gemini-3.8-flash` configuration. This does **not** establish generation quota, successful OCR, extraction accuracy or retention behavior. No user image/prompt or live generation was sent.
 
 ## Change and evidence
 

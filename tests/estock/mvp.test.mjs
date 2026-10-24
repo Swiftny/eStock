@@ -88,6 +88,7 @@ try {
   isolated.searchParams.set("options", `-c search_path=${schema}`);
   process.env.DATABASE_URL = isolated.href;
   process.env.GEMINI_API_KEY = "synthetic-audit-provider-stub";
+  process.env.ESTOCK_GEMINI_MODEL = "gemini-3.8-flash";
   process.env.NODE_ENV = "development";
   process.env.ESTOCK_MANAGER_PASSWORD = randomBytes(24).toString("base64url");
   process.env.ESTOCK_STAFF_PASSWORD = process.env.ESTOCK_MANAGER_PASSWORD;

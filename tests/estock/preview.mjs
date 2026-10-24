@@ -202,7 +202,7 @@ try {
     NODE_ENV: "development",
     ESTOCK_DEMO_ALLOW_SHARED_PASSWORD: "true",
     GEMINI_API_KEY: "test-only-local-provider-stub",
-    ESTOCK_GEMINI_MODEL: "test-only-provider-stub",
+    ESTOCK_GEMINI_MODEL: "gemini-3.8-flash",
     GOOGLE_GEMINI_BASE_URL: `http://127.0.0.1:${providerPort}`,
     NODE_OPTIONS: `--require "${guard.replaceAll("\\", "/")}"`,
     NEXT_TELEMETRY_DISABLED: "1",

@@ -11,11 +11,11 @@ Internal target **24 October 2026, 20:00 MYT**. PH/earlier orientation: **25 Oct
 | No. | Deliverable | Final file/link | Current readiness |
 | --- | --- | --- | --- |
 | 1 | Official-template proposal PDF | `SDC2026_TooGoodToBeTrue_Preliminary.pdf` | Updated Markdown draft only; official PDF/signature not produced here |
-| 2 | Pitch deck | Team convention: `eStock_Pitch_Deck.pptx`, backup PDF | New narrative plan only; no aligned deck verified |
+| 2 | Pitch deck | [eStock Pitch Deck](https://canva.link/8u8hjvd6aode0fg) | Team-supplied Canva design identified; anonymous judge access and final narrative alignment remain unverified |
 | 3 | Accessible working prototype | Working URL or accessible build plus instructions | Local Staff-receiving implementation; hosted/judge access remains unverified |
 | 4 | Technical & Tools Declaration with actual evidence | `SDC2026_TooGoodToBeTrue_TechDeclaration.pdf` | Draft updated; proof completeness/signature/export pending |
 | 5 | Public GitHub source, Apache 2.0 and committee access | Correct submitted repo URL | Repository/LICENSE exist; public/judge/committee access not verified here |
-| 6 | 5–7-minute YouTube pitch/demo | Judge-accessible YouTube URL | New script plan only; no aligned video verified |
+| 6 | 5–7-minute YouTube pitch/demo | [eStock Pitching Video](https://youtu.be/ntcX81K0TeE) | YouTube metadata/playability available without sign-in; duration 5:14. Full content, audio, prototype demonstration and build alignment remain to review |
 
 All six are required (PH §6.3.5). A static mockup/video does not replace interactive prototype access. No official preliminary slide cap was verified; PPTX/backup PDF and six-minute video target are team choices. Final-round .pptx/10-minute pitch requirements are separate in the matrix.
 
@@ -37,7 +37,7 @@ All six are required (PH §6.3.5). A static mockup/video does not replace intera
 - [ ] Architecture ≤200, team review ≤100, replaceability ≤100, privacy ≤150, limitations ≤150 words.
 - [ ] List actual languages/frameworks/libraries/model IDs/versions/licences and cloud plans/regions/tiers from evidence, not guesses.
 - [ ] Separate planned Gemini/PostgreSQL from actual historical Next.js/SQLite/RunPod/training/development-tool usage.
-- [ ] Include historical RunPod run `20261021T110320Z`, metrics/selection/run metadata, actual packages/model revision and own-account proof; do not erase it after pivot.
+- [ ] Declare historical RunPod run `20261021T110320Z`, actual packages/model use and own-account proof in the final declaration; use the RunPod POU PDF and declaration Appendix C. Do not claim that historical raw artifacts are current submission files.
 - [ ] Resolve historical team-history dataset generator/seed/author provenance before claiming synthetic compliance.
 - [ ] Declare actual AI development assistance, extent, current documentation-source reads and team responsibility.
 - [ ] No blank categories; No/None only if truly inapplicable. Unknown account/tier/proof is not None.
@@ -53,7 +53,7 @@ All six are required (PH §6.3.5). A static mockup/video does not replace intera
 - [ ] Do not claim a connected app/Serverless round trip or OCR from historical training alone.
 - [ ] Preserve separate X-09 verbal Orbyte workspace issue; confirm written expectation/access/screenshot permission. No live API/sandbox/integration claimed.
 
-Historical proof files exist under `submission/evidence/`; existence alone is not final proof completeness. Current sample ZIP fetch failed (404), so its older wording remains historical/unresolved. No new cloud action is authorised.
+Current RunPod evidence is supplied in [RunPod POU PDF](../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). The user chose PDF-only evidence; raw metadata/log/screenshot files remain historical Git records rather than current submission files. Review ownership/runtime proof and the final signed declaration. A later connected GitHub read confirmed the supplied README sample's Required label; this is not an organiser waiver. No new cloud action is authorised.
 
 ## 5. Prototype acceptance and evidence review
 

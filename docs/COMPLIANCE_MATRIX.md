@@ -1,5 +1,7 @@
 # eStock: rules, sources, evidence and conflicts
 
+Evidence-location update, 25 October 2026: the user selected PDF-only RunPod evidence, available in [RunPod POU PDF](../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). No raw evidence directory is part of the current submission folder. Final own-account/runtime proof sufficiency remains separate from PDF presence.
+
 Reviewed 23 October 2026 for the document-assisted inventory pivot. Connected Google Drive returned the actual D2, PH, OH, TC, PT, TD and orientation-slide text; the main resources folder was listed. Public homepage/FAQ still show the later deadline. Sample ZIP retrieval returned 404/NOT_FOUND in this update; its prior README review remains historical. No private Discord, logged-in portal or video recording was checked. See [source verification](submission/SOURCE_VERIFICATION_2026_10_23.md). Requirements are not completion claims.
 
 ## Sources
@@ -126,7 +128,7 @@ Prepare attendance, travel, visitor pass/vehicle 48-hour arrangements, equipment
 
 ## Active product and historical proof
 
-The English [PRD](product/prd.md) is the active product. PostgreSQL/Gemini and new accounts/permissions/drafts are target requirements, not completed integrations. Existing website/SQLite forecasting/purchasing code and old reports remain unchanged. Historical RunPod run `20261021T110320Z`, metrics/selection/run metadata and screenshots in `submission/evidence/` are retained; they do not verify OCR or a connected Serverless application. The historic team-history generator/provenance gap remains open. Replit deployment, own-project proof and hosted persistence remain unverified. Do not mark readiness complete because documentation drafts exist.
+The English [PRD](product/prd.md) is the active product. Original source and reports retain their historical scope. Historical RunPod run `20261021T110320Z` is declared, with current proof in [RunPod POU PDF](../submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) and [Technical & Tools Declaration, Appendix C](../submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf). Original raw run records remain in Git history, not a current submission evidence directory. Those records do not verify OCR or a connected Serverless application. Historical dataset provenance, hosted durability and final submission acceptance still require appropriate evidence; document/PDF presence alone is not completion.
 
 ## Completeness statement
 
