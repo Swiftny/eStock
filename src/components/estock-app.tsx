@@ -15,6 +15,7 @@ import { ManagerHistory } from "./manager-history";
 import styles from "./estock-app.module.css";
 import { Notifications, ReceivingWorkspace } from "./receiving-workspace";
 import { ReceiptImagePicker } from "./receipt-image-picker";
+import { Icon } from "./ui";
 
 type Role = "manager" | "staff";
 type Page = "inventory" | "scan" | "drafts" | "history" | "receiving";
@@ -190,6 +191,7 @@ export function EStockApp() {
   const [notice, setNotice] = useState("");
   const [authRole, setAuthRole] = useState<Role>("manager");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
   const [movementTarget, setMovementTarget] = useState<{
@@ -316,6 +318,7 @@ export function EStockApp() {
       setPage("inventory");
       window.history.replaceState(window.history.state, "", "#inventory");
       setPassword("");
+      setShowPassword(false);
       await loadData(result.role);
     } catch (cause) {
       setError(message(cause));
@@ -450,15 +453,25 @@ export function EStockApp() {
                 </label>
               </div>
             </fieldset>
-            <label className={styles.field}>
-              <span>Access code</span>
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
+            <div className={styles.field}>
+              <label htmlFor="access-code">Access code</label>
+              <div className={styles.secretInput}>
+                <input
+                  id="access-code"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide access code" : "Show access code"}
+                  onClick={() => setShowPassword((shown) => !shown)}
+                >
+                  <Icon name={showPassword ? "eyeOff" : "eye"} />
+                </button>
+              </div>
+            </div>
             {error && <ErrorNotice text={error} />}
             <button className={styles.primaryButton} type="submit" disabled={signingIn}>
               {signingIn ? "Signing in…" : "Sign in"}

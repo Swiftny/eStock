@@ -12,7 +12,9 @@ export function Icon({
     | "approval"
     | "request"
     | "receive"
-    | "check";
+    | "check"
+    | "eye"
+    | "eyeOff";
   className?: string;
 }) {
   const paths: Record<typeof name, ReactNode> = {
@@ -51,6 +53,18 @@ export function Icon({
       </>
     ),
     check: <path d="m5 12 4 4L19 6" />,
+    eye: (
+      <>
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    ),
+    eyeOff: (
+      <>
+        <path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.7 3.6M6.6 6.6C3.7 8.5 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6" />
+        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+      </>
+    ),
   };
   return (
     <svg
