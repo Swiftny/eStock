@@ -53,3 +53,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+/generated-artifacts/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

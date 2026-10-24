@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "eStock"
+description = "Document-assisted inventory management for staff and managers, with receipt receiving, stock tracking, and purchasing drafts."
+version = "1.0.0"
+id = "artifacts/estock"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23418
+
+[services.development]
+run = "pnpm --filter @workspace/estock run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/estock", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/estock/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23418"
+BASE_PATH = "/"

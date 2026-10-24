@@ -17,6 +17,9 @@ async function buildAll() {
   await esbuild({
     entryPoints: [path.resolve(artifactDir, "src/index.ts")],
     platform: "node",
+    alias: {
+      "@/lib": path.resolve(artifactDir, "../../lib/estock-core/src"),
+    },
     bundle: true,
     format: "esm",
     outdir: distDir,

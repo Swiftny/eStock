@@ -3,8 +3,10 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import estockRouter from "./routes/estock";
 
 const app: Express = express();
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({
@@ -26,6 +28,8 @@ app.use(
   }),
 );
 app.use(cors());
+// Fetch handlers consume their own bounded body streams (including image intake).
+app.use("/api", estockRouter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

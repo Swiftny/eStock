@@ -1,0 +1,21 @@
+{
+  "name": "@workspace/estock-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:setup:dev": "tsx src/server/estock/schema-setup.ts",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.31.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.5",
+    "tsx": "catalog:"
+  }
+}
