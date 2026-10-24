@@ -1,41 +1,55 @@
-# Local operating-system files
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+.next
+.turbo
+.svelte-kit
+.nuxt
+.output
+.vercel
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
 .DS_Store
 Thumbs.db
 
-# Local credentials; commit placeholder examples only
-.env
-.env.*
-!.env.example
-!.env.*.example
-*.pem
-*.key
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
 
-# Common local dependencies and caches; final stack remains open
-node_modules/
-.venv/
-venv/
-__pycache__/
-*.py[cod]
-.pytest_cache/
+# Replit
 .cache/
-*.log
-
-# Private registration contacts and local submission working notes
-.private/
-# Local OCR receipt photos, corrections and prompt references are never committed
-/.private/ocr-reference/
-
-# Trained model unzipped for the worker image build; kept outside Git
-worker/model/
-
-# Next.js output and local verification artifacts
-.next/
-out/
-*.tsbuildinfo
-.artifacts/
-
-# Local persistent demo database
-/data/
-*.sqlite
-*.sqlite-wal
-*.sqlite-shm
+.local/

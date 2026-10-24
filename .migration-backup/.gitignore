@@ -1,0 +1,41 @@
+# Local operating-system files
+.DS_Store
+Thumbs.db
+
+# Local credentials; commit placeholder examples only
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Common local dependencies and caches; final stack remains open
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+*.log
+
+# Private registration contacts and local submission working notes
+.private/
+# Local OCR receipt photos, corrections and prompt references are never committed
+/.private/ocr-reference/
+
+# Trained model unzipped for the worker image build; kept outside Git
+worker/model/
+
+# Next.js output and local verification artifacts
+.next/
+out/
+*.tsbuildinfo
+.artifacts/
+
+# Local persistent demo database
+/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

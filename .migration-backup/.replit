@@ -1,0 +1,16 @@
+run = "npm run dev -- --port 3000"
+entrypoint = "src/app/page.tsx"
+modules = ["nodejs-20", "python-3.12", "web"]
+hidden = [".git", ".next", "node_modules", ".artifacts", ".private"]
+
+[nix]
+channel = "stable-25_05"
+
+[deployment]
+build = ["sh", "-c", "npm ci --include=dev && npm run build"]
+run = ["sh", "-c", "node scripts/replit-check.mjs && npm run db:estock:migrate && npm run start -- --port 3000"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
