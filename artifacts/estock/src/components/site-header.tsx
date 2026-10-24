@@ -36,7 +36,14 @@ export function SiteHeader() {
           cache: "no-store",
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error("Account status unavailable. Reload to try again.");
+        if (!response.ok) {
+          const detail = await response.json().catch(() => null);
+          throw new Error(
+            typeof detail?.error === "string"
+              ? `${detail.error} (HTTP ${response.status})`
+              : `Account status unavailable (HTTP ${response.status}). Reload to try again.`,
+          );
+        }
         const session = await response.json();
         if (!controller.signal.aborted && revision === sessionRevision.current) {
           setAuthenticated(session.authenticated === true);

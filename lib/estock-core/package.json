@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:integration": "node --experimental-transform-types tests/mvp.integration.mjs",
     "db:setup:dev": "tsx src/server/estock/schema-setup.ts",
     "test": "tsx --test tests/*.test.ts"
   },

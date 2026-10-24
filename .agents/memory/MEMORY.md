@@ -1,0 +1,1 @@
+- [Migration browser testing](migration-browser-testing.md) — use the local Chromium runner if the documented testing helper is unavailable.
