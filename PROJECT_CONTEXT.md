@@ -1,6 +1,18 @@
 # eStock: current project context and handoff
 
+README KPI status, 25 October 2026: the user confirmed no timing measurement has been conducted and requested filling the README fields. Baseline and prototype results now explicitly say not yet measured; the Phase 2 percentage target awaits baseline measurement. No performance result or target was invented. Documentation-only change; checked with Git whitespace validation.
+
 Updated 24 October 2026, MYT. This is the active handoff. [Earlier complete context](docs/archive/2026-10-23-before-document-intake/PROJECT_CONTEXT.md.txt) is preserved as history, including prior authorisations, reported checks and contradictory GPU status notes. It must not drive new work.
+
+## Submission README preparation: 24 October 2026
+
+The user requested aligning README with the supplied GitHub submission example and official Drive requirements. Their latest team assignments are Marco Ryan Suseno: Leader, UI, pitch slides and RunPod; Maximillion Cang: Database; William Christiansen: AI; Riakudu Vittorios Surjoraharjo (Vitto): Frontend and Replit. These supersede older responsibility summaries for the current submission; historical implementation notes retain their original scope. The provided repository is `https://github.com/Swiftny/eStock` and live demo is `https://e-stock-maximillionc.replit.app`. The user will update the Replit release separately and explicitly asked to keep RunPod, slide deck and demo video details blank.
+
+One coordinated documentation editor rewrote README around the template's team, links, problem/solution, stack, structure, architecture, run/test instructions, Replit/RunPod use, challenges, roadmap and submission checklist. It retains the actual Gemini/PostgreSQL/Staff-confirmed workflow, historical-source links and Apache licence, rather than copying the sample's Python/RunPod example as a working integration. Unknown judge access, member GitHub accounts, baseline/results/target and final submission fields remain visible blanks. The existing local Replit POU PDF is linked as pending team review and Git inclusion; a final proposal/declaration PDF is not invented. Official final forms still require complete, truthful declarations.
+
+Actual sources: connected Google Drive folder listings and readable text for the Domain 2 brief, Participant Handbook, Official Handbook, Terms & Conditions, GitHub-link PDF, proposal and Technical & Tools Declaration templates; connected GitHub sample README and file tree; current local scripts/configuration and verification reports; Context7 Replit import/secrets/republish documentation. A public GET returned HTTP 200 and the eStock title. It did not verify login, receiving, provider calls, source/deployment identity or hosted persistence. Private portal/Discord, recordings, signed PDFs and final committee access were not verified.
+
+Checks: twelve required template sections, twenty local Markdown link targets, seven reserved RunPod/slide/video fields, current member roles, package script names, environment-variable references and Git whitespace pass. No application tests/build were rerun for this documentation-only task. Shared allowlist: README, this context and the tools declaration; no single-area scope pass is claimed. Pre-existing seven evidence deletions and two untracked user POU PDFs are preserved. No application/configuration/credential edit, database mutation, Gemini generation, commit, push, merge or deployment was performed.
 
 ## Skip navigation visibility: 24 October 2026
 
@@ -222,6 +234,10 @@ Replit mandatory (PH §9.2), own-account/project proof (§10.6); deployment/stor
 Deadline: PH/earlier orientation **25 October 2026, 07:59:59 AM MYT** versus website/FAQ **25 October 2026, 11:59 PM MYT**. Conservative internal target **24 October 2026, 20:00 MYT**; use earlier cutoff pending written clarification. Preserve six preliminary deliverables, actual signatures/declarations, workshops/attendance, committee access, public Apache-licensed source, genuine commit history and freeze after deadline. Drafts do not establish submission readiness.
 
 ## Team and next handoff
+
+25 October demo-access clarification: user explicitly supplied public demo passwords `Manager` and `Staff` for the respective roles. README judge-access instructions now include these credentials and identify the shared synthetic-data demo. This does not change runtime configuration or verify deployed login.
+
+25 October README follow-up: added user-confirmed contributor accounts Marco `Enkhoder`, Maxi `MaximillionCang` and William `Kurrbluu`. README now links the locally present Preliminary and RunPod proof PDFs without claiming content/signature review, Git upload or submission completion. Documentation-only change; existing user edits and evidence deletions preserved. Checked exact contributor links, local PDF paths and changed-file whitespace; no application tests, provider calls or publication.
 
 Marco Ryan Suseno: leader/AI. Riakudu Vittorios Surjoraharjo: frontend. Maximillion Cang: data. William Christiansen: system/backend. All reported Xiamen University. Registration contacts remain ignored/private; leader phone and portal matching require team facts.
 

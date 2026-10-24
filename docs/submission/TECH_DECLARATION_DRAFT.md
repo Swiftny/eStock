@@ -1,5 +1,13 @@
 # eStock: Technical & Tools Declaration working draft
 
+**README KPI status, 25 October:** Codex used local shell reads and apply_patch to label baseline and prototype timing as not yet measured, following the user's confirmation. The Phase 2 target awaits baseline measurement. Git whitespace validation was run; no application code, measurements, provider calls or publication changed.
+
+**Public demo access, 25 October:** At the user's instruction, Codex used apply_patch and a Git whitespace check to document the user-supplied public Manager/Staff demo credentials in README. No runtime credentials were changed and deployed login was not tested.
+
+**Contributor README follow-up, 25 October:** Codex used local shell/Git reads and apply_patch to add three user-confirmed GitHub contributor links, link locally present Preliminary/RunPod PDFs and identify remaining README/submission fields. Exact links, local file presence and changed-file whitespace were checked. PDF contents/signatures, hosted behavior and official submission were not verified. Existing user edits/evidence deletions were preserved; no application code, dependency, provider call, commit, push or publication changed.
+
+**Submission README preparation, 24 October:** At the user's request, Codex used connected Google Drive folder/file reads, the Google Drive skill, connected GitHub template reads, Context7 Replit documentation, local source/configuration reads, shell/Git/apply_patch and Python static Markdown/path/placeholder checks. README follows the supplied sample's sections while describing the actual Next.js/Gemini/PostgreSQL receiving workflow. Team-confirmed roles and supplied GitHub/live URLs are included; RunPod, slides/video and other unconfirmed fields remain blank for team completion. Twelve required sections, twenty local links, seven reserved fields, roles, script/environment references and whitespace checks pass. A public demo GET returned 200; hosted functionality, matching source revision and persistence were not verified. No application tests/build rerun, data/credential change, Gemini call, commit, push, merge or publication. Existing user evidence deletions and two untracked POU PDFs were preserved. This working README is not a completed official declaration.
+
 **Skip navigation visibility, 24 October:** Codex used ui-ux-pro-max, antislop during, find-docs/Context7 MDN, installed Next.js CSS guidance, shell/Git/apply_patch, existing Playwright/headless Chrome, Biome and Next build. Shared CSS now clips the inactive skip link and reveals it on keyboard focus. Scoped CSS lint, production build/types, six viewport/motion configurations and all nine landing-link interactions pass; screenshots were inspected and skip-text contrast measured at 13.90:1. Physical Safari/iOS elastic overscroll remains unverified. No dependency, operational data, provider call, commit, push or deployment change. [Evidence and scoped Delivery Gate](../verification/SKIP_LINK_2026_10_24.md).
 
 **Skip-link commit handoff:** The user's later instruction authorises a local topic branch and commit of the four allowlisted files, with explicit Git staging, whitespace/path checks and verification of human commit metadata without an AI co-author trailer. The user performs the push and PR merge. Earlier no-commit statements describe the verification phase; no assistant push or merge is authorised.
@@ -61,7 +69,7 @@ Latest pre-handoff revision: Codex implemented grouped Receipt history/separate 
 | Prototype | Local document-intake MVP with synthetic verification and a small exploratory real-Gemini sample; broad OCR accuracy, physical cameras and deployed access remain Unverified |
 | Source | https://github.com/Swiftny/sdc2026-TooGoodToBeTrue-domain2 — public/judge/committee access still to verify |
 
-Team: Marco leader/AI; Riakudu Vittorios Surjoraharjo frontend; Maximillion Cang data; William Christiansen system/backend.
+Latest team-confirmed responsibilities: Marco Ryan Suseno, Leader/UI/pitch slides/RunPod; Maximillion Cang, Database; William Christiansen, AI; Riakudu Vittorios Surjoraharjo (Vitto), Frontend/Replit. Earlier implementation records retain their original historical scope.
 
 ## 2. Architecture and technology stack
 
