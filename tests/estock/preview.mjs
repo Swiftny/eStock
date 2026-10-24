@@ -35,7 +35,7 @@ let requests = 0;
 const provider = createServer((request, response) => {
   request.resume();
   requests++;
-  if (requests === 3) {
+  if (requests === 3 || requests === 4) {
     response.writeHead(503, { "Content-Type": "application/json" });
     response.end(
       JSON.stringify({
@@ -45,11 +45,35 @@ const provider = createServer((request, response) => {
     return;
   }
   const extraction = {
+    imageStatus: "partial",
+    documentType: "nota",
     documentDate: "2026-10-02",
+    dateNeedsReview: false,
     lines: [
-      { rawName: "Synthetic Widget", rawQuantity: "2", rawUnit: "pcs", needsReview: false },
-      { rawName: "Unfamiliar Lamp", rawQuantity: "2", rawUnit: "boxes", needsReview: true },
-      { rawName: "", rawQuantity: "", rawUnit: "", needsReview: true },
+      {
+        rawName: "Synthetic Widget",
+        rawQuantity: 2,
+        rawUnit: "pcs",
+        quantityText: "2 pcs",
+        needsReview: false,
+        reviewReason: null,
+      },
+      {
+        rawName: "Unfamiliar Lamp",
+        rawQuantity: 2,
+        rawUnit: "boxes",
+        quantityText: "2 boxes",
+        needsReview: true,
+        reviewReason: "kemasan_ambigu",
+      },
+      {
+        rawName: null,
+        rawQuantity: null,
+        rawUnit: null,
+        quantityText: null,
+        needsReview: true,
+        reviewReason: "nama_samar",
+      },
     ],
   };
   response.writeHead(200, { "Content-Type": "application/json" });

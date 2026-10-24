@@ -22,6 +22,8 @@ __pycache__/
 
 # Private registration contacts and local submission working notes
 .private/
+# Local OCR receipt photos, corrections and prompt references are never committed
+/.private/ocr-reference/
 
 # Trained model unzipped for the worker image build; kept outside Git
 worker/model/

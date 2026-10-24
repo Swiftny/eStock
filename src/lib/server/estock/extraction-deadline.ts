@@ -1,12 +1,15 @@
 import { fail } from "./errors";
 
-export const EXTRACTION_TIMEOUT_MS = 45_000;
+const RETRY_503_DELAY_MS = 1_000;
+
+function providerHttpStatus(error: unknown): number | null {
+  return error instanceof Error && "status" in error && typeof error.status === "number"
+    ? error.status
+    : null;
+}
 
 function providerFailure(error: unknown): never {
-  const status =
-    error instanceof Error && "status" in error && typeof error.status === "number"
-      ? error.status
-      : null;
+  const status = providerHttpStatus(error);
   let reason: string | undefined;
   let providerStatus: string | undefined;
   if (error instanceof Error && status !== null) {
@@ -22,6 +25,18 @@ function providerFailure(error: unknown): never {
     }
   }
   const unchanged = " No draft was saved and stock has not changed.";
+  const timeoutName =
+    error instanceof Error &&
+    ["TimeoutError", "AbortError", "RequestTimeoutError", "APIConnectionTimeoutError"].includes(
+      error.name,
+    );
+  if (status === 408 || status === 504 || timeoutName) {
+    fail(
+      `Gemini or the connection timed out. Try Create draft again when you are ready.${unchanged}`,
+      504,
+      "GEMINI_TIMEOUT",
+    );
+  }
   if (status === 401 || reason) {
     fail(
       `Gemini could not authenticate the server API key. Check GEMINI_API_KEY in .env.local.${unchanged}`,
@@ -80,32 +95,46 @@ function providerFailure(error: unknown): never {
   );
 }
 
-export async function withExtractionDeadline<T>(
-  operation: (signal: AbortSignal) => Promise<T>,
-  timeoutMs = EXTRACTION_TIMEOUT_MS,
-): Promise<T> {
-  const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      new Promise<never>((_, reject) => {
-        timer = setTimeout(() => {
-          controller.abort();
-          reject(new DOMException("Extraction deadline reached", "TimeoutError"));
-        }, timeoutMs);
-      }),
-      operation(controller.signal),
-    ]);
-  } catch (error) {
-    if (controller.signal.aborted || (error instanceof Error && error.name === "TimeoutError")) {
-      fail(
-        "Reading the image took too long. No draft was saved and stock has not changed. Try Create draft again when you are ready.",
-        504,
-        "GEMINI_TIMEOUT",
-      );
+export async function withExtractionProviderErrors<T>(operation: () => Promise<T>): Promise<T> {
+  const startedAt = performance.now();
+  let attempts = 0;
+  for (;;) {
+    attempts++;
+    try {
+      return await operation();
+    } catch (error) {
+      const status = providerHttpStatus(error);
+      if (status === 503 && attempts === 1) {
+        console.warn("eStock Gemini provider retry", {
+          status: 503,
+          nextAttempt: 2,
+          elapsedMs: Math.round(performance.now() - startedAt),
+        });
+        await new Promise((resolve) => setTimeout(resolve, RETRY_503_DELAY_MS));
+        continue;
+      }
+      const name = error instanceof Error ? error.name : "unknown";
+      const errorClass = [
+        "ApiError",
+        "AbortError",
+        "TimeoutError",
+        "RequestTimeoutError",
+        "APIConnectionTimeoutError",
+        "TypeError",
+        "Error",
+      ].includes(name)
+        ? name
+        : "other";
+      console.error("eStock Gemini provider failure", {
+        errorClass,
+        status:
+          status !== null && Number.isInteger(status) && status >= 100 && status <= 599
+            ? status
+            : null,
+        attempts,
+        elapsedMs: Math.round(performance.now() - startedAt),
+      });
+      providerFailure(error);
     }
-    providerFailure(error);
-  } finally {
-    clearTimeout(timer);
   }
 }

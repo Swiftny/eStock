@@ -149,5 +149,5 @@ export function LandingDots() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="landing-dots" />;
+  return <canvas ref={canvasRef} className="landing-dots" aria-hidden="true" tabIndex={-1} />;
 }

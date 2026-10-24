@@ -27,15 +27,28 @@ let providerCalls = 0;
 const key = () => `audit:${randomUUID()}`;
 const date = "2026-10-23";
 globalThis.__auditExtraction = { documentDate: date, lines: [] };
-const provider = `export const Type={OBJECT:'OBJECT',ARRAY:'ARRAY',STRING:'STRING',BOOLEAN:'BOOLEAN'}; export class GoogleGenAI { constructor(options){globalThis.__auditSdkOptions=options;} models={generateContent:async(input)=>{globalThis.__auditSdkInput=input;return globalThis.__auditProvider();}}; }`;
+const provider = `export const MediaResolution={MEDIA_RESOLUTION_MEDIUM:'MEDIA_RESOLUTION_MEDIUM',MEDIA_RESOLUTION_HIGH:'MEDIA_RESOLUTION_HIGH'}; export class GoogleGenAI { constructor(options){globalThis.__auditSdkOptions=options;} models={generateContent:async(input)=>{globalThis.__auditSdkInput=input;return globalThis.__auditProvider();}}; }`;
 globalThis.__auditProvider = async () => {
   providerCalls++;
   if (globalThis.__auditExtraction instanceof Error) throw globalThis.__auditExtraction;
+  const fixture = globalThis.__auditExtraction;
+  const structured =
+    typeof fixture === "string"
+      ? fixture
+      : {
+          ...fixture,
+          imageStatus: fixture.imageStatus || "clear",
+          documentType: fixture.documentType || "faktur",
+          documentDate: fixture.documentDate || null,
+          dateNeedsReview: fixture.dateNeedsReview ?? !fixture.documentDate,
+          lines: fixture.lines.map((item) => ({
+            ...item,
+            quantityText: item.quantityText ?? null,
+            reviewReason: item.reviewReason ?? null,
+          })),
+        };
   return {
-    text:
-      typeof globalThis.__auditExtraction === "string"
-        ? globalThis.__auditExtraction
-        : JSON.stringify(globalThis.__auditExtraction),
+    text: typeof structured === "string" ? structured : JSON.stringify(structured),
   };
 };
 registerHooks({
@@ -104,7 +117,16 @@ try {
   };
   const newDraft = async (lines, documentDate = date) => {
     globalThis.__auditExtraction = { documentDate, lines };
-    return (await drafts.createDraft(imageRequest())).draft;
+    const draft = (await drafts.createDraft(imageRequest())).draft;
+    if (!draft.extractedDocumentDate || draft.lines.some((item) => !item.reviewedName))
+      return draft;
+    return (
+      await drafts.saveDraft(draft.id, {
+        expectedRevision: draft.revision,
+        documentDate: draft.extractedDocumentDate,
+        lines: edits(draft),
+      })
+    ).draft;
   };
   const line = (rawName, rawQuantity = "1", rawUnit = "pcs") => ({
     rawName,
@@ -126,7 +148,7 @@ try {
     (
       await drafts.saveDraft(draft.id, {
         expectedRevision: draft.revision,
-        documentDate: draft.documentDate,
+        documentDate: draft.documentDate || draft.extractedDocumentDate,
         lines,
       })
     ).draft;
@@ -211,11 +233,11 @@ try {
     assert.equal((await newDraft([line("Synthetic")])).lines[0].productId, null);
   });
   await check(
-    "unknown review product Opening 0; manual conversion; raw/final preservation",
+    "unknown quantity prefills; review product Opening 0; manual conversion; raw/final preservation",
     async () => {
       let draft = await newDraft([line("Unknown Carton", "2", "boxes")]);
       assert.equal(draft.lines[0].productId, null);
-      assert.equal(draft.lines[0].approvedQuantity, null);
+      assert.equal(draft.lines[0].approvedQuantity, 2);
       const p = await product("New Review Product", 0);
       draft = await save(draft, [
         {
@@ -246,6 +268,78 @@ try {
       assert.equal(movement.quantity, 24);
       assert.equal(movement.unit, "pcs");
       assert.equal(movement.reviewedName, "Reviewed Carton");
+    },
+  );
+  await check(
+    "draft matching prefills exact formatting variants, confirmed aliases and clear OCR typos",
+    async () => {
+      const p = await product("KOSCHKA HSS-CO DRILL BIT 5 MM", 10);
+      const before = (await inv.getProduct(p.id)).stock;
+      for (const name of ["koschka hss co drillbit 5mm", "KOSCHIKA HSS-CO DRILL BIT 5 MM"]) {
+        const draft = await newDraft([line(name, "10")]);
+        assert.equal(draft.lines[0].productId, p.id);
+        assert.equal(draft.lines[0].approvedQuantity, 10);
+        assert.equal(draft.lines[0].candidates[0].id, p.id);
+        assert.equal(draft.lines[0].candidates[0].aliases, undefined);
+      }
+      assert.equal((await inv.getProduct(p.id)).stock, before);
+    },
+  );
+  await check(
+    "matching leaves ambiguous names, different size/unit/colour/model and archived products unselected",
+    async () => {
+      const p = await product("RUCIKA PVC PIPE AW 5 MM BLACK X100", 1);
+      for (const name of [
+        "RUCIKA PVC PIPE AW 6 MM BLACK X100",
+        "RUCIKA PVC PIPE AW 5 CM BLACK X100",
+        "RUCIKA PVC PIPE AW 5 MM WHITE X100",
+        "RUCIKA PVC PIPE AW 5 MM BLACK X101",
+        "RUCIKA",
+      ])
+        assert.equal((await newDraft([line(name)])).lines[0].productId, null);
+      await product(p.name, 0);
+      assert.equal((await newDraft([line(p.name)])).lines[0].productId, null);
+      const other = await product("Unique Archived Match 10 MM", 0);
+      await inv.archiveProduct(other.id, { expectedVersion: other.version, requestId: key() });
+      assert.equal((await newDraft([line(other.name)])).lines[0].productId, null);
+      const match = await load("src/lib/estock-product-match.ts");
+      const candidates = [
+        { id: "a", name: "KOSCHKA HSS-CO DRILL BIT 5 MM" },
+        { id: "b", name: "KOSHCKA HSS-CO DRILL BIT 5 MM" },
+      ];
+      assert.equal(
+        match.rankProductMatches("KOSCKA HSS-CO DRILL BIT 5 MM", candidates).selected,
+        null,
+      );
+      assert.equal(
+        match.rankProductMatches("PIPE 3 X 4 MM", [{ id: "a", name: "PIPE 4 X 3 MM" }]).selected,
+        null,
+      );
+    },
+  );
+  await check(
+    "older unmapped drafts get a suggestion without a GET mutation; manual choices survive reopening",
+    async () => {
+      const draft = await newDraft([line("LEGACY MATCHING DRILL 7 MM", "3")]);
+      assert.equal(draft.lines[0].productId, null);
+      const p = await product("Legacy Matching Drill 7mm", 4);
+      const before = (await pool.query("SELECT * FROM estock_drafts WHERE id=$1", [draft.id])).rows;
+      const suggested = await drafts.getDraft(draft.id);
+      assert.equal(suggested.lines[0].productId, null);
+      assert.equal(suggested.lines[0].suggestedProductId, p.id);
+      assert.deepEqual(
+        (await pool.query("SELECT * FROM estock_drafts WHERE id=$1", [draft.id])).rows,
+        before,
+      );
+      const alternative = await product("Manual Selection Product", 0);
+      const chosen = await save(
+        suggested,
+        edits(suggested).map((l) => ({ ...l, productId: alternative.id })),
+      );
+      const reopened = await drafts.getDraft(chosen.id);
+      assert.equal(reopened.lines[0].productId, alternative.id);
+      assert.equal(reopened.lines[0].suggestedProductId, null);
+      assert.equal((await inv.getProduct(p.id)).stock, 4);
     },
   );
   await check("atomic multi-line receiving; immutable terminal draft; request replay", async () => {
@@ -448,6 +542,7 @@ try {
         [503, null, "UNAVAILABLE", "GEMINI_UNAVAILABLE", "temporarily unavailable"],
       ];
       for (const [status, reason, providerStatus, code, guidance] of cases) {
+        const callsBefore = providerCalls;
         globalThis.__auditExtraction = Object.assign(
           new Error(
             JSON.stringify({
@@ -475,6 +570,7 @@ try {
           assert.ok(body.error.includes("No draft was saved and stock has not changed."));
           assert.ok(!JSON.stringify(body).includes("private-provider-key-and-document-text"));
         }
+        assert.equal(providerCalls - callsBefore, status === 503 ? 2 : 1);
       }
       assert.equal(
         (await pool.query("SELECT count(*)::int n FROM estock_drafts")).rows[0].n,
@@ -491,6 +587,15 @@ try {
       await rejected(() => drafts.createDraft(imageRequest()), "GEMINI_UNAVAILABLE");
       globalThis.__auditExtraction = "not json";
       await rejected(() => drafts.createDraft(imageRequest()), "GEMINI_INVALID_RESULT");
+      globalThis.__auditExtraction = JSON.stringify({
+        imageStatus: "clear",
+        documentType: "faktur",
+        documentDate: date,
+        dateNeedsReview: false,
+        lines: [null],
+      });
+      await rejected(() => drafts.createDraft(imageRequest()), "GEMINI_INVALID_RESULT");
+      const callsBeforeInvalidImage = providerCalls;
       await rejected(
         () =>
           drafts.createDraft(
@@ -507,9 +612,148 @@ try {
           ),
         "IMAGE_TOO_LARGE",
       );
+      assert.equal(providerCalls, callsBeforeInvalidImage);
       assert.equal((await inv.getProduct(base.id)).stock, before);
     },
   );
+  await check(
+    "unrecognized Gemini review reasons flag review while whole quantities prefill",
+    async () => {
+      globalThis.__auditExtraction = {
+        documentDate: date,
+        lines: [{ ...line(base.name, "2", "pcs"), reviewReason: "faint print" }],
+      };
+      const draft = (await drafts.createDraft(imageRequest())).draft;
+      assert.equal(draft.lines[0].needsReview, true);
+      assert.equal(draft.lines[0].reviewReason, "bagian_samar");
+      assert.equal(draft.lines[0].approvedQuantity, 2);
+    },
+  );
+  await check("all uncertain lines downgrade a clear image to a partial draft", async () => {
+    globalThis.__auditExtraction = {
+      imageStatus: "clear",
+      documentDate: null,
+      lines: [
+        { ...line("Unclear label A", "2", "py"), needsReview: true, reviewReason: "nama_samar" },
+        { ...line("Unclear label B", "3", "pj"), needsReview: true, reviewReason: "satuan_samar" },
+      ],
+    };
+    const uncertain = (await drafts.createDraft(imageRequest())).draft;
+    assert.equal(uncertain.status, "DRAFT");
+    assert.equal(uncertain.imageStatus, "partial");
+    assert.ok(uncertain.lines.every((item) => item.needsReview));
+    assert.equal((await drafts.getDraft(uncertain.id)).imageStatus, "partial");
+
+    globalThis.__auditExtraction = {
+      imageStatus: "clear",
+      documentDate: null,
+      lines: [line(base.name, "1"), { ...line("Unclear label", "2"), needsReview: true }],
+    };
+    const mixed = (await drafts.createDraft(imageRequest())).draft;
+    assert.equal(mixed.imageStatus, "clear");
+  });
+  await check(
+    "a plausible Gemini issue date remains an unconfirmed Manager candidate",
+    async () => {
+      globalThis.__auditExtraction = {
+        imageStatus: "clear",
+        documentType: "faktur",
+        documentDate: date,
+        dateNeedsReview: false,
+        lines: [line(base.name, "2")],
+      };
+      const draft = (await drafts.createDraft(imageRequest())).draft;
+      assert.equal(draft.extractedDocumentDate, date);
+      assert.equal(draft.documentDate, null);
+      assert.equal(draft.dateNeedsReview, true);
+      assert.ok(globalThis.__auditSdkInput.contents[1].includes("FAKTUR PENJUALAN"));
+      await rejected(() => send(draft), "INVALID_INPUT");
+      const savedWithoutDate = (
+        await drafts.saveDraft(draft.id, {
+          expectedRevision: draft.revision,
+          documentDate: null,
+          lines: edits(draft),
+        })
+      ).draft;
+      assert.equal(savedWithoutDate.documentDate, null);
+      assert.equal(savedWithoutDate.status, "DRAFT");
+      await rejected(() => send(savedWithoutDate), "INVALID_INPUT");
+      const confirmed = (
+        await drafts.saveDraft(draft.id, {
+          expectedRevision: savedWithoutDate.revision,
+          documentDate: date,
+          lines: edits(savedWithoutDate),
+        })
+      ).draft;
+      assert.equal(confirmed.documentDate, date);
+      assert.equal(confirmed.status, "DRAFT");
+      assert.equal(
+        (
+          await pool.query(
+            "SELECT count(*)::int n FROM estock_receipt_submissions WHERE draft_id=$1",
+            [confirmed.id],
+          )
+        ).rows[0].n,
+        0,
+      );
+      const stockBeforeSend = (await inv.getProduct(base.id)).stock;
+      const submitted = await send(confirmed);
+      assert.equal(submitted.draft.status, "AWAITING_STAFF");
+      assert.equal((await inv.getProduct(base.id)).stock, stockBeforeSend);
+    },
+  );
+  await check("only provider HTTP 503 receives one bounded extra attempt", async () => {
+    const { withExtractionProviderErrors } = await load(
+      "src/lib/server/estock/extraction-deadline.ts",
+    );
+    let attempts = 0;
+    const recovered = await withExtractionProviderErrors(async () => {
+      attempts++;
+      if (attempts === 1) throw Object.assign(new Error("synthetic 503"), { status: 503 });
+      return "recovered";
+    });
+    assert.equal(recovered, "recovered");
+    assert.equal(attempts, 2);
+    for (const status of [400, 401, 429, 500, 504]) {
+      attempts = 0;
+      await assert.rejects(() =>
+        withExtractionProviderErrors(async () => {
+          attempts++;
+          throw Object.assign(new Error("synthetic no-retry"), { status });
+        }),
+      );
+      assert.equal(attempts, 1, `HTTP ${status} must not be retried`);
+    }
+  });
+  await check("order image metadata and fractional source quantity stay reviewable", async () => {
+    globalThis.__auditExtraction = {
+      imageStatus: "partial",
+      documentType: "surat_pesanan",
+      documentDate: null,
+      dateNeedsReview: true,
+      lines: [{ ...line(base.name, 0.5, "LSN"), quantityText: "0,5 LSN" }],
+    };
+    const draft = (await drafts.createDraft(imageRequest())).draft;
+    assert.equal(draft.documentType, "surat_pesanan");
+    assert.equal(draft.imageStatus, "partial");
+    assert.equal(draft.documentDate, null);
+    assert.equal(draft.dateNeedsReview, true);
+    assert.equal(draft.lines[0].rawQuantity, 0.5);
+    assert.equal(draft.lines[0].quantityText, "0,5 LSN");
+    assert.equal(draft.lines[0].needsReview, true);
+    assert.equal(draft.lines[0].approvedQuantity, null);
+    const reopened = await drafts.getDraft(draft.id);
+    assert.equal(reopened.documentType, "surat_pesanan");
+    assert.equal(reopened.lines[0].quantityText, "0,5 LSN");
+    globalThis.__auditExtraction = {
+      imageStatus: "unreadable",
+      documentType: "tidak_terbaca",
+      documentDate: null,
+      dateNeedsReview: true,
+      lines: [],
+    };
+    await rejected(() => drafts.createDraft(imageRequest()), "PHOTO_UNREADABLE");
+  });
   await check(
     "blank unreadable line can be excluded with a reason while valid lines complete",
     async () => {
@@ -646,22 +890,18 @@ try {
     },
   );
   await check(
-    "extraction deadline aborts a stalled provider; timeout/provider failures save no draft or stock",
+    "provider timeouts save no draft or stock without a local extraction deadline",
     async () => {
-      const { withExtractionDeadline, EXTRACTION_TIMEOUT_MS } = await load(
+      const { withExtractionProviderErrors } = await load(
         "src/lib/server/estock/extraction-deadline.ts",
       );
-      assert.equal(EXTRACTION_TIMEOUT_MS, 45000);
-      let signal;
       await rejected(
         () =>
-          withExtractionDeadline((s) => {
-            signal = s;
-            return new Promise(() => {});
-          }, 20),
+          withExtractionProviderErrors(() =>
+            Promise.reject(new DOMException("Test-only timeout", "TimeoutError")),
+          ),
         "GEMINI_TIMEOUT",
       );
-      assert.equal(signal.aborted, true);
       const before = (await pool.query("SELECT count(*)::int n FROM estock_drafts")).rows[0].n;
       const balance = (await inv.getProduct(base.id)).stock;
       globalThis.__auditExtraction = new DOMException("Test-only timeout", "TimeoutError");
@@ -672,8 +912,8 @@ try {
       );
       assert.equal((await inv.getProduct(base.id)).stock, balance);
       assert.equal(globalThis.__auditSdkOptions.httpOptions.retryOptions.attempts, 1);
-      assert.equal(globalThis.__auditSdkOptions.httpOptions.timeout, 45000);
-      assert.ok(globalThis.__auditSdkInput.config.abortSignal instanceof AbortSignal);
+      assert.equal(globalThis.__auditSdkOptions.httpOptions.timeout, undefined);
+      assert.equal(globalThis.__auditSdkInput.config.abortSignal, undefined);
     },
   );
   await check(
@@ -784,7 +1024,9 @@ try {
       );
       assert.ok(
         !columns.rows.some(
-          (r) => r.data_type === "bytea" || /image|photo|base64/.test(r.column_name),
+          (r) =>
+            r.data_type === "bytea" ||
+            (r.column_name !== "image_status" && /image|photo|base64/.test(r.column_name)),
         ),
       );
     },
@@ -881,6 +1123,20 @@ try {
       const first = await confirm(receipt, undefined, operation);
       const replay = await confirm(receipt, undefined, operation);
       assert.equal(first.receipt.receivedAt, replay.receipt.receivedAt);
+      assert.equal(
+        (
+          await pool.query("SELECT fingerprint FROM estock_requests WHERE request_id=$1", [
+            operation,
+          ])
+        ).rows[0].fingerprint,
+        input.fingerprint({
+          key: receipt.id,
+          expected: receipt.revision,
+          outcomes: receipt.lines
+            .map((line) => ({ id: line.id, outcome: "MATCH", difference: null }))
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        }),
+      );
       assert.equal((await inv.getProduct(p.id)).stock, 30);
       await rejected(() => confirm(receipt), "RECEIPT_CLOSED");
       assert.ok(!(await receiving.listReceiving("staff")).some((r) => r.id === draft.id));
@@ -929,6 +1185,57 @@ try {
         ),
         false,
       );
+    },
+  );
+  await check(
+    "actual quantities derive match, shortage, extra and zero atomically with stable retries",
+    async () => {
+      const p = await product("Direct Actual Quantity Product", 7);
+      const draft = await newDraft(Array.from({ length: 4 }, () => line(p.name, "20")));
+      await send(draft);
+      const receipt = await receiving.getReceipt(draft.id, "staff");
+      const quantities = [20, 18, 23, 0];
+      const values = receipt.lines.map((line, i) => ({
+        id: line.id,
+        actualQuantity: quantities[i],
+      }));
+      const operation = key();
+      const first = await confirm(receipt, values, operation);
+      const replay = await confirm(receipt, [...values].reverse(), operation);
+      assert.equal(first.receipt.receivedAt, replay.receipt.receivedAt);
+      assert.equal((await inv.getProduct(p.id)).stock, 68);
+      assert.deepEqual(
+        first.receipt.lines.map((line) => [
+          line.expected,
+          line.actual,
+          line.outcome,
+          line.difference,
+        ]),
+        [
+          [20, 20, "MATCH", null],
+          [20, 18, "SHORT", 2],
+          [20, 23, "EXTRA", 3],
+          [20, 0, "SHORT", 20],
+        ],
+      );
+      assert.equal((await inv.listHistory()).filter((m) => m.draftId === draft.id).length, 3);
+      assert.equal(
+        (await receiving.listNotifications("manager")).notifications.filter(
+          (n) => n.receiptId === draft.id && n.kind === "DISCREPANCY",
+        ).length,
+        1,
+      );
+      await rejected(
+        () =>
+          confirm(
+            receipt,
+            values.map((line) => ({ ...line, actualQuantity: 1 })),
+            operation,
+          ),
+        "REQUEST_CONFLICT",
+      );
+      await rejected(() => confirm(receipt, values), "RECEIPT_CLOSED");
+      assert.equal((await inv.getProduct(p.id)).stock, 68);
     },
   );
   await check(
@@ -991,15 +1298,36 @@ try {
           { id: l.id, outcome: "MATCH" },
         ],
         [{ id: l.id, outcome: "INVENTED" }],
+        ...[-1, 0.5, "2", null, true, Number.MAX_SAFE_INTEGER + 1].map((actualQuantity) => [
+          { id: l.id, actualQuantity },
+        ]),
+        [{ id: l.id }],
+        [{ id: l.id, actualQuantity: 2, outcome: "SHORT" }],
+        [{ id: l.id, actualQuantity: 3, difference: null }],
+        [{ id: l.id, actualQuantity: Number.MAX_SAFE_INTEGER }],
+        [{ id: randomUUID(), actualQuantity: 3 }],
+        [{ id: draft.lines[1].id, actualQuantity: 3 }],
+        [
+          { id: l.id, actualQuantity: 3 },
+          { id: l.id, actualQuantity: 3 },
+        ],
       ])
         await rejected(() => confirm(r, payload), "INVALID_INPUT");
+      await assert.rejects(
+        () =>
+          confirm(r, [
+            { id: l.id, actualQuantity: 3 },
+            { id: randomUUID(), outcome: "MATCH" },
+          ]),
+        (error) => error.code === "INVALID_INPUT" && /one quantity format/.test(error.message),
+      );
       await rejected(() => confirm({ ...r, revision: r.revision + 1 }), "STALE_DRAFT");
       assert.equal((await inv.getProduct(p.id)).stock, 9);
       assert.equal((await receiving.getReceipt(r.id, "staff")).lines[0].actual, null);
     },
   );
   await check(
-    "simultaneous Staff confirmations different and same request IDs post once",
+    "simultaneous actual-quantity confirmations different and same request IDs post once",
     async () => {
       const p = await product("Double Confirm Product", 0);
       for (const same of [false, true]) {
@@ -1007,9 +1335,10 @@ try {
         await send(draft);
         const r = await receiving.getReceipt(draft.id, "staff");
         const operation = key();
+        const values = r.lines.map((line) => ({ id: line.id, actualQuantity: line.expected }));
         const result = await Promise.allSettled([
-          confirm(r, undefined, operation),
-          confirm(r, undefined, same ? operation : key()),
+          confirm(r, values, operation),
+          confirm(r, values, same ? operation : key()),
         ]);
         assert.equal(result.filter((r) => r.status === "fulfilled").length, same ? 2 : 1);
         assert.equal((await inv.listHistory()).filter((m) => m.draftId === draft.id).length, 1);
@@ -1030,7 +1359,7 @@ try {
       await pool.query(
         "CREATE TRIGGER audit_fail_notice BEFORE INSERT ON estock_notifications FOR EACH ROW EXECUTE FUNCTION audit_fail_notice()",
       );
-      const outcomes = [{ id: r.lines[0].id, outcome: "SHORT", difference: 1 }],
+      const outcomes = [{ id: r.lines[0].id, actualQuantity: 2 }],
         operation = key();
       await assert.rejects(() => confirm(r, outcomes, operation));
       assert.equal((await inv.getProduct(p.id)).stock, 5);
@@ -1069,7 +1398,10 @@ try {
       assert.equal(Number(archived.archived_stock), 12);
       assert.equal(Number(archived.stock), 12);
       assert.ok(!(await inv.listProducts()).some((x) => x.id === p.id));
-      assert.equal((await inv.matchProducts(p.name)).length, 0);
+      assert.equal(
+        (await inv.matchProducts(p.name)).some((candidate) => candidate.id === p.id),
+        false,
+      );
       for (const type of ["TAKE", "RETURN"])
         await rejected(
           () =>
@@ -1094,6 +1426,50 @@ try {
       );
     },
   );
+  await check("sent receipt corrections and exclusions remain frozen after recall", async () => {
+    const p = await product("Snapshot Evidence Product", 0);
+    let draft = await newDraft([line(p.name, "2"), line("Supplier side note", "", "")]);
+    let values = edits(draft);
+    values[0].reviewedName = "Original corrected description";
+    values[0].productId = p.id;
+    values[0].approvedQuantity = 2;
+    values[1].excluded = true;
+    values[1].reviewedName = "Original excluded description";
+    values[1].exclusionReason = "Not an inventory item";
+    draft = await save(draft, values);
+    const first = await send(draft);
+    const firstRevision = first.draft.revision;
+    const firstReceipt = await receiving.getReceipt(draft.id, "manager");
+    assert.equal(firstReceipt.lines[0].reviewedName, "Original corrected description");
+    assert.equal(firstReceipt.excludedLines[0].reviewedName, "Original excluded description");
+    assert.equal(firstReceipt.excludedLines[0].exclusionReason, "Not an inventory item");
+    assert.equal("excludedLines" in (await receiving.getReceipt(draft.id, "staff")), false);
+    draft = (await receiving.recallReceipt(draft.id, { expectedRevision: firstRevision })).draft;
+    values = edits(draft);
+    values[0].reviewedName = "Updated corrected description";
+    values[0].productId = p.id;
+    values[0].approvedQuantity = 3;
+    values[1].excluded = true;
+    values[1].reviewedName = "Updated excluded description";
+    values[1].exclusionReason = "Different correction";
+    draft = await save(draft, values);
+    await send(draft);
+    const oldIncluded = await pool.query(
+      "SELECT reviewed_name_snapshot FROM estock_receipt_lines WHERE draft_id=$1 AND revision=$2",
+      [draft.id, firstRevision],
+    );
+    const oldExcluded = await pool.query(
+      "SELECT reviewed_name,exclusion_reason FROM estock_receipt_exclusions WHERE draft_id=$1 AND revision=$2",
+      [draft.id, firstRevision],
+    );
+    assert.equal(oldIncluded.rows[0].reviewed_name_snapshot, "Original corrected description");
+    assert.equal(oldExcluded.rows[0].reviewed_name, "Original excluded description");
+    assert.equal(oldExcluded.rows[0].exclusion_reason, "Not an inventory item");
+    const latest = await receiving.getReceipt(draft.id, "manager");
+    assert.equal(latest.lines[0].reviewedName, "Updated corrected description");
+    assert.equal(latest.excludedLines[0].exclusionReason, "Different correction");
+    assert.equal((await inv.getProduct(p.id)).stock, 0);
+  });
   await check(
     "Take bounds both roles at available stock and zero; archive races serialize",
     async () => {
@@ -1242,7 +1618,7 @@ try {
           await migrate(c);
           assert.equal(
             (await c.query("SELECT count(*)::int n FROM estock_schema_migrations")).rows[0].n,
-            2,
+            6,
           );
           assert.equal(
             (await c.query("SELECT count(*)::int n FROM estock_notifications")).rows[0].n,
@@ -1335,11 +1711,491 @@ try {
       await send(draft, operation);
     },
   );
+  const history = await load("src/lib/server/estock/history.ts");
+  await check(
+    "permanent activity clear preserves balances, receipt evidence and replay guards",
+    async () => {
+      const creation = {
+        name: "Clear Activity Product",
+        unit: "pcs",
+        openingStock: 10,
+        requestId: key(),
+      };
+      const p = (await inv.createProduct(creation)).product;
+      const draft = await newDraft([line(p.name, "5")]);
+      await complete(draft);
+      const take = { productId: p.id, type: "TAKE", quantity: 3, requestId: key() };
+      const returned = { productId: p.id, type: "RETURN", quantity: 2, requestId: key() };
+      await inv.recordMovement("staff", take);
+      await inv.recordMovement("manager", returned);
+      const negative = await product("Negative Activity Balance", 0);
+      await complete(await newDraft([line(negative.name, "6")]));
+      await inv.recordMovement("staff", {
+        productId: negative.id,
+        type: "TAKE",
+        quantity: 4,
+        requestId: key(),
+      });
+      const stocks = (await pool.query("SELECT id,stock FROM estock_products ORDER BY id")).rows;
+      const intakes = (
+        await pool.query("SELECT id FROM estock_movements WHERE type='INTAKE' ORDER BY id")
+      ).rows;
+      const count = (
+        await pool.query(
+          "SELECT count(*)::int n FROM estock_movements WHERE type IN ('OPENING','TAKE','RETURN')",
+        )
+      ).rows[0].n;
+      assert.equal((await history.clearStockActivity()).deletedEvents, count);
+      assert.deepEqual(
+        (await pool.query("SELECT id,stock FROM estock_products ORDER BY id")).rows,
+        stocks,
+      );
+      assert.deepEqual(
+        (await pool.query("SELECT id FROM estock_movements WHERE type='INTAKE' ORDER BY id")).rows,
+        intakes,
+      );
+      assert.equal(
+        (await inv.listHistory()).some((m) => m.type !== "INTAKE"),
+        false,
+      );
+      assert.equal((await receiving.getReceipt(draft.id, "manager")).lines[0].actual, 5);
+      assert.equal(
+        (await pool.query("SELECT delta FROM estock_activity_balances WHERE product_id=$1", [p.id]))
+          .rows[0].delta,
+        "9",
+      );
+      assert.equal(
+        (
+          await pool.query("SELECT delta FROM estock_activity_balances WHERE product_id=$1", [
+            negative.id,
+          ])
+        ).rows[0].delta,
+        "-4",
+      );
+      for (const operation of [
+        () => inv.createProduct(creation),
+        () => inv.recordMovement("staff", take),
+        () => inv.recordMovement("manager", returned),
+      ])
+        await rejected(operation, "ACTIVITY_CLEARED");
+      await rejected(
+        () => inv.recordMovement("staff", { ...take, quantity: 1 }),
+        "REQUEST_CONFLICT",
+      );
+      for (const operation of [creation, take, returned]) {
+        const row = (
+          await pool.query("SELECT result FROM estock_requests WHERE request_id=$1", [
+            operation.requestId,
+          ])
+        ).rows[0];
+        assert.deepEqual(row.result, { activityCleared: true });
+      }
+      assert.equal((await inv.getProduct(p.id)).stock, 14);
+      await assert.rejects(
+        () =>
+          pool.query(
+            `INSERT INTO estock_movements(id,source_event_id,product_id,product_name,unit,type,quantity,delta,balance_after,actor_role,actor_account_id)
+       VALUES($1,$2,$3,'Synthetic','pcs','OPENING',0,0,14,'manager','manager')`,
+            [randomUUID(), key(), p.id],
+          ),
+        (error) => error.code === "23514",
+      );
+      await inv.recordMovement("manager", {
+        productId: p.id,
+        type: "RETURN",
+        quantity: 1,
+        requestId: key(),
+      });
+      await inv.recordMovement("staff", {
+        productId: p.id,
+        type: "TAKE",
+        quantity: 2,
+        requestId: key(),
+      });
+      assert.equal((await inv.listHistory()).filter((m) => m.type !== "INTAKE").length, 2);
+      assert.equal((await history.clearStockActivity()).deletedEvents, 2);
+      assert.equal((await inv.getProduct(p.id)).stock, 13);
+      assert.equal(
+        (await pool.query("SELECT delta FROM estock_activity_balances WHERE product_id=$1", [p.id]))
+          .rows[0].delta,
+        "8",
+      );
+      assert.equal((await history.clearStockActivity()).deletedEvents, 0);
+      await inv.recordMovement("manager", {
+        productId: p.id,
+        type: "RETURN",
+        quantity: 1,
+        requestId: key(),
+      });
+      const concurrent = { productId: p.id, type: "TAKE", quantity: 1, requestId: key() };
+      await Promise.all([history.clearStockActivity(), inv.recordMovement("staff", concurrent)]);
+      try {
+        await inv.recordMovement("staff", concurrent);
+      } catch (error) {
+        assert.equal(error.code, "ACTIVITY_CLEARED");
+      }
+      assert.equal((await inv.getProduct(p.id)).stock, 13);
+    },
+  );
+  await check(
+    "failed permanent activity deletion rolls back balances, details and request results",
+    async () => {
+      const p = await product("Clear Rollback Product", 3);
+      await inv.recordMovement("manager", {
+        productId: p.id,
+        type: "RETURN",
+        quantity: 1,
+        requestId: key(),
+      });
+      const snapshot = async () => ({
+        movements: (await pool.query("SELECT * FROM estock_movements ORDER BY id")).rows,
+        balances: (await pool.query("SELECT * FROM estock_activity_balances ORDER BY product_id"))
+          .rows,
+        requests: (await pool.query("SELECT * FROM estock_requests ORDER BY request_id")).rows,
+        products: (await pool.query("SELECT * FROM estock_products ORDER BY id")).rows,
+      });
+      const before = await snapshot();
+      await pool.query(
+        "CREATE FUNCTION audit_block_activity_clear() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic clear failure'; END $$",
+      );
+      await pool.query(
+        "CREATE TRIGGER audit_block_activity_clear BEFORE DELETE ON estock_movements FOR EACH ROW WHEN (OLD.type='RETURN') EXECUTE FUNCTION audit_block_activity_clear()",
+      );
+      try {
+        await assert.rejects(() => history.clearStockActivity());
+        assert.deepEqual(await snapshot(), before);
+      } finally {
+        await pool.query("DROP TRIGGER audit_block_activity_clear ON estock_movements");
+        await pool.query("DROP FUNCTION audit_block_activity_clear()");
+      }
+      assert.ok((await history.clearStockActivity()).deletedEvents >= 2);
+      assert.equal((await inv.getProduct(p.id)).stock, 4);
+    },
+  );
+  await check(
+    "permanent notification clear is role scoped and leaves pending receiving usable",
+    async () => {
+      const p = await product("Notification Clear Product", 0);
+      const completed = await newDraft([line(p.name, "3")]);
+      await send(completed);
+      const completedReceipt = await receiving.getReceipt(completed.id, "staff");
+      await confirm(completedReceipt, [{ id: completedReceipt.lines[0].id, actualQuantity: 1 }]);
+      const pending = await newDraft([line(p.name, "2")]);
+      await send(pending);
+      const managerNotices = await receiving.listNotifications("manager");
+      const staffNotices = await receiving.listNotifications("staff");
+      assert.ok(staffNotices.notifications.some((n) => n.receiptId === pending.id && n.actionable));
+      assert.equal(
+        (await receiving.clearNotifications("staff")).deletedNotifications,
+        staffNotices.notifications.length,
+      );
+      assert.deepEqual(await receiving.listNotifications("staff"), {
+        notifications: [],
+        unread: 0,
+      });
+      assert.deepEqual(await receiving.listNotifications("manager"), managerNotices);
+      assert.ok((await receiving.listReceiving("staff")).some((r) => r.id === pending.id));
+      await confirm(await receiving.getReceipt(pending.id, "staff"));
+      assert.equal((await inv.getProduct(p.id)).stock, 3);
+      const later = await newDraft([line(p.name, "1")]);
+      await send(later);
+      assert.equal((await receiving.listNotifications("staff")).notifications.length, 1);
+      await receiving.clearNotifications("manager");
+      assert.deepEqual(await receiving.listNotifications("manager"), {
+        notifications: [],
+        unread: 0,
+      });
+      assert.equal(
+        (await receiving.listNotifications("staff")).notifications[0].receiptId,
+        later.id,
+      );
+    },
+  );
+  await check(
+    "clear APIs require exact phrases, Manager activity permission and own notification role",
+    async () => {
+      const manager = await auth.signIn("manager", process.env.ESTOCK_MANAGER_PASSWORD);
+      const staff = await auth.signIn("staff", process.env.ESTOCK_STAFF_PASSWORD);
+      const activityRoute = await load("src/app/api/estock/history/activity/route.ts");
+      const noticesRoute = await load("src/app/api/estock/notifications/route.ts");
+      const request = (token, confirmation, extra = {}) =>
+        new NextRequest("http://localhost:3000/api/estock/clear", {
+          method: "DELETE",
+          headers: {
+            Cookie: token ? `${auth.COOKIE}=${token}` : "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ confirmation, ...extra }),
+        });
+      assert.equal((await activityRoute.DELETE(request(null, "Clear Stock Activity"))).status, 401);
+      assert.equal(
+        (await activityRoute.DELETE(request(staff, "Clear Stock Activity", { role: "manager" })))
+          .status,
+        403,
+      );
+      const count = (await pool.query("SELECT count(*)::int n FROM estock_movements")).rows[0].n;
+      for (const phrase of [undefined, "", "clear stock activity", "Clear Stock Activity "]) {
+        assert.equal((await activityRoute.DELETE(request(manager, phrase))).status, 400);
+        assert.equal(
+          (await pool.query("SELECT count(*)::int n FROM estock_movements")).rows[0].n,
+          count,
+        );
+      }
+      assert.equal(
+        (await activityRoute.DELETE(request(manager, "Clear Stock Activity"))).status,
+        200,
+      );
+      const notices = await receiving.listNotifications("staff");
+      for (const phrase of [undefined, "", "clear notifications", "Clear Notifications "])
+        assert.equal((await noticesRoute.DELETE(request(staff, phrase))).status, 400);
+      assert.deepEqual(await receiving.listNotifications("staff"), notices);
+      assert.equal((await noticesRoute.DELETE(request(null, "Clear Notifications"))).status, 401);
+      assert.equal(
+        (await noticesRoute.DELETE(request(manager, "Clear Notifications", { role: "staff" })))
+          .status,
+        200,
+      );
+      assert.deepEqual(await receiving.listNotifications("staff"), notices);
+      assert.equal((await noticesRoute.DELETE(request(staff, "Clear Notifications"))).status, 200);
+      assert.deepEqual(await receiving.listNotifications("staff"), {
+        notifications: [],
+        unread: 0,
+      });
+    },
+  );
+  await check(
+    "delete-all API requires Manager, same origin, exact phrase and request identity",
+    async () => {
+      const route = await load("src/app/api/estock/products/route.ts");
+      const manager = await auth.signIn("manager", process.env.ESTOCK_MANAGER_PASSWORD);
+      const staff = await auth.signIn("staff", process.env.ESTOCK_STAFF_PASSWORD);
+      const request = (token, confirmation, requestId = key(), origin) =>
+        new NextRequest("http://localhost:3000/api/estock/products", {
+          method: "DELETE",
+          headers: {
+            Cookie: token ? `${auth.COOKIE}=${token}` : "",
+            "Content-Type": "application/json",
+            ...(origin ? { Origin: origin } : {}),
+          },
+          body: JSON.stringify({ confirmation, requestId }),
+        });
+      const before = (await pool.query("SELECT * FROM estock_products ORDER BY id")).rows;
+      assert.equal((await route.DELETE(request(null, "Delete All Inventory"))).status, 401);
+      assert.equal((await route.DELETE(request(staff, "Delete All Inventory"))).status, 403);
+      for (const phrase of [undefined, "", "delete all inventory", "Delete All Inventory "])
+        assert.equal((await route.DELETE(request(manager, phrase))).status, 400);
+      assert.equal(
+        (await route.DELETE(request(manager, "Delete All Inventory", "", undefined))).status,
+        400,
+      );
+      assert.equal(
+        (
+          await route.DELETE(
+            request(manager, "Delete All Inventory", key(), "https://other.invalid"),
+          )
+        ).status,
+        403,
+      );
+      assert.deepEqual(
+        (await pool.query("SELECT * FROM estock_products ORDER BY id")).rows,
+        before,
+      );
+    },
+  );
+  await check(
+    "permanent inventory deletion rolls back all dependent changes on failure",
+    async () => {
+      const p = await product("Deletion Rollback Product", 7);
+      const draft = await newDraft([line(p.name, "2")]);
+      await send(draft);
+      const tables = [
+        "estock_products",
+        "estock_aliases",
+        "estock_activity_balances",
+        "estock_drafts",
+        "estock_draft_lines",
+        "estock_movements",
+        "estock_receipt_lines",
+        "estock_requests",
+        "estock_notifications",
+      ];
+      const snapshot = async () =>
+        Promise.all(
+          tables.map(
+            async (table) =>
+              (
+                await pool.query(
+                  `SELECT row_to_json(t) AS row FROM ${table} t ORDER BY row_to_json(t)::text`,
+                )
+              ).rows,
+          ),
+        );
+      const before = await snapshot();
+      await pool.query(
+        "CREATE FUNCTION audit_block_inventory_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic delete failure'; END $$",
+      );
+      await pool.query(
+        "CREATE TRIGGER audit_block_inventory_delete BEFORE DELETE ON estock_products FOR EACH ROW EXECUTE FUNCTION audit_block_inventory_delete()",
+      );
+      try {
+        await assert.rejects(() => inv.deleteAllInventory({ requestId: key() }));
+        assert.deepEqual(await snapshot(), before);
+      } finally {
+        await pool.query("DROP TRIGGER audit_block_inventory_delete ON estock_products");
+        await pool.query("DROP FUNCTION audit_block_inventory_delete()");
+      }
+    },
+  );
+  await check(
+    "delete all physically removes active/archived products, preserves history, recalls checks and prevents replay",
+    async () => {
+      const creation = {
+        name: "Delete All Product",
+        unit: "pcs",
+        openingStock: 10,
+        requestId: key(),
+      };
+      const p = (await inv.createProduct(creation)).product;
+      const movement = { productId: p.id, type: "TAKE", quantity: 2, requestId: key() };
+      await inv.recordMovement("staff", movement);
+      await pool.query(
+        "INSERT INTO estock_aliases(id,product_id,alias,normalized,confirmed_by) VALUES($1,$2,'Delete Alias','delete alias','manager')",
+        [randomUUID(), p.id],
+      );
+      await history.clearStockActivity();
+      const completed = await newDraft([line(p.name, "3")]);
+      await complete(completed, key());
+      const pending = await newDraft([line(p.name, "2")]);
+      const sendKey = key();
+      await send(pending, sendKey);
+      const oldReceipt = await receiving.getReceipt(pending.id, "staff");
+      const unsent = await newDraft([line(p.name, "1")]);
+      const archived = await product("Archived Before Permanent Delete", 9);
+      const archiveInput = { expectedVersion: archived.version, requestId: key() };
+      await inv.archiveProduct(archived.id, archiveInput);
+      const oldHistory = await inv.listHistory();
+      const oldCompleted = await receiving.getReceipt(completed.id, "manager");
+      const productsCount = (await pool.query("SELECT count(*)::int n FROM estock_products"))
+        .rows[0].n;
+      const sessionCount = (await pool.query("SELECT count(*)::int n FROM estock_sessions")).rows[0]
+        .n;
+      const route = await load("src/app/api/estock/products/route.ts");
+      const manager = await auth.signIn("manager", process.env.ESTOCK_MANAGER_PASSWORD);
+      const deletionKey = key();
+      const response = await route.DELETE(
+        new NextRequest("http://localhost:3000/api/estock/products", {
+          method: "DELETE",
+          headers: { Cookie: `${auth.COOKIE}=${manager}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ confirmation: "Delete All Inventory", requestId: deletionKey }),
+        }),
+      );
+      assert.equal(response.status, 200);
+      const result = await response.json();
+      assert.equal(result.deletedProducts, productsCount);
+      assert.ok(result.recalledReceipts > 0);
+      for (const table of ["estock_products", "estock_aliases", "estock_activity_balances"])
+        assert.equal((await pool.query(`SELECT count(*)::int n FROM ${table}`)).rows[0].n, 0);
+      await rejected(() => inv.getProduct(p.id), "NOT_FOUND");
+      await rejected(() => inv.getProduct(archived.id), "NOT_FOUND");
+      assert.deepEqual(await inv.listProducts(), []);
+      assert.deepEqual(
+        await inv.listHistory(),
+        oldHistory.map((m) => ({ ...m, productId: null })),
+      );
+      assert.deepEqual(await receiving.getReceipt(completed.id, "manager"), {
+        ...oldCompleted,
+        lines: oldCompleted.lines.map((l) => ({ ...l, productId: null })),
+      });
+      assert.equal((await drafts.getDraft(pending.id)).status, "DRAFT");
+      assert.equal((await drafts.getDraft(unsent.id)).lines[0].productId, null);
+      assert.equal((await receiving.listReceiving("staff")).length, 0);
+      await rejected(() => confirm(oldReceipt), "RECEIPT_CLOSED");
+      await rejected(() => save(unsent), "STALE_DRAFT");
+      await rejected(() => send(pending, sendKey), "INVENTORY_DELETED");
+      // Earlier activity clearing may already have replaced these replay payloads.
+      await assert.rejects(
+        () => inv.createProduct(creation),
+        (e) => ["INVENTORY_DELETED", "ACTIVITY_CLEARED"].includes(e.code),
+      );
+      await assert.rejects(
+        () => inv.recordMovement("staff", movement),
+        (e) => ["INVENTORY_DELETED", "ACTIVITY_CLEARED"].includes(e.code),
+      );
+      await rejected(() => inv.archiveProduct(archived.id, archiveInput), "INVENTORY_DELETED");
+      assert.ok(
+        (await pool.query("SELECT count(*)::int n FROM estock_sessions")).rows[0].n >= sessionCount,
+      );
+      const next = await product("Fresh Inventory After Deletion", 5);
+      assert.deepEqual(await inv.deleteAllInventory({ requestId: deletionKey }), result);
+      assert.equal((await inv.getProduct(next.id)).stock, 5);
+      const detachedActivity = (
+        await pool.query(
+          "SELECT count(*)::int n FROM estock_movements WHERE product_id IS NULL AND type<>'INTAKE'",
+        )
+      ).rows[0].n;
+      await history.clearStockActivity();
+      assert.equal(
+        (
+          await pool.query(
+            "SELECT count(*)::int n FROM estock_movements WHERE product_id IS NULL AND type<>'INTAKE'",
+          )
+        ).rows[0].n,
+        0,
+      );
+      assert.equal((await inv.getProduct(next.id)).stock, 5);
+      assert.ok(detachedActivity > 0);
+      const corrected = await save(
+        await drafts.getDraft(unsent.id),
+        edits(await drafts.getDraft(unsent.id)).map((l) => ({
+          ...l,
+          productId: next.id,
+        })),
+      );
+      await complete(corrected, key());
+      assert.equal((await inv.getProduct(next.id)).stock, 6);
+    },
+  );
+  await check(
+    "permanent inventory deletion serializes with Staff confirmation without partial Intake",
+    async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const p = await product(`Delete Confirm Race ${attempt}`, 4);
+        const draft = await newDraft([line(p.name, "2")]);
+        await send(draft);
+        const receipt = await receiving.getReceipt(draft.id, "staff");
+        const [confirmation, deletion] = await Promise.allSettled([
+          confirm(receipt),
+          inv.deleteAllInventory({ requestId: key() }),
+        ]);
+        assert.equal(deletion.status, "fulfilled");
+        assert.equal((await inv.listProducts()).length, 0);
+        const saved = await drafts.getDraft(draft.id);
+        const intakes = (await inv.listHistory()).filter(
+          (m) => m.draftId === draft.id && m.type === "INTAKE",
+        );
+        if (confirmation.status === "fulfilled") {
+          assert.equal(saved.status, "RECEIVED");
+          assert.equal(intakes.length, 1);
+          assert.equal(intakes[0].quantity, 2);
+          assert.equal(intakes[0].productId, null);
+        } else {
+          assert.ok(["RECEIPT_CLOSED", "STALE_DRAFT"].includes(confirmation.reason.code));
+          assert.equal(saved.status, "DRAFT");
+          assert.equal(intakes.length, 0);
+        }
+      }
+    },
+  );
   const discrepancies = await pool.query(
-    "SELECT p.id FROM estock_products p LEFT JOIN estock_movements m ON m.product_id=p.id GROUP BY p.id,p.stock HAVING p.stock<>coalesce(sum(m.delta),0)",
+    `SELECT p.id FROM estock_products p
+     LEFT JOIN (SELECT product_id,sum(delta) delta FROM estock_movements GROUP BY product_id) m ON m.product_id=p.id
+     LEFT JOIN estock_activity_balances b ON b.product_id=p.id
+     WHERE p.stock<>coalesce(m.delta,0)+coalesce(b.delta,0)`,
   );
   assert.equal(discrepancies.rowCount, 0);
-  console.log("RECONCILIATION PASS: every synthetic product stock equals sum of ledger deltas");
+  console.log(
+    "RECONCILIATION PASS: every synthetic product stock equals live deltas plus carried-forward activity balance",
+  );
   console.log(
     JSON.stringify({
       passed,

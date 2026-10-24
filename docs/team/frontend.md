@@ -1,4 +1,4 @@
-# Frontend · Riakudu Vittorios Surjoraharjos
+# Frontend · Riakudu Vittorios Surjoraharjo
 
 [Team](README.md) · [Integration](integration.md) · [DESIGN.md](../../DESIGN.md)
 

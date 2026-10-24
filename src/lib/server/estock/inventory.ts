@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { HistoryMovement } from "../../estock-history";
+import { rankProductMatches } from "../../estock-product-match";
 import type { PoolClient } from "pg";
 import type { Role } from "./auth";
 import { ready, withTransaction } from "./db";
@@ -80,21 +81,20 @@ export async function matchExactProducts(
   return exact.rows.map(product);
 }
 
-export async function matchProducts(name: string, client?: PoolClient): Promise<ProductView[]> {
+export async function matchingCatalogue(
+  client?: PoolClient,
+): Promise<(ProductView & { aliases: string[] })[]> {
   const db = client || (await ready());
-  const normalized = normalizeName(name);
-  if (!normalized) return [];
-  const exact = await matchExactProducts(name, client);
-  if (exact.length) return exact;
-  const fuzzy = await db.query(
-    `SELECT DISTINCT p.* FROM estock_products p
+  const result = await db.query(
+    `SELECT p.*,coalesce(array_agg(a.alias) FILTER (WHERE a.alias IS NOT NULL),ARRAY[]::text[]) AS aliases FROM estock_products p
      LEFT JOIN estock_aliases a ON a.product_id=p.id
-     WHERE p.archived_at IS NULL AND (position($1 in p.normalized_name)>0 OR position(p.normalized_name in $1)>0
-       OR position($1 in coalesce(a.normalized,''))>0)
-     ORDER BY p.id LIMIT 5`,
-    [normalized],
+     WHERE p.archived_at IS NULL GROUP BY p.id ORDER BY p.id`,
   );
-  return fuzzy.rows.map(product);
+  return result.rows.map((row) => ({ ...product(row), aliases: row.aliases }));
+}
+
+export async function matchProducts(name: string, client?: PoolClient): Promise<ProductView[]> {
+  return rankProductMatches(name, await matchingCatalogue(client)).candidates;
 }
 
 export async function withRequest<T>(
@@ -120,6 +120,14 @@ export async function withRequest<T>(
     if (!row || row.action !== action || row.actor_role !== role || row.fingerprint !== hash) {
       fail("This request ID was already used with different details.", 409, "REQUEST_CONFLICT");
     }
+    if (row.result?.activityCleared === true)
+      fail(
+        "This activity was permanently cleared. The request was already processed; refresh Inventory.",
+        410,
+        "ACTIVITY_CLEARED",
+      );
+    if (row.result?.inventoryDeleted === true)
+      fail("These products were permanently deleted. Refresh Inventory.", 410, "INVENTORY_DELETED");
     return row.result as T;
   }
   const result = await operation();
@@ -200,7 +208,7 @@ export function movement(row: Record<string, unknown>): MovementView {
     type: row.type as MovementView["type"],
     quantity: Number(row.quantity),
     delta: Number(row.delta),
-    productId: String(row.product_id),
+    productId: row.product_id ? String(row.product_id) : null,
     productName: String(row.product_name),
     unit: String(row.unit),
     actorRole: row.actor_role as Role,
@@ -300,6 +308,60 @@ export async function archiveProduct(productId: string, input: Record<string, un
           [key],
         );
         return { archived: true, productId: key };
+      },
+    ),
+  );
+}
+
+export async function deleteAllInventory(input: Record<string, unknown>) {
+  return withTransaction(async (client) =>
+    withRequest(
+      client,
+      requestId(input.requestId),
+      "DELETE_ALL_INVENTORY",
+      "manager",
+      {},
+      async () => {
+        // Draft-first locking follows Send/Confirm and excludes concurrent product writes.
+        await client.query("LOCK TABLE estock_drafts, estock_products IN EXCLUSIVE MODE");
+        const products = await client.query("SELECT id FROM estock_products ORDER BY id");
+        const ids = products.rows.map((row) => String(row.id));
+        if (!ids.length) return { deletedProducts: 0, recalledReceipts: 0 };
+        const affected = await client.query(
+          `SELECT DISTINCT d.id,d.status FROM estock_drafts d
+         JOIN estock_draft_lines l ON l.draft_id=d.id
+         WHERE d.status IN ('DRAFT','AWAITING_STAFF') AND l.product_id=ANY($1::uuid[])`,
+          [ids],
+        );
+        const draftIds = affected.rows.map((row) => String(row.id));
+        await client.query(
+          `UPDATE estock_drafts SET status='DRAFT',revision=revision+1,updated_at=now()
+         WHERE id=ANY($1::uuid[]) AND status IN ('DRAFT','AWAITING_STAFF')`,
+          [draftIds],
+        );
+        await client.query(
+          `UPDATE estock_notifications SET resolved_at=now(),read_at=coalesce(read_at,now())
+         WHERE draft_id=ANY($1::uuid[]) AND role='staff' AND resolved_at IS NULL`,
+          [draftIds],
+        );
+        await client.query(
+          `UPDATE estock_draft_lines SET selected_product_version=NULL,confirm_alias=false
+         WHERE product_id=ANY($1::uuid[])`,
+          [ids],
+        );
+        await client.query(
+          `UPDATE estock_requests SET result='{"inventoryDeleted":true}'::jsonb
+         WHERE (action='CREATE_PRODUCT' AND result #>> '{product,id}'=ANY($1::text[]))
+           OR (action IN ('TAKE','RETURN') AND result #>> '{product,id}'=ANY($1::text[]))
+           OR (action='ARCHIVE_PRODUCT' AND result->>'productId'=ANY($1::text[]))
+           OR (action='SEND_RECEIPT' AND result #>> '{draft,id}'=ANY($2::text[]))`,
+          [ids, draftIds],
+        );
+        await client.query("DELETE FROM estock_products WHERE id=ANY($1::uuid[])", [ids]);
+        return {
+          deletedProducts: ids.length,
+          recalledReceipts: affected.rows.filter((row) => row.status === "AWAITING_STAFF").length,
+        };
       },
     ),
   );

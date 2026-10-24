@@ -1,4 +1,6 @@
 .simple-landing {
+  position: relative;
+  isolation: isolate;
   overflow: clip;
 }
 .landing-dots {
@@ -21,15 +23,20 @@
   background: var(--white);
   border-color: var(--line);
 }
-.simple-landing .header-inner {
-  width: min(calc(100% - 2 * clamp(16px, 3vw, 40px)), 1440px);
+.site-header-frame {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(calc(100% - 2 * var(--site-gutter)), var(--site-header-width));
+  margin-inline: auto;
   flex-wrap: wrap;
   min-height: 80px;
 }
 .landing-navigation {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: var(--site-nav-gap);
   margin-left: 0;
 }
 .landing-header-actions {
@@ -374,12 +381,12 @@
   font-size: 0.75rem;
 }
 @media (max-width: 850px) {
-  .simple-landing .header-inner {
+  .site-header-frame {
     flex-wrap: wrap;
     gap: 0 0.5rem;
     padding-block: 0.5rem;
   }
-  .landing-navigation {
+  .site-header-frame > nav {
     justify-content: flex-start;
     order: 2;
     width: 100%;
@@ -387,6 +394,9 @@
 }
 
 @media (max-width: 650px) {
+  .site-header-frame {
+    --site-nav-gap: clamp(16px, 4vw, 24px);
+  }
   .ai-explainer {
     grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;
@@ -402,14 +412,14 @@
   .role-card {
     aspect-ratio: auto;
   }
-  .simple-landing .header-inner {
+  .site-header-frame {
     min-height: 72px;
     flex-wrap: wrap;
     gap: 0 0.5rem;
     padding-block: 0.5rem;
   }
   .landing-navigation {
-    gap: 2rem;
+    gap: var(--site-nav-gap);
     justify-content: flex-start;
     order: 2;
     width: 100%;
@@ -421,9 +431,9 @@
   .landing-navigation .landing-text-link {
     font-size: 0.75rem;
   }
-  .landing-demo,
-  .landing-signin {
-    padding-inline: 0.75rem;
+  .landing-header-actions .landing-demo,
+  .landing-header-actions .landing-signin {
+    padding-inline: clamp(10px, 3.2vw, 12px);
   }
   .landing-hero {
     padding-block: 4rem;

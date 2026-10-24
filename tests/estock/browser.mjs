@@ -7,6 +7,8 @@ import { chromium } from "playwright-core";
 
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 const origin = "http://127.0.0.1:3107";
+const browserChannel = process.env.ESTOCK_BROWSER_CHANNEL || "chrome";
+assert.ok(["chrome", "msedge"].includes(browserChannel), "Use chrome or msedge browser channel");
 const secrets = [
   process.env.ESTOCK_MANAGER_PASSWORD,
   process.env.ESTOCK_STAFF_PASSWORD,
@@ -15,7 +17,11 @@ const secrets = [
 ].filter(Boolean);
 const redact = (text) =>
   secrets.reduce((safe, secret) => safe.split(secret).join("[redacted]"), String(text));
-const artifacts = join(process.cwd(), ".artifacts", "estock-mvp");
+const artifacts = join(
+  process.cwd(),
+  ".artifacts",
+  browserChannel === "chrome" ? "estock-mvp" : `estock-mvp-${browserChannel}`,
+);
 mkdirSync(artifacts, { recursive: true });
 let serverLog = "";
 let identity;
@@ -160,8 +166,13 @@ try {
     if (i === 179) throw new Error("Owned preview did not become ready");
     await delay(250);
   }
-  browser = await chromium.launch({ channel: "chrome", headless: true });
+  browser = await chromium.launch({
+    channel: browserChannel,
+    headless: true,
+    args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"],
+  });
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await context.grantPermissions(["camera"], { origin });
   await context.route("**/*", (route) =>
     new URL(route.request().url()).origin === origin ? route.continue() : route.abort(),
   );
@@ -194,6 +205,11 @@ try {
       .filter({ hasText: name });
   const snapshot = async () =>
     (await api(manager, "products")).body.products.map((p) => [p.id, p.stock]);
+  const managedRow = (page, name) =>
+    page
+      .getByRole("list", { name: "Products to manage" })
+      .getByRole("listitem")
+      .filter({ hasText: name });
   await check(
     "Inventory home, role-specific header navigation and no redundant Back controls",
     async () => {
@@ -231,7 +247,8 @@ try {
     await createProduct(manager, "Synthetic Zero", 0);
     await createProduct(manager, "Synthetic Four", 4);
     await manager.getByLabel("Search products").fill("sYnThEtIc wIdGeT");
-    const widget = row(manager, "Synthetic Widget");
+    await manager.getByRole("button", { name: "Manage products", exact: true }).click();
+    const widget = managedRow(manager, "Synthetic Widget");
     await visible(widget);
     await widget.getByRole("button", { name: "Edit", exact: true }).click();
     const dialog = manager.getByRole("dialog");
@@ -239,6 +256,7 @@ try {
     await dialog.getByRole("button", { name: "Save name", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
     await manager.getByLabel("Search products").fill("");
+    await navigate(manager, "Inventory");
     assert.match(await row(manager, "Synthetic Zero").innerText(), /Out of stock/);
     assert.equal(
       await row(manager, "Synthetic Zero")
@@ -273,6 +291,266 @@ try {
     mimeType: "image/png",
     buffer: Buffer.from(image, "base64"),
   };
+  await check("Simulated camera, retake Cancel, Remove and upload on a narrow screen", async () => {
+    await navigate(manager, "Scan receipt");
+    await manager.waitForTimeout(550);
+    await manager.screenshot({ path: join(artifacts, "scan-desktop.png"), fullPage: true });
+    await manager.setViewportSize({ width: 375, height: 812 });
+    await manager.getByRole("button", { name: "Take photo", exact: true }).click();
+    await visible(manager.getByLabel("Live receipt camera preview"));
+    await manager.waitForFunction(() => {
+      const button = [...document.querySelectorAll("button")].find(
+        (item) => item.textContent?.trim() === "Take picture",
+      );
+      return button && !button.disabled;
+    });
+    await noOverflow(manager);
+    await manager.screenshot({ path: join(artifacts, `${browserChannel}-fake-camera-375px.png`) });
+    await manager.getByRole("button", { name: "Take picture", exact: true }).click();
+    const previewImage = manager.getByAltText(
+      "Selected receipt for review before creating a draft",
+    );
+    await visible(previewImage);
+    const captured = await previewImage.evaluate(async (image) => {
+      const blob = await (await fetch(image.src)).blob();
+      const signature = [...new Uint8Array(await blob.slice(0, 3).arrayBuffer())];
+      const bitmap = await createImageBitmap(blob);
+      const result = {
+        mimeType: blob.type,
+        bytes: blob.size,
+        signature,
+        width: bitmap.width,
+        height: bitmap.height,
+      };
+      bitmap.close();
+      return result;
+    });
+    assert.equal(captured.mimeType, "image/jpeg");
+    assert.ok(captured.bytes > 1000, "Captured camera JPEG should contain image bytes");
+    assert.deepEqual(captured.signature, [0xff, 0xd8, 0xff]);
+    assert.ok(captured.width > 0 && captured.height > 0, "Captured JPEG must decode to pixels");
+    await manager.getByRole("button", { name: "Retake photo", exact: true }).click();
+    await visible(manager.getByRole("button", { name: "Cancel camera", exact: true }));
+    await manager.getByRole("button", { name: "Cancel camera", exact: true }).click();
+    await visible(previewImage);
+    await manager.waitForFunction(
+      () => document.activeElement?.textContent?.trim() === "Retake photo",
+    );
+    await manager.getByRole("button", { name: "Remove image", exact: true }).click();
+    await previewImage.waitFor({ state: "hidden" });
+    assert.equal(await manager.getByRole("button", { name: "Create draft" }).isDisabled(), true);
+    await manager.getByRole("button", { name: "Take photo", exact: true }).click();
+    await visible(manager.getByRole("button", { name: "Cancel camera", exact: true }));
+    await manager.getByRole("button", { name: "Cancel camera", exact: true }).click();
+    await manager.waitForFunction(
+      () => document.activeElement?.textContent?.trim() === "Take photo",
+    );
+    await manager.getByLabel("Upload a receipt image").setInputFiles(payload);
+    await visible(previewImage);
+    await manager.getByRole("button", { name: "Remove image", exact: true }).click();
+    await previewImage.waitFor({ state: "hidden" });
+    await noOverflow(manager);
+    await manager.setViewportSize({ width: 1280, height: 900 });
+  });
+  await check("Camera permission denial and missing device keep upload available", async () => {
+    await navigate(manager, "Scan receipt");
+    await manager.evaluate(() => {
+      const original = navigator.mediaDevices.getUserMedia;
+      window.__cameraFailureName = "NotAllowedError";
+      Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+        configurable: true,
+        value: () =>
+          Promise.reject(new DOMException("Synthetic camera failure", window.__cameraFailureName)),
+      });
+      window.__restoreGetUserMedia = () =>
+        Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+          configurable: true,
+          value: original,
+        });
+    });
+    try {
+      for (const [failure, expected] of [
+        ["NotAllowedError", "Camera permission was denied"],
+        ["NotFoundError", "No usable camera was found"],
+      ]) {
+        await manager.evaluate((name) => {
+          window.__cameraFailureName = name;
+        }, failure);
+        await manager.getByRole("button", { name: "Take photo", exact: true }).click();
+        await visible(manager.getByRole("alert").filter({ hasText: expected }));
+        await manager.waitForFunction(
+          () => document.activeElement?.textContent?.trim() === "Take photo",
+        );
+        assert.equal(await manager.getByRole("button", { name: "Upload file" }).isEnabled(), true);
+      }
+    } finally {
+      await manager.evaluate(() => window.__restoreGetUserMedia?.());
+    }
+  });
+  await check("Multiple camera sources can switch without losing the capture flow", async () => {
+    await navigate(manager, "Scan receipt");
+    await manager.evaluate(() => {
+      const originalMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      const originalDevices = navigator.mediaDevices.enumerateDevices.bind(navigator.mediaDevices);
+      window.__requestedCameraIds = [];
+      Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+        configurable: true,
+        value: (constraints) => {
+          window.__requestedCameraIds.push(constraints.video?.deviceId?.exact || "default");
+          return originalMedia({
+            ...constraints,
+            video: { width: { ideal: 1920 }, height: { ideal: 1080 } },
+          });
+        },
+      });
+      Object.defineProperty(navigator.mediaDevices, "enumerateDevices", {
+        configurable: true,
+        value: async () => [
+          { kind: "videoinput", deviceId: "synthetic-front", label: "Synthetic front camera" },
+          { kind: "videoinput", deviceId: "synthetic-back", label: "Synthetic back camera" },
+        ],
+      });
+      window.__restoreCameraSelection = () => {
+        Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+          configurable: true,
+          value: originalMedia,
+        });
+        Object.defineProperty(navigator.mediaDevices, "enumerateDevices", {
+          configurable: true,
+          value: originalDevices,
+        });
+      };
+    });
+    try {
+      await manager.getByRole("button", { name: "Take photo", exact: true }).click();
+      await visible(manager.getByRole("button", { name: "Switch camera", exact: true }));
+      await manager.getByRole("button", { name: "Switch camera", exact: true }).click();
+      await manager.waitForFunction(() => window.__requestedCameraIds?.includes("synthetic-front"));
+      await manager.waitForFunction(() => {
+        const button = [...document.querySelectorAll("button")].find(
+          (item) => item.textContent?.trim() === "Take picture",
+        );
+        return button && !button.disabled;
+      });
+      await manager.getByRole("button", { name: "Take picture", exact: true }).click();
+      await visible(manager.getByAltText("Selected receipt for review before creating a draft"));
+      await manager.getByRole("button", { name: "Remove image", exact: true }).click();
+    } finally {
+      await manager.evaluate(() => window.__restoreCameraSelection?.());
+    }
+  });
+  await check("Camera disconnection restores focus and keeps upload available", async () => {
+    await navigate(manager, "Scan receipt");
+    await manager.getByRole("button", { name: "Take photo", exact: true }).click();
+    await manager.waitForFunction(() => {
+      const video = document.querySelector("video");
+      return video?.srcObject?.getVideoTracks()?.[0]?.readyState === "live";
+    });
+    await manager.evaluate(() => {
+      document
+        .querySelector("video")
+        .srcObject.getVideoTracks()[0]
+        .dispatchEvent(new Event("ended"));
+    });
+    await visible(manager.getByRole("alert").filter({ hasText: "The camera disconnected" }));
+    await manager.waitForFunction(
+      () => document.activeElement?.textContent?.trim() === "Take photo",
+    );
+    assert.equal(await manager.getByRole("button", { name: "Upload file" }).isEnabled(), true);
+  });
+  await check("Mobile-UA native capture input accepts a synthetic photo", async () => {
+    const mobileContext = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+      userAgent:
+        "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+      isMobile: true,
+      hasTouch: true,
+    });
+    try {
+      await mobileContext.route("**/*", (route) =>
+        new URL(route.request().url()).origin === origin ? route.continue() : route.abort(),
+      );
+      const mobilePage = await mobileContext.newPage();
+      observeConsole(mobilePage);
+      mobilePage.on("pageerror", (error) => runtimeErrors.push(redact(error.message)));
+      await login(mobilePage, "manager");
+      await navigate(mobilePage, "Scan receipt");
+      const input = mobilePage.getByLabel("Take a receipt photo");
+      assert.equal(await input.getAttribute("capture"), "environment");
+      assert.equal(await input.getAttribute("accept"), "image/*");
+      const chooserPromise = mobilePage.waitForEvent("filechooser");
+      await mobilePage.getByRole("button", { name: "Take photo", exact: true }).click();
+      const chooser = await chooserPromise;
+      await chooser.setFiles(payload);
+      await visible(mobilePage.getByAltText("Selected receipt for review before creating a draft"));
+      await noOverflow(mobilePage);
+      await mobilePage.screenshot({
+        path: join(artifacts, `${browserChannel}-mobile-capture-375px.png`),
+      });
+    } finally {
+      await mobileContext.close();
+    }
+  });
+  await check(
+    "Oversized synthetic JPEG is resized before upload without losing the selected file",
+    async () => {
+      await navigate(manager, "Scan receipt");
+      await manager.setViewportSize({ width: 375, height: 812 });
+      const oversizedBase64 = await manager.evaluate(() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 4000;
+        canvas.height = 3000;
+        const context = canvas.getContext("2d");
+        const pixels = context.createImageData(canvas.width, canvas.height);
+        let seed = 17;
+        for (let index = 0; index < pixels.data.length; index += 4) {
+          seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+          pixels.data[index] = seed & 255;
+          pixels.data[index + 1] = (seed >>> 8) & 255;
+          pixels.data[index + 2] = (seed >>> 16) & 255;
+          pixels.data[index + 3] = 255;
+        }
+        context.putImageData(pixels, 0, 0);
+        const encoded = canvas.toDataURL("image/jpeg", 0.99).split(",")[1];
+        canvas.width = canvas.height = 0;
+        return encoded;
+      });
+      const oversized = Buffer.from(oversizedBase64, "base64");
+      assert.ok(oversized.length > 6 * 1024 * 1024);
+      assert.ok(oversized.length < 40 * 1024 * 1024);
+      await manager.getByLabel("Upload a receipt image").setInputFiles({
+        name: "oversized-synthetic.jpg",
+        mimeType: "image/jpeg",
+        buffer: oversized,
+      });
+      const previewImage = manager.getByAltText(
+        "Selected receipt for review before creating a draft",
+      );
+      await visible(previewImage);
+      const processed = await previewImage.evaluate(async (image) => {
+        const blob = await (await fetch(image.src)).blob();
+        const bitmap = await createImageBitmap(blob);
+        const result = {
+          mimeType: blob.type,
+          bytes: blob.size,
+          width: bitmap.width,
+          height: bitmap.height,
+        };
+        bitmap.close();
+        return result;
+      });
+      assert.equal(processed.mimeType, "image/jpeg");
+      assert.ok(processed.bytes > 0 && processed.bytes <= 6 * 1024 * 1024);
+      assert.ok(processed.width <= 3200 && processed.width * processed.height <= 8_000_000);
+      await noOverflow(manager);
+      await navigate(manager, "Inventory");
+      await navigate(manager, "Scan receipt");
+      await visible(manager.getByAltText("Selected receipt for review before creating a draft"));
+      await manager.getByRole("button", { name: "Remove image", exact: true }).click();
+      await previewImage.waitFor({ state: "hidden" });
+      await manager.setViewportSize({ width: 1280, height: 900 });
+    },
+  );
   async function scan() {
     await navigate(manager, "Scan receipt");
     await manager.getByLabel("Upload a receipt image").setInputFiles(payload);
@@ -286,6 +564,21 @@ try {
     async () => {
       const before = await snapshot();
       firstDraft = await scan();
+      assert.equal(firstDraft.documentDate, null);
+      assert.equal(firstDraft.extractedDocumentDate, "2026-10-02");
+      assert.equal(firstDraft.dateNeedsReview, true);
+      await visible(
+        manager
+          .getByRole("alert")
+          .filter({ hasText: /Photo is partly unclear|Every line needs checking/ }),
+      );
+      await manager.screenshot({ path: join(artifacts, "draft-desktop.png"), fullPage: true });
+      await visible(
+        manager.getByText("Check the issue date against the document, then confirm it below.", {
+          exact: true,
+        }),
+      );
+      assert.equal(await manager.getByLabel("Document date for this intake").inputValue(), "");
       assert.deepEqual(await snapshot(), before);
       await manager.getByText("Compare with a bon image", { exact: true }).click();
       const posts = draftPosts;
@@ -300,6 +593,8 @@ try {
       assert.equal(draftPosts, posts);
       await manager.setViewportSize({ width: 375, height: 812 });
       await noOverflow(manager);
+      await manager.evaluate(() => window.scrollTo(0, 0));
+      await manager.waitForTimeout(550);
       await manager.screenshot({ path: join(artifacts, "draft-mobile-width.png"), fullPage: true });
       await manager.reload();
       await visible(manager.getByRole("heading", { name: "Document lines", exact: true }));
@@ -372,7 +667,7 @@ try {
       await staff.getByRole("button", { name: /^Notifications/ }).click();
       await visible(staff.getByText("Receipt ready to check", { exact: true }));
       await staff.getByRole("button", { name: "Open receiving check", exact: true }).click();
-      await visible(staff.getByRole("heading", { name: "Synthetic Lamp", exact: true }));
+      await visible(staff.getByText("Synthetic Lamp", { exact: true }));
       assert.match(await staff.locator("main").innerText(), /Expected: 24 pcs/);
       await noOverflow(staff);
       await staff.screenshot({
@@ -386,18 +681,15 @@ try {
     },
   );
   await check(
-    "Staff differences preview does not mutate stock; final check immediately posts actual 1/27",
+    "Staff actual quantities do not mutate stock before confirmation; final check posts actual 1/27",
     async () => {
       const before = await snapshot();
-      await staff.getByRole("button", { name: "Report differences", exact: true }).click();
+      await staff.getByText("Synthetic Widget Renamed", { exact: true }).click();
       await staff
-        .getByLabel("Report a difference for Synthetic Widget Renamed", { exact: true })
-        .check();
-      await staff
-        .getByLabel("Difference quantity for Synthetic Widget Renamed", { exact: true })
-        .fill("3");
+        .getByLabel("How much did you receive for Synthetic Widget Renamed?", { exact: true })
+        .fill("-1");
       await visible(
-        staff.getByText("Enter a positive whole difference. Shortage cannot exceed 2.", {
+        staff.getByText("Enter a whole number of 0 or more.", {
           exact: true,
         }),
       );
@@ -408,14 +700,12 @@ try {
         true,
       );
       await staff
-        .getByLabel("Difference quantity for Synthetic Widget Renamed", { exact: true })
+        .getByLabel("How much did you receive for Synthetic Widget Renamed?", { exact: true })
         .fill("1");
-      await staff.getByLabel("Report a difference for Synthetic Lamp", { exact: true }).check();
+      await staff.getByText("Synthetic Lamp", { exact: true }).click();
       await staff
-        .getByLabel("Difference for Synthetic Lamp", { exact: true })
-        .selectOption("EXTRA");
-      await staff.getByLabel("Difference quantity for Synthetic Lamp", { exact: true }).fill("3");
-      assert.match(await staff.locator("main").innerText(), /Actually received: 27 pcs/);
+        .getByLabel("How much did you receive for Synthetic Lamp?", { exact: true })
+        .fill("27");
       assert.deepEqual(await snapshot(), before);
       await staff.getByRole("button", { name: "Confirm received goods", exact: true }).click();
       await visible(staff.getByText(/Shared Staff checked.*Stock posted/));
@@ -464,61 +754,68 @@ try {
       assert.equal(await manager.getByText("Recent activity", { exact: true }).count(), 0);
     },
   );
-  await check("All items match confirmation and same-date receipt History grouping", async () => {
-    const second = await scan();
-    const lines = manager.locator('[class*="draftLines"] > [class*="draftLine"]');
-    const p = (await api(manager, "products")).body.products.find(
-      (p) => p.name === "Synthetic Widget Renamed",
-    );
-    await manager.getByLabel("Document date for this intake").fill("2026-10-03");
-    await lines.nth(0).getByLabel("Official product").selectOption(p.id);
-    await lines
-      .nth(0)
-      .getByLabel(/Expected quantity/)
-      .fill("1");
-    for (const index of [1, 2]) {
-      await lines.nth(index).getByLabel("Exclude this line from Intake").check();
-      await lines.nth(index).getByLabel("Reason for excluding this line").fill("Non-stock line");
-    }
-    await manager.getByRole("button", { name: "Send to Staff", exact: true }).click();
-    await visible(manager.getByRole("heading", { name: "Awaiting Staff check", exact: true }));
-    await navigate(staff, "Pending checks");
-    await staff.getByRole("button", { name: /Synthetic Widget Renamed.*Check goods/ }).click();
-    await visible(staff.getByRole("button", { name: "All items match", exact: true }));
-    await staff.getByRole("button", { name: "All items match", exact: true }).click();
-    await staff.getByRole("button", { name: "Confirm received goods", exact: true }).click();
-    await visible(staff.getByText(/Stock posted at confirmation/));
-    assert.equal(
-      (await api(manager, "products")).body.products.find(
+  await check(
+    "Matching actual quantity confirmation and same-date receipt History grouping",
+    async () => {
+      const second = await scan();
+      const lines = manager.locator('[class*="draftLines"] > [class*="draftLine"]');
+      const p = (await api(manager, "products")).body.products.find(
         (p) => p.name === "Synthetic Widget Renamed",
-      ).stock,
-      7,
-    );
-    assert.equal(
-      (await api(manager, "notifications")).body.notifications.filter(
-        (n) => n.receiptId === second.id,
-      ).length,
-      0,
-    );
-    await navigate(manager, "History");
-    await visible(manager.getByText("2 of 2 completed receipts", { exact: true }));
-    await manager.getByLabel("Search receipts").fill("Synthetic Lamp");
-    await visible(manager.getByText("1 of 2 completed receipts", { exact: true }));
-    await manager.getByText("View receipt details", { exact: true }).click();
-    assert.match(await manager.getByRole("article").innerText(), /2 boxes/);
-    assert.match(await manager.getByRole("article").innerText(), /Shared Staff received 27 pcs/);
-    await manager.getByLabel("Document date", { exact: true }).fill("2026-10-04");
-    await visible(manager.getByRole("heading", { name: "No matching receipts", exact: true }));
-    await manager.getByLabel("Document date", { exact: true }).fill("");
-    await manager.getByLabel("Search receipts").fill("");
-    await manager.setViewportSize({ width: 320, height: 812 });
-    await noOverflow(manager);
-    await manager.screenshot({
-      path: join(artifacts, "receipt-history-mobile-width.png"),
-      fullPage: true,
-    });
-    await manager.setViewportSize({ width: 1280, height: 900 });
-  });
+      );
+      await manager.getByLabel("Document date for this intake").fill("2026-10-03");
+      await lines.nth(0).getByLabel("Official product").selectOption(p.id);
+      await lines
+        .nth(0)
+        .getByLabel(/Expected quantity/)
+        .fill("1");
+      for (const index of [1, 2]) {
+        await lines.nth(index).getByLabel("Exclude this line from Intake").check();
+        await lines.nth(index).getByLabel("Reason for excluding this line").fill("Non-stock line");
+      }
+      await manager.getByRole("button", { name: "Send to Staff", exact: true }).click();
+      await visible(manager.getByRole("heading", { name: "Awaiting Staff check", exact: true }));
+      await navigate(staff, "Pending checks");
+      await staff.getByRole("button", { name: /Synthetic Widget Renamed.*Check goods/ }).click();
+      assert.equal(
+        await staff
+          .getByLabel("How much did you receive for Synthetic Widget Renamed?", { exact: true })
+          .inputValue(),
+        "1",
+      );
+      await staff.getByRole("button", { name: "Confirm received goods", exact: true }).click();
+      await visible(staff.getByText(/Stock posted at confirmation/));
+      assert.equal(
+        (await api(manager, "products")).body.products.find(
+          (p) => p.name === "Synthetic Widget Renamed",
+        ).stock,
+        7,
+      );
+      assert.equal(
+        (await api(manager, "notifications")).body.notifications.filter(
+          (n) => n.receiptId === second.id,
+        ).length,
+        0,
+      );
+      await navigate(manager, "History");
+      await visible(manager.getByText("2 of 2 completed receipts", { exact: true }));
+      await manager.getByLabel("Search receipts").fill("Synthetic Lamp");
+      await visible(manager.getByText("1 of 2 completed receipts", { exact: true }));
+      await manager.getByText("View receipt details", { exact: true }).click();
+      assert.match(await manager.getByRole("article").innerText(), /2 boxes/);
+      assert.match(await manager.getByRole("article").innerText(), /Shared Staff received 27 pcs/);
+      await manager.getByLabel("Document date", { exact: true }).fill("2026-10-04");
+      await visible(manager.getByRole("heading", { name: "No matching receipts", exact: true }));
+      await manager.getByLabel("Document date", { exact: true }).fill("");
+      await manager.getByLabel("Search receipts").fill("");
+      await manager.setViewportSize({ width: 320, height: 812 });
+      await noOverflow(manager);
+      await manager.screenshot({
+        path: join(artifacts, "receipt-history-mobile-width.png"),
+        fullPage: true,
+      });
+      await manager.setViewportSize({ width: 1280, height: 900 });
+    },
+  );
   await check("Provider error has deliberate retry; discard remains stock-neutral", async () => {
     await navigate(manager, "Scan receipt");
     await manager.getByLabel("Upload a receipt image").setInputFiles(payload);
@@ -535,6 +832,64 @@ try {
     await visible(manager.getByRole("heading", { name: "Discarded draft", exact: true }));
     assert.deepEqual(await snapshot(), before);
   });
+  await check("Slow scan keeps status across sections and finishes without redirect", async () => {
+    const before = await snapshot();
+    let delayPost = true;
+    await manager.route("**/api/estock/drafts", async (route) => {
+      if (route.request().method() === "POST" && delayPost) {
+        delayPost = false;
+        await delay(11_250);
+      }
+      await route.continue();
+    });
+    await navigate(manager, "Scan receipt");
+    await manager.getByLabel("Upload a receipt image").setInputFiles(payload);
+    await manager.getByRole("button", { name: "Create draft", exact: true }).click();
+    await visible(manager.getByText("Gemini is reading the image. Stock will stay unchanged."));
+    await navigate(manager, "History");
+    await visible(manager.getByText(/Still reading your document/));
+    await visible(manager.getByText("Draft created. Open Drafts to review it.", { exact: true }));
+    await visible(manager.getByRole("heading", { name: "History", exact: true }));
+    assert.deepEqual(await snapshot(), before);
+    await navigate(manager, "Scan receipt");
+    assert.equal(
+      await manager.getByAltText("Selected receipt for review before creating a draft").count(),
+      0,
+    );
+    await navigate(manager, "Drafts");
+    await visible(manager.getByRole("heading", { name: "Document lines", exact: true }));
+    await manager.getByRole("button", { name: "Discard draft", exact: true }).click();
+    await manager.getByRole("button", { name: "Yes, discard draft", exact: true }).click();
+    await manager.unroute("**/api/estock/drafts");
+    assert.deepEqual(await snapshot(), before);
+  });
+  await check("Scan failure after navigation retains the photo for retry", async () => {
+    const before = await snapshot();
+    await manager.route("**/api/estock/drafts", async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      await delay(500);
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Synthetic delayed scan outage" }),
+      });
+    });
+    await navigate(manager, "Scan receipt");
+    await manager.getByLabel("Upload a receipt image").setInputFiles(payload);
+    await manager.getByRole("button", { name: "Create draft", exact: true }).click();
+    await navigate(manager, "History");
+    await visible(manager.getByText(/Scan needs attention/));
+    await visible(manager.getByRole("heading", { name: "History", exact: true }));
+    await manager.unroute("**/api/estock/drafts");
+    await navigate(manager, "Scan receipt");
+    await visible(manager.getByAltText("Selected receipt for review before creating a draft"));
+    await visible(manager.getByRole("alert").filter({ hasText: "Synthetic delayed scan outage" }));
+    await manager.getByRole("button", { name: "Create draft", exact: true }).click();
+    await visible(manager.getByRole("heading", { name: "Document lines", exact: true }));
+    await manager.getByRole("button", { name: "Discard draft", exact: true }).click();
+    await manager.getByRole("button", { name: "Yes, discard draft", exact: true }).click();
+    assert.deepEqual(await snapshot(), before);
+  });
   await check(
     "Entirely missing delivery records actual zero in History without Intake",
     async () => {
@@ -544,6 +899,11 @@ try {
       const p = (await api(manager, "products")).body.products.find(
         (p) => p.name === "Synthetic Widget Renamed",
       );
+      assert.equal(
+        await manager.getByRole("button", { name: "Send to Staff", exact: true }).isDisabled(),
+        true,
+      );
+      await manager.getByLabel("Document date for this intake").fill("2026-10-03");
       await lines.nth(0).getByLabel("Official product").selectOption(p.id);
       await lines
         .nth(0)
@@ -557,15 +917,11 @@ try {
       await visible(manager.getByRole("heading", { name: "Awaiting Staff check", exact: true }));
       await navigate(staff, "Pending checks");
       await staff.getByRole("button", { name: /Synthetic Widget Renamed.*Check goods/ }).click();
-      await visible(staff.getByRole("heading", { name: "Synthetic Widget Renamed", exact: true }));
-      await staff.getByRole("button", { name: "Report differences", exact: true }).click();
+      await visible(staff.getByText("Synthetic Widget Renamed", { exact: true }));
+      await staff.getByText("Synthetic Widget Renamed", { exact: true }).click();
       await staff
-        .getByLabel("Report a difference for Synthetic Widget Renamed", { exact: true })
-        .check();
-      await staff
-        .getByLabel("Difference quantity for Synthetic Widget Renamed", { exact: true })
-        .fill("2");
-      await visible(staff.getByText("Actually received: 0 pcs", { exact: true }));
+        .getByLabel("How much did you receive for Synthetic Widget Renamed?", { exact: true })
+        .fill("0");
       await staff.getByRole("button", { name: "Confirm received goods", exact: true }).click();
       await visible(staff.getByText(/Stock posted at confirmation/));
       assert.deepEqual(await snapshot(), before);
@@ -662,7 +1018,8 @@ try {
     "Delete one accessible dialog: keyboard Cancel, persistence with remaining stock and retained History",
     async () => {
       await navigate(manager, "Inventory");
-      const lamp = row(manager, "Synthetic Lamp");
+      await manager.getByRole("button", { name: "Manage products", exact: true }).click();
+      const lamp = managedRow(manager, "Synthetic Lamp");
       await lamp.getByRole("button", { name: "Delete Synthetic Lamp", exact: true }).click();
       let dialog = manager.getByRole("dialog");
       assert.equal(await dialog.count(), 1);
@@ -702,6 +1059,7 @@ try {
       await manager.unroute("**/api/estock/products/*");
       await lamp.waitFor({ state: "hidden" });
       await manager.reload();
+      await navigate(manager, "Inventory");
       await visible(manager.getByRole("heading", { name: "Inventory", exact: true }));
       assert.equal(await row(manager, "Synthetic Lamp").count(), 0);
       assert.equal(await staff.getByRole("button", { name: /^Delete/ }).count(), 0);
@@ -720,6 +1078,7 @@ try {
       const p = (await api(manager, "products")).body.products.find(
         (p) => p.name === "Synthetic pending lamp",
       );
+      await manager.getByLabel("Document date for this intake").fill("2026-10-03");
       await lines.nth(0).getByLabel("Official product").selectOption(p.id);
       await lines
         .nth(0)
@@ -733,16 +1092,14 @@ try {
       await visible(manager.getByRole("heading", { name: "Awaiting Staff check", exact: true }));
       await navigate(staff, "Pending checks");
       await staff.getByRole("button", { name: /Synthetic pending lamp.*Check goods/ }).click();
-      await visible(staff.getByRole("heading", { name: "Synthetic pending lamp", exact: true }));
-      await staff.getByRole("button", { name: "Report differences", exact: true }).click();
+      await visible(staff.getByText("Synthetic pending lamp", { exact: true }));
+      await staff.getByText("Synthetic pending lamp", { exact: true }).click();
       await staff
-        .getByLabel("Report a difference for Synthetic pending lamp", { exact: true })
-        .check();
-      await staff
-        .getByLabel("Difference quantity for Synthetic pending lamp", { exact: true })
+        .getByLabel("How much did you receive for Synthetic pending lamp?", { exact: true })
         .fill("1");
       await navigate(manager, "Inventory");
-      await row(manager, "Synthetic pending lamp")
+      await manager.getByRole("button", { name: "Manage products", exact: true }).click();
+      await managedRow(manager, "Synthetic pending lamp")
         .getByRole("button", { name: "Delete Synthetic pending lamp", exact: true })
         .click();
       await manager
@@ -779,16 +1136,16 @@ try {
           .isDisabled(),
         true,
       );
-      await visible(staff.getByRole("heading", { name: "Synthetic pending lamp", exact: true }));
+      await visible(staff.getByText("Synthetic pending lamp", { exact: true }));
       assert.match(await staff.locator("main").innerText(), /Expected: 2 pcs/);
       await staff.getByRole("button", { name: "Reopen latest check", exact: true }).click();
-      await visible(staff.getByRole("heading", { name: "Synthetic Widget Renamed", exact: true }));
+      await visible(staff.getByText("Synthetic Widget Renamed", { exact: true }));
       assert.match(await staff.locator("main").innerText(), /Expected: 4 pcs/);
       assert.equal(
         await staff
-          .getByRole("button", { name: "All items match", exact: true })
-          .getAttribute("aria-pressed"),
-        "true",
+          .getByLabel("How much did you receive for Synthetic Widget Renamed?", { exact: true })
+          .inputValue(),
+        "4",
       );
       await staff.getByRole("button", { name: "Confirm received goods", exact: true }).click();
       await visible(staff.getByText(/Stock posted at confirmation/));
@@ -968,7 +1325,7 @@ try {
   );
   assert.deepEqual(unexpectedConsoleErrors, []);
   console.log(
-    `BROWSER SUMMARY: ${results.length} journeys passed in headless Chrome. Physical camera/mobile device/live Gemini not tested.`,
+    `BROWSER SUMMARY: ${results.length} journeys passed in headless ${browserChannel}. Fake webcam and mobile-UA capture input tested; physical camera/mobile device/live Gemini not tested.`,
   );
 } catch (error) {
   results.push({ scenario: step, result: "Fail", evidence: redact(error.message) });
@@ -1013,6 +1370,9 @@ try {
         runtimeErrors,
         consoleDiagnostics,
         contrastSamples,
+        browserChannel,
+        simulatedCamera: "Chromium fake media stream",
+        mobileCaptureInput: "Android user-agent and synthetic file chooser",
         physicalCamera: "Unverified",
         realMobileDevice: "Unverified",
         liveGemini: "Unverified",

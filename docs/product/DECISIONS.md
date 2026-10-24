@@ -75,7 +75,7 @@ Historical OPEN-05/06 messaging options are superseded by the pivot; no WhatsApp
 | Member | Assignment | University |
 | --- | --- | --- |
 | Marco Ryan Suseno | Leader / AI | Xiamen University |
-| Riakudu Vittorios Surjoraharjos | Frontend | Xiamen University |
+| Riakudu Vittorios Surjoraharjo | Frontend | Xiamen University |
 | Maximillion Cang | Data | Xiamen University |
 | William Christiansen | System / backend | Xiamen University |
 

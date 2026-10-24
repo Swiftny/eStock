@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 export function Icon({
@@ -85,7 +86,7 @@ export function Icon({
 export function Wordmark() {
   return (
     <span className="wordmark">
-      <span>e</span>Stock
+      <Image src="/estock-logo.svg" alt="eStock" width={81} height={34} unoptimized />
     </span>
   );
 }

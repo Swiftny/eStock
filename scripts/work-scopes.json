@@ -53,6 +53,9 @@
     "tests/estock/mvp.test.mjs"
   ],
   "system": [
+    ".replit",
+    "scripts/replit-check.mjs",
+    "docs/engineering/REPLIT_DEPLOYMENT.md",
     "src/app/api/session/**",
     "src/lib/server/session.ts",
     "next.config.ts",
