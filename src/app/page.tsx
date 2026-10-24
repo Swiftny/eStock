@@ -1,4 +1,5 @@
 import { LandingMotion } from "@/components/landing-motion";
+import { LandingDots } from "@/components/landing-dots";
 import { SiteHeader } from "@/components/site-header";
 
 const workflow = [
@@ -39,6 +40,7 @@ export default function Home() {
         Skip to content
       </a>
       <SiteHeader />
+      <LandingDots />
       <LandingMotion />
       <main id="main" tabIndex={-1}>
         <section className="landing-hero container" aria-labelledby="hero-title">

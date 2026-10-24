@@ -1,6 +1,15 @@
 .simple-landing {
   overflow: clip;
 }
+.landing-dots {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  color: #d6e3ff;
+  pointer-events: none;
+}
 .simple-landing .site-header {
   background: var(--paper);
   border-color: transparent;
