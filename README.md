@@ -1,119 +1,295 @@
 # eStock
 
-For a new hosted project, use the [Replit import and deployment guide](docs/engineering/REPLIT_DEPLOYMENT.md). Local edits and GitHub pushes do not automatically update the published Replit app; pull or copy the intended source into Replit and publish again.
+Document-assisted inventory for small shops: a Manager reviews supplier-document lines, Staff confirms the goods received, and stock updates with a receipt record.
 
-Inventory rows keep Take/Return; Manager opens **Manage products** to Edit/Delete and uses **Back to inventory** to return. Its separate **Delete all inventory** action asks for confirmation with Delete/Cancel buttons and permanently removes active/archived products, live balances and aliases. No delete action requires retyping a phrase. History remains; pending checks return to Drafts for correction. Single-product Delete still archives. [Earlier inventory checks](docs/verification/INVENTORY_MANAGEMENT_2026_10_24.md).
+## Team Information
 
-eStock's approved direction is **document-assisted inventory for one shop and one warehouse**: turn supplier-document lines into a reviewed stock-intake draft, then send a frozen receipt to shared Staff. Staff checks physical goods and immediately posts actual received quantities once. Manager receives informational alerts for differences. Both roles search Inventory and use Take or Return.
-
-TooGoodToBeTrue · Xiamen University · SDC Hackathon 2026 · Domain 2, Orbyte Smart SME Challenge · SDG 8.2/8.3. eStock is a team proposal, not an official Orbyte module or a working Orbyte integration.
-
-## Current demo
-
-| Layer | Status on 24 October 2026 |
+| Field | Details |
 | --- | --- |
-| Website | `/demo` contains separate Manager and Staff views. Staff search stock and record Take/Return. Manager can also manage products, upload documents, prepare/send/recall drafts, Delete products and inspect History. Staff receives pending checks and confirms actual goods. |
-| Data and AI | New `/api/estock` backend and PostgreSQL schema implement the document-intake workflow. The image goes to Gemini from the server, and extracted lines stay in a reviewable draft until Staff physically checks and confirms actual receipt. |
-| Legacy code | The earlier SQLite replenishment/forecasting source remains for historical context; it is outside this demo workflow. |
-| Verification | The [current end-to-end QC](docs/verification/END_TO_END_QC_2026_10_24.md) records isolated PostgreSQL/API and Chrome/Edge browser checks, an exploratory live Gemini sample, actual fixes and remaining limits. The [Staff-receiving verification](docs/verification/STAFF_RECEIVING_2026_10_24.md) and [pre-push audit](docs/verification/PRE_PUSH_PRD_AUDIT.md) describe earlier revisions. Physical devices and deployment remain unverified. |
+| Team Name | Too Good To Be True |
+| Team Domain | Domain 2: Orbyte Smart SME Challenge, Less Busywork, Better Business |
+| SDG Track | SDG 8: Decent Work and Economic Growth, targets 8.2 and 8.3 |
+| Team Leader | Marco Ryan Suseno |
+| University | Xiamen University |
+| Number of Members | 4 |
 
-The [copy verification report](docs/verification/LANDING_COPY_2026_10_23.md) describes the earlier landing-copy task; it does not verify the new demo.
+## Links
 
-## Approved scope
+| Resource | Link |
+| --- | --- |
+| GitHub Repository | https://github.com/Swiftny/eStock |
+| Live Demo | https://e-stock-maximillionc.replit.app |
+| RunPod Endpoint | |
+| Slide Deck | |
+| Demo Video | |
 
-Manager alone creates/edits products, enters Opening stock, scans/uploads, prepares/edits/matches/sends/recalls/discards drafts and sees full History. Shared Staff alone confirms receiving checks. Manager Delete archives products even with remaining stock, retaining history. Manager and Staff view/search stock and perform Take/Return. MVP has a separate Manager account and one shared Staff account; History identifies that shared account/role, not individual employees. Backend permission checks are required.
 
-Products have an official name, one base unit, Opening and generated internal ID; no mandatory user-entered SKU/barcode/shelf location. Final quantities are integers. Opening 0 is an explicit catalogue-setup clarification; unknown products created during review start at zero, then receive actual Intake once at Staff confirmation. Intake/Take/Return quantities are positive. Concurrent Take cannot make stock negative. Return means usable goods physically returned, not a refund or linked reversal of a previous Take.
 
-An image does not prove goods arrived. Manager resolves expected quantities and sends to Staff; Staff must confirm actual physical receipt before stock increases, including for invoices/orders. Preparation, frozen submitted revisions and completed checks persist without images. Completion is immutable and once-only. Preserve extracted, expected and actual quantities, Document date, Manager sent time and shared Staff confirmation/posting time; an old printed date never backdates the ledger. Present MYT. Convert cartons manually to base units; aliases do not retrain Gemini. Low stock is strictly below 5, including zero; exactly 5 is not Low stock.
+### Demo Access
 
-No prices, monetary calculations, forecasting, purchasing policies, outboxes, PO management, budgets, fine-tuning, RAG, embeddings, self-hosted GPU inference or training pipeline in the new MVP. Similar-document warnings across separate uploads are P1; single-draft protection is not universal duplicate-image prevention.
+Open the Live Demo, choose **Open demo**, then select Manager or Staff. The credentials below are public demo credentials for judges. Use only synthetic data in this shared demo.
 
-Only team-created synthetic images, products, supplier details and test records are permitted for the hackathon. Uploaded images may exist transiently but must not remain in app database/disk/object/browser storage, logs, telemetry or caches. Reopened drafts have no original image; Manager checks the bon itself when reviewing scanned values. Gemini's own retention/terms/tier must be verified before any separate future real-world pilot.
+| Account | Judge access instructions |
+| --- | --- |
+| Manager | Select **Manager** and enter password `Manager`. |
+| Shared Staff | Select **Staff** and enter password `Staff`. |
 
-## Run the new demo locally
+The live URL is supplied by the team. The architecture and setup below describe this repository; checking that the published Replit version matches the intended GitHub revision remains part of the release checklist.
 
-Use Node 22.18+ and PostgreSQL. An optional local-only PostgreSQL service is provided in [`compose.estock.yml`](compose.estock.yml). Docker Desktop must be running before starting that service. Alternatively, use any PostgreSQL instance and set its connection URL.
+## Overview
 
-Create an ignored `.env.local` from [`.env.example`](.env.example) in a fresh checkout. Set `DATABASE_URL`, `GEMINI_API_KEY`, `ESTOCK_MANAGER_PASSWORD`, `ESTOCK_STAFF_PASSWORD` and a long random `ESTOCK_SESSION_SECRET`. `ESTOCK_GEMINI_MODEL` is optional; `ESTOCK_GEMINI_MEDIA_RESOLUTION` optionally selects `medium` or `high`, with a blank value using the model default. For the supplied local Compose service, use `DATABASE_URL=postgresql://estock:estock_local_only@127.0.0.1:55432/estock`. The Manager and Staff passwords are for the two demo accounts. Keep this file private; the browser never needs the Gemini key.
+### Problem
 
-In this working copy, `.env.local` already contains the local database URL and demo credentials. Open that ignored file to read or change the two sign-in passwords and configure your Gemini key. Preserve the existing `ESTOCK_SESSION_SECRET` when changing passwords.
+Small shops often copy product names and quantities from supplier documents into a spreadsheet or stock book. Re-entering the same details takes time and can introduce mistakes, especially when products use different names or deliveries arrive short. A document also cannot establish what physically arrived, so automatically treating its quantities as received stock can make the inventory inaccurate.
 
-Manager and Staff passwords must normally differ. For an intentional local demo, set `ESTOCK_DEMO_ALLOW_SHARED_PASSWORD=true` in `.env.local` to allow both accounts to use the same password while running `npm run dev`. This exception is disabled by default and is never accepted in production mode. Sessions still retain the selected account role, and backend Manager-only permission checks still apply. Restart the development server after changing local authentication settings.
+### Solution
 
-The origin guard compares the browser Origin with the inbound Host and request scheme, including the port. This allows `http://localhost:3000` when the dev server binds to `0.0.0.0`; the bind address is not the browser's origin. Different origins and requests marked `cross-site` remain rejected. No wildcard or forwarded-host allowlist is used.
+eStock uses Gemini to extract a first draft of product lines from a supplier-document photo. The Manager checks the date, product matches and expected quantities, converts package quantities into the product's base unit, and sends the prepared receipt to Staff. Staff checks the physical delivery and confirms actual quantities. That confirmation updates stock and receipt History together, with a Manager notification for discrepancies.
 
-```sh
+The MVP serves one shop and one warehouse. Its product catalogue, role permissions, receipt workflow and activity records demonstrate a reusable inventory capability for the Orbyte ecosystem. This is a proposed fit; no live Orbyte API integration is claimed.
+
+### Key Features
+
+- **Document-assisted preparation:** camera or file upload, backend extraction, editable product lines and review cues for uncertain values.
+- **Product matching:** official product names and confirmed aliases, with Manager correction when a match is ambiguous or missing.
+- **Physical receiving:** frozen Manager submissions, Staff entry of actual received quantities, and recorded shortages or extras.
+- **Once-only stock intake:** transactional receipt completion, stock balances, Intake movements and required discrepancy notifications.
+- **Everyday stock actions:** both roles search inventory and record positive whole-number Take or Return quantities; concurrent Take cannot make stock negative.
+- **Role-specific management:** Manager manages products, Opening stock, drafts and full History; shared Staff confirms receiving checks. Shared-account activity does not identify individual employees.
+- **Traceable records:** receipt History separates document, sent and checked times and retains Intake details; Stock activity shows Opening, Take and Return. Manager product archive retains historical identity.
+
+### Core Automated Journey
+
+| Stage | eStock behavior |
+| --- | --- |
+| Trigger | Manager uploads a team-created synthetic supplier document. |
+| Connected data | The application uses the product catalogue, confirmed aliases, current stock and receipt state. |
+| AI and rules | Gemini extracts document text; application rules validate and match lines. Manager checks uncertain details and prepares base-unit quantities. |
+| Human control | Manager reviews and sends expected quantities. Staff physically checks and confirms actual goods before stock increases. No later Manager approval is required. |
+| Visible outcome | Actual Intake, stock and receipt History are recorded atomically; quantity differences notify the Manager. |
+
+### Expected Benefit and SDG Contribution
+
+The intended benefit is less repeated typing with a physical check before inventory changes. This supports SDG 8.2 through productivity tools and SDG 8.3 through a workflow designed for small businesses. No measured time-saving or OCR-accuracy percentage is claimed here.
+
+| Measurement | Value or method |
+| --- | --- |
+| Core KPI | Seconds from starting document entry to confirmed receipt, compared with manual entry on the same synthetic delivery |
+| Manual-entry baseline | Not yet measured. |
+| Measured prototype result and sample size | Not yet measured; no timing study conducted. |
+| Phase 2 improvement target (%) | To be defined after baseline measurement. |
+
+### Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js 16, React 19, TypeScript, CSS and Manrope |
+| Backend | Next.js server routes under `/api/estock` |
+| Database | PostgreSQL, `pg`, ordered SQL migrations |
+| AI | Server-side Google Gemini API via `@google/genai`; default model `gemini-2.5-flash` |
+| Hosting | Replit live demo; repository includes `.replit` configuration |
+| Local verification | Biome, TypeScript, Node tests, Playwright with Chrome/Edge |
+
+The earlier SQLite forecasting/purchasing code and worker/training material are preserved as historical work. They are outside the active document-assisted inventory workflow. Actual historical tools and AI-assisted development belong in the Technical & Tools Declaration.
+
+## Project Structure
+
+```text
+.
+├── src/
+│   ├── app/                     # Landing, /demo and server API routes
+│   ├── components/              # Manager and Staff interfaces
+│   ├── lib/server/estock/       # Auth, extraction, inventory and receiving
+│   └── styles/                  # Shared design tokens and styles
+├── db/estock/                   # PostgreSQL schema and ordered migrations
+├── public/                      # Public assets and synthetic fixture templates
+├── scripts/                     # Migration and runtime checks
+├── tests/estock/                # Isolated API and browser verification
+├── docs/                        # PRD, architecture, verification and team notes
+├── submission/                  # Final submission PDFs and proof of use
+├── worker/                      # Historical forecasting worker
+├── training/                    # Historical model-training material
+├── .env.example                 # Variable names, without real secrets
+├── .replit                      # Replit run and deployment configuration
+├── compose.estock.yml           # Optional local PostgreSQL service
+├── package.json
+├── LICENSE
+└── README.md
+```
+
+### Architecture
+
+```mermaid
+flowchart TD
+    M[Manager: upload and review] --> API[Next.js server API]
+    API --> G[Gemini: extract document lines]
+    G --> API
+    API <--> DB[(PostgreSQL: products, drafts and stock)]
+    M --> SEND[Send frozen expected quantities]
+    SEND --> S[Staff: physical check and confirm actual quantities]
+    S --> TX[Atomic receipt completion]
+    TX --> DB
+    TX --> H[Updated inventory, History and discrepancy notifications]
+```
+
+## How to Run
+
+### Option 1: Use the Live Demo
+
+1. Open https://e-stock-maximillionc.replit.app.
+2. Select **Open demo**, then sign in using the appropriate demo account.
+3. As Manager, prepare a synthetic receipt and **Send to Staff**.
+4. As Staff, check actual goods and confirm receiving, then inspect the updated stock. Manager can inspect receipt History and discrepancies.
+
+Use only team-created synthetic documents, supplier details, products and records for the hackathon demonstration.
+
+### Option 2: Run This Repository on Replit
+
+1. Import `https://github.com/Swiftny/eStock` using [Replit's GitHub import](https://replit.com/import).
+2. Configure a hosted PostgreSQL database and the server secrets listed below. Secret values are not imported from GitHub.
+3. Install dependencies and apply the eStock migrations, then use the configured **Run** command.
+4. For a published server app, check production secrets and database selection, build and publish. Pulling GitHub changes does not by itself update the published app; publish the intended revision again.
+
+The repository's [.replit](.replit) supplies the build/start configuration. See the [Replit deployment guide](docs/engineering/REPLIT_DEPLOYMENT.md) for the complete setup and hosted verification steps. The laptop's local Docker database URL cannot be used as a hosted database connection.
+
+### Option 3: Run Locally
+
+Requirements: Node.js **22.18 or newer**, npm, and PostgreSQL. Docker Desktop is optional when using an existing PostgreSQL instance.
+
+```bash
+git clone https://github.com/Swiftny/eStock.git
+cd eStock
 npm ci
+cp .env.example .env.local
+```
+
+Fill in these server variables in the ignored `.env.local` file:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `GEMINI_API_KEY` | Server API key for document extraction |
+| `ESTOCK_MANAGER_PASSWORD` | Manager account password |
+| `ESTOCK_STAFF_PASSWORD` | Shared Staff account password; different from Manager in production |
+| `ESTOCK_SESSION_SECRET` | Stable random session secret, at least 32 characters |
+| `ESTOCK_GEMINI_MODEL` | Optional; blank uses `gemini-2.5-flash` |
+| `ESTOCK_GEMINI_MEDIA_RESOLUTION` | Optional; blank, `medium` or `high` |
+
+For the supplied local Compose service, use `postgresql://estock:estock_local_only@127.0.0.1:55432/estock` as `DATABASE_URL`, then run:
+
+```bash
 docker compose -f compose.estock.yml up -d --wait
 npm run db:estock:migrate
 npm run dev
 ```
 
-Run `npm ci` again after pulling dependency changes. If PostgreSQL is unavailable, open Docker Desktop and run the Compose command above; `--wait` waits for its healthcheck. The Compose project is fixed as `estock`, with database container `estock-postgres-1` and persistent named volume `estock_postgres_data`. In this working copy, the earlier database was copied from `sdc-hackathon_estock_postgres_data` without deleting that source volume. If port 3000 already serves this checkout, use that server instead of starting a second instance.
+Open http://localhost:3000/demo. If you use an existing PostgreSQL server, skip the Compose command. Migrations upgrade the schema without resetting existing inventory. Preserve the database volume and existing session secret when updating the application.
 
-Open `http://localhost:3000/demo`, sign in as Manager or Staff, and add initial products from the Manager account. Manager document upload accepts JPEG, PNG or WebP images up to 6 MB and requires a real Gemini key; the default model is `gemini-2.5-flash`. There is no mock scan path. `npm run dev` runs the website; it does not start PostgreSQL. If the database or Gemini service is unavailable, the relevant operation will display an error instead of silently using sample inventory.
+The active demo uses real backend extraction, with no mock scan fallback. A Gemini failure leaves stock unchanged. The local-only `ESTOCK_DEMO_ALLOW_SHARED_PASSWORD=true` exception is available during development; production requires separate Manager and Staff passwords. Legacy SQLite/RunPod variables in `.env.example` are not required for this workflow.
 
-Local setup verified on 24 October 2026: PostgreSQL 17.11 in Docker is healthy on `127.0.0.1:55432`; schema setup, typecheck and all 20 isolated PostgreSQL/API tests pass. The running `/demo` server on port 3000 accepts Manager/Staff login and stock reads; Staff receives 403 for Manager-only History and drafts. No products, movements or drafts were added to the application database. Live Gemini was not called. See [project context](PROJECT_CONTEXT.md) for the runtime diagnosis and limits.
+### Run Tests
 
-On the Manager's **Scan receipt** page, choose **Take photo** or **Upload file**. Phones use their native camera chooser; supported desktop browsers show a live preview with **Take picture**, **Cancel camera**, and **Switch camera** when multiple devices are available. Desktop preview requires HTTPS or localhost and camera permission. A phone opening a plain HTTP LAN address may need a secure preview URL for browser camera APIs. Camera errors leave Upload file available. Preview the selected image, then use **Retake photo**, **Change file**, or **Remove image** as needed. Decodable large photos and camera formats such as HEIC/AVIF are resized to a JPEG in a bounded browser canvas before upload; the prepared image must be at most 6 MB and the original file at most 40 MB. If the browser cannot decode a format, use JPEG, PNG or WebP. Images and camera streams are temporary; there is no browser-storage or server-file save. Physical phones and webcams still need device-specific acceptance.
-
-**Create draft** sends either choice through server-side Gemini extraction, with at most one additional attempt for an HTTP 503. The prompt asks for document type, issue date, raw product lines, quantities/units, image readability and specific review reasons. It preserves package notation such as `@320BH` without multiplying carton contents and keeps fractional source quantities for manual conversion. The extracted date appears in the editable Document date field; positive whole-number OCR quantities prefill Expected quantity even before product matching. Manager must check the bon and adjust date, names, product choice, quantity and base units before Send. Fractional or unreadable quantities stay blank. Uncertain lines have a short inline cue; an image with no readable item row asks for a retake without saving a draft. Orders and proformas retain a delivery warning. Extraction does not add stock. Staff opens a pending check or notification, enters the actual counts, and confirms physical goods. Actual quantities post immediately; no further Manager approval. Staff has no OCR or general draft access. Exploratory real-provider and simulated browser results, with their limits, are in the [earlier QC](docs/verification/END_TO_END_QC_2026_10_24.md).
-
-Staff receiving shows compact product rows with a disclosure arrow on the left. Open a row to edit its **How much did you receive?** field when the physical count differs, including 0 for missing goods. Unchanged rows use the expected count. Changed quantities remain visible when collapsed; the server records matching, short or extra results and the difference when Staff confirms.
-
-The draft form presents one editable column instead of a second source-text column or comparison-image picker. A blank unreadable line can be excluded with a reason before sending the valid included lines to Staff. Extraction has no application-imposed 45-second cutoff; a numeric provider HTTP 503 receives one bounded retry, while provider, network and hosting limits can still end a request. The scan screen keeps a slow request visible. On a provider or connection failure, check Drafts before deliberately retrying, since a lost response after persistence may leave a saved draft. Extraction itself never changes stock.
-
-Manager **Drafts** lists only preparation drafts and receipts awaiting Staff. **History** contains completed receipts, historical Manager approvals and discarded drafts. Receipt details show extracted/expected/actual quantities and Manager sent, shared Staff checked and stock posting times. Same-date receipts stay separate. Search by product/description/quantity and filter document date. Manager can permanently clear completed/discarded receipt records and notifications after an in-app confirmation. This detaches bon details from existing Intake movements while keeping the minimal ledger and stock balances; deleted receipts cannot support later duplicate-document warnings. **Stock activity** separately lists Take/Return with server account attribution and discoverable **Manager opening balance** records. Shared Staff labels never identify an individual employee.
-
-Manager **Stock activity** also has **Clear stock activity** with an explicit click confirmation. It permanently deletes individual Opening/Take/Return events and their replay details, keeps only a combined numerical balance per product, and leaves current stock and receipt history intact. Old request identities remain protected against duplicate posting. **Clear notifications** also uses click confirmation and permanently deletes only the signed-in account's notifications; pending receiving checks remain available. These actions do not run automatically. Migration 005 supplies the activity balance and once-only Opening guard.
-
-## Apply this revision on each teammate's laptop
-
-Each teammate runs these commands against **their own** PostgreSQL Docker volume and preserves their existing ignored `.env.local`:
-
-```sh
-npm ci
-docker compose -f compose.estock.yml up -d --wait
-npm run db:estock:migrate
-npm run dev
+```bash
+npm run typecheck
+npm run build
+npm run test:estock
+npm run test:estock:browser
 ```
 
-The explicit command and application initialization use the same ordered transactional migration runner, with a per-schema advisory lock and `estock_schema_migrations`. `001_initial.sql` is adopted safely for existing unversioned databases; `002_staff_receiving.sql` adds receiving snapshots/checks, notifications and archive columns; `003_extraction_metadata.sql` adds document/readability/review evidence to drafts; `004_receipt_revision_evidence.sql` freezes the reviewed name and exclusion reason for each new sent revision. Re-running setup does not repost receipts or reset stock. Existing unsent drafts remain preparation drafts; old APPROVED receipts keep their Manager attribution. Historical pre-004 exclusion snapshots cannot be reconstructed. Products, movements and compatible sessions persist. **Do not use database resets, truncate or `down -v`.** Stop/restart the app after updating the source. The command needs permission to apply schema changes. It neither reads images nor calls Gemini.
+The API/browser suites require a reachable test PostgreSQL database and permission to create their own temporary schemas. Set `ESTOCK_TEST_DATABASE_URL`, or use the configured local database. They create synthetic records in isolated schemas and clean up those owned schemas; browser OCR uses a test-only provider stub. Browser checks require installed Chrome, or Edge with `ESTOCK_BROWSER_CHANNEL=msedge`. These tests do not establish real-document OCR accuracy or hosted durability.
 
-Stockroom is the only permanent app destination. Manager task buttons open Inventory, Scan receipt, Drafts and History. Staff task buttons open Inventory/Take/Return and pending receiving checks. Each feature/detail has Back to Stockroom, including notification arrivals. Notifications refresh every eight seconds and on focus. A deleted product in a pending receipt blocks posting: Manager opens Drafts, uses Recall to correct, selects active products and sends a new version. Manager receives differences as information after stock posts.
+## How We Use Replit
 
-[Current end-to-end QC](docs/verification/END_TO_END_QC_2026_10_24.md) records this revision; older reports retain their original scope. The small live OCR sample is exploratory, while physical devices/cameras, provider retention and hosted persistence remain unverified.
+- **Live prototype:** the team-provided published app is linked above.
+- **Repository configuration:** `.replit` defines Node 22, the development command, deployment build/start commands and the exposed application port.
+- **Server secrets:** database credentials, Gemini credentials and account/session secrets are configured outside source control.
+- **Release workflow:** pull the intended GitHub revision into the Replit project, check its configuration, publish, and verify the published version.
 
-## Repeatable local verification
+Proof of use: [SDC2026_TooGoodToBeTrue_Replit_POU.pdf](submission/SDC2026_TooGoodToBeTrue_Replit_POU.pdf). This local PDF still needs team review and inclusion in the submitted GitHub files and Technical & Tools Declaration. A reachable homepage alone does not verify receiving, database persistence or restart/redeploy behavior.
 
-`npm run test:estock` runs retained PostgreSQL/API regressions with a test-only provider stub. Set `ESTOCK_TEST_DATABASE_URL` or use private local `DATABASE_URL`; the database account needs permission to create/drop its own uniquely named schema. Tests verify their search path, create synthetic data only there and remove only that owned schema. They never reset or seed operational tables. No live Gemini call occurs.
+## How We Use RunPod
 
-`npm run test:estock:browser` launches a temporary source copy, unique synthetic schema, loopback provider stub and a fresh **headless Chrome** profile using the development demo credentials from the private environment. Set `ESTOCK_BROWSER_CHANNEL=msedge` to exercise installed Edge instead. `playwright-core` is a development-only driver and downloads no browser. Port 3107 must be free. A preview identity check prevents testing against another service. External fetches are blocked; no existing browser profile or operational data is used. The process must be allowed to stop its own child server tree for cleanup. Evidence is saved in ignored `.artifacts/estock-mvp/` or `.artifacts/estock-mvp-msedge/`. Fake camera streams and a mobile user agent test the browser paths; they do not verify physical devices.
+| Field | Details |
+| --- | --- |
+| Workload and purpose | |
+| Pod ID or Serverless endpoint | |
+| GPU type and runtime | |
+| Own-account proof of use | |
 
-For a manual synthetic-only browser walkthrough, `npm run test:estock:preview` exposes the same isolated preview. Its third extraction request deliberately simulates a provider outage; other calls return clearly synthetic fixture data. Use `stop` then Enter to clean up, or Ctrl+C in an interactive terminal. No mock/fallback path was added to the ordinary app. Do not mistake this test-only preview for live receipt extraction.
+Reserved for team completion. The active receipt-extraction path uses Gemini; this README does not claim a working application-to-RunPod connection. Historical work remains in the repository documentation and must still be declared where applicable.
 
-Only use team-created synthetic supplier documents and records for competition material. The app does not keep uploaded image files; it keeps structured draft and History records. Check Gemini service terms before processing real supplier documents. Historical [stock](docs/verification/STOCK_TRACKING_2026_10_21.md), [forecast](docs/verification/FORECASTING_2026_10_21.md), [integration](docs/verification/INTEGRATION_2026_10_22.md), [UI](docs/verification/UI_2026_10_22.md) and [automatic SKU](docs/verification/AUTO_SKU_2026_10_22.md) reports remain about the earlier system.
+## Verification and Data Handling
 
-## Read and coordinate
+Existing [end-to-end QC](docs/verification/END_TO_END_QC_2026_10_24.md) records local PostgreSQL/API and Chrome/Edge checks. The [skip-link report](docs/verification/SKIP_LINK_2026_10_24.md) records the later landing accessibility correction. These reports describe their own tested revisions; they are not new verification of the published Replit app.
 
-Start with [AGENTS.md](AGENTS.md), [context](PROJECT_CONTEXT.md), [English PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [stock specification](docs/engineering/STOCK_TRACKING.md), [OCR intake specification](docs/engineering/OCR_INTAKE.md), [build handoff](docs/plans/BUILD_PLAN.md) and [team integration](docs/team/integration.md). The [Indonesian source](docs/product/sources/PRD_ID_2026_10_23.md) is preserved; [superseded documentation](docs/archive/2026-10-23-before-document-intake/README.md) is historical. The coordinated scope map includes active eStock modules; shared contracts still require one editor.
+The application processes uploaded images transiently and retains structured draft/receipt data rather than uploaded image files. Gemini provider retention and hosting logs/cache behavior require separate review. AI output can be wrong: Manager checks the document, and Staff confirms the physical goods. Package conversion is manual. There are no monetary calculations, purchasing automation or forecasting in the active workflow.
 
-| Member | Assignment | University |
+## Challenges & Learnings
+
+- **Document text is not delivery proof:** separate expected quantities from Staff-confirmed actual quantities.
+- **OCR can produce plausible mistakes:** preserve review cues and require human checks of names, dates and units.
+- **Retries and concurrent actions can duplicate or corrupt stock:** use frozen revisions, request identities and transactional posting.
+- **Local and hosted versions can differ:** verify the intended source revision, server secrets, database and published app together.
+
+## Future Improvements
+
+- [ ] Measure task time, correction rate and extraction accuracy on a declared team-created synthetic evaluation set.
+- [ ] Strengthen similar-document warnings across separate uploads.
+- [ ] Verify physical phone cameras, hosted receiving and persistence across restart/redeploy.
+- [ ] Extend the single-shop workflow into a reusable Orbyte connector and multi-business configuration.
+
+## Team
+
+| Name | Role | GitHub |
 | --- | --- | --- |
-| Marco Ryan Suseno | Leader / AI | Xiamen University |
-| Riakudu Vittorios Surjoraharjo | Frontend | Xiamen University |
-| Maximillion Cang | Data | Xiamen University |
-| William Christiansen | System / backend | Xiamen University |
+| Marco Ryan Suseno | Team Leader, UI, pitch slides and RunPod | [@Enkhoder](https://github.com/Enkhoder) |
+| Maximillion Cang (Maxi) | Database, Backend | [@MaximillionCang](https://github.com/MaximillionCang) |
+| William Christiansen | AI | [@Kurrbluu](https://github.com/Kurrbluu) |
+| Riakudu Vittorios Surjoraharjo | Frontend and Replit | [@Swiftny](https://github.com/Swiftny) |
 
-Private registration contacts stay outside public documentation. Repository: [Swiftny/sdc2026-TooGoodToBeTrue-domain2](https://github.com/Swiftny/sdc2026-TooGoodToBeTrue-domain2).
+Assignments and GitHub accounts follow the team's latest confirmation. Registration contacts remain private.
 
-## Competition and submission status
+## Submission Documents
 
-[Compliance matrix](docs/COMPLIANCE_MATRIX.md) and [checklist](docs/SUBMISSION_CHECKLIST.md) retain all six preliminary deliverables: official-template proposal PDF, deck, accessible working prototype, Technical & Tools Declaration with actual proof, public GitHub source with Apache 2.0/committee access, and a 5–7-minute YouTube pitch/demo. Drafts are not completed deliverables.
+| Document | File or completion field | Status |
+| --- | --- | --- |
+| Preliminary proposal, official template | [Preliminary PDF](submission/SDC2026_TooGoodToBeTrue_Preliminary.pdf) | Local file present; template, word limits, signature and Git upload pending review |
+| Technical & Tools Declaration, official template | `submission/SDC2026_TooGoodToBeTrue_TechDeclaration.pdf` | Final PDF to be added |
+| Replit proof of use | [Replit POU PDF](submission/SDC2026_TooGoodToBeTrue_Replit_POU.pdf) | Local file present; team review and Git upload pending |
+| RunPod proof of use | [RunPod POU PDF](submission/SDC2026_TooGoodToBeTrue_Runpod_POU.pdf) | Local file present; team review, Git upload and inclusion in the declaration pending |
 
-Replit is mandatory with own-account/project evidence (PH §9.2/§10.6); deployment and durable hosted storage remain unverified. PH §9.3 ties RunPod to GPU work and §10.7 requires proof for teams that used it. The older sample's general Required wording remains unresolved (X-03); hosted Gemini creates no invented exemption. Historical [RunPod training/evaluation](docs/plans/AI_RUNPOD_PLAN.md) remains declarable; it is not OCR evidence or proof of a connected Serverless app.
+The [proposal draft](docs/submission/PROPOSAL_DRAFT.md) and [declaration draft](docs/submission/TECH_DECLARATION_DRAFT.md) are working material, not signed final submissions. Blank fields in this README are editing placeholders; the official final forms require complete, truthful answers, including actual AI-development assistance and sponsor/tool use.
 
-PH/earlier orientation: **25 October 2026, 07:59:59 AM MYT**. [Website](https://sdchack.my/) and [FAQ](https://sdchack.my/faq) still show **11:59 PM MYT**. Use the earlier cutoff pending written clarification; internal target **24 October 2026, 20:00 MYT**. Freeze judged materials after the applicable deadline. Latest private announcements, portal fields, attendance, workshops, signatures and final access still require team verification.
+## Submission Checklist
 
-The original [Apache 2.0 LICENSE](LICENSE), Git history and historical evidence are preserved. See [third-party notices](THIRD_PARTY_NOTICES.md). This implementation changes application code and local setup only; no commit, push, publication or paid model call was made in this task.
+- [x] Team name, Domain 2, SDG track and current responsibilities filled in.
+- [x] GitHub repository and live demo links added.
+- [x] Apache 2.0 LICENSE file retained.
+- [ ] Slide deck link added and aligned with the pitch.
+- [ ] Accessible 5–7-minute YouTube pitch/demo video linked.
+- [ ] Judge access instructions completed and tested in a fresh browser.
+- [ ] Published demo checked against the intended GitHub revision, including receiving and database persistence.
+- [ ] Replit own-account/project proof reviewed, committed and included in the declaration.
+- [ ] RunPod details and applicable own-account proof completed and declared.
+- [ ] Official preliminary PDF completed within word limits and genuinely signed.
+- [ ] Official Technical & Tools Declaration completed, reviewed and genuinely signed.
+- [ ] Required submission PDFs named with `TooGoodToBeTrue` and added to `submission/`.
+- [ ] Setup steps checked on the submitted revision.
+- [ ] Secrets and private records excluded from source, history, screenshots and video.
+- [ ] Public repository and designated committee collaborator access verified for judging.
+- [ ] Official portal submission completed and judged source/build/materials frozen at the applicable deadline.
+
+See the full [submission checklist](docs/SUBMISSION_CHECKLIST.md) and [compliance matrix](docs/COMPLIANCE_MATRIX.md) for source-specific requirements, deadline clarification and remaining human checks. This README does not by itself establish submission readiness.
+
+## Submission References
+
+- [Official submission resources on Google Drive](https://drive.google.com/drive/folders/1xw7c2aN8N-at8hPEULzkcU76e_FFb0Ef)
+- [GitHub submission example used for this README's structure](https://github.com/michaelzhngg/SDC_Hackathon_Submission_Template)
+- [Domain 2 brief and marking rubric](https://drive.google.com/file/d/11wqbeO-HYep-DJPQ-LPZnrZfQvCgr5BU/view)
+- [Participant Handbook, including deliverables and platform proof](https://drive.google.com/file/d/1fGBS-jevDj_FrF8wsbYNPzyU5TTrfk1V/view)
+
+Project details: [PRD](docs/product/prd.md), [decisions](docs/product/DECISIONS.md), [stock tracking](docs/engineering/STOCK_TRACKING.md), [document intake](docs/engineering/OCR_INTAKE.md), [project context](PROJECT_CONTEXT.md), [build handoff](docs/plans/BUILD_PLAN.md) and [team integration](docs/team/integration.md). The [earlier archived project](docs/archive/2026-10-23-before-document-intake/README.md) remains historical.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE). Existing third-party notices remain in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
