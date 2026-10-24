@@ -1,0 +1,81 @@
+{
+  "model": "gemini-3.8-flash",
+  "created_at": "2026-10-24T21:46:58.134Z",
+  "image_sha256": "b5736a5e0b67e3bf5ac9dd880fff3b84f05a98cc1e50fd0fa723a888304b366b",
+  "expected_date": "2026-10-24",
+  "expected_document_type": "surat_jalan",
+  "expected_lines": [
+    {
+      "rawName": "Lamp 5W",
+      "rawQuantity": 20,
+      "rawUnit": "pcs"
+    },
+    {
+      "rawName": "Lamp 10W",
+      "rawQuantity": 20,
+      "rawUnit": "pcs"
+    },
+    {
+      "rawName": "Extension cable 3m",
+      "rawQuantity": 5,
+      "rawUnit": "pcs"
+    }
+  ],
+  "scope": "One direct provider extraction of a new generated synthetic image; no database, catalogue matching, stock or hosted app operation.",
+  "status": "pass",
+  "elapsed_ms": 76136,
+  "checks": {
+    "date": true,
+    "document_type": true,
+    "exactly_three_lines": true,
+    "lines": [
+      {
+        "name": true,
+        "quantity": true,
+        "unit": true
+      },
+      {
+        "name": true,
+        "quantity": true,
+        "unit": true
+      },
+      {
+        "name": true,
+        "quantity": true,
+        "unit": true
+      }
+    ]
+  },
+  "extracted": {
+    "imageStatus": "clear",
+    "documentType": "surat_jalan",
+    "documentDate": "2026-10-24",
+    "dateNeedsReview": false,
+    "lines": [
+      {
+        "rawName": "Lamp 5W",
+        "rawQuantity": 20,
+        "rawUnit": "pcs",
+        "quantityText": "20 pcs",
+        "needsReview": false,
+        "reviewReason": null
+      },
+      {
+        "rawName": "Lamp 10W",
+        "rawQuantity": 20,
+        "rawUnit": "pcs",
+        "quantityText": "20 pcs",
+        "needsReview": false,
+        "reviewReason": null
+      },
+      {
+        "rawName": "Extension cable 3m",
+        "rawQuantity": 5,
+        "rawUnit": "pcs",
+        "quantityText": "5 pcs",
+        "needsReview": false,
+        "reviewReason": null
+      }
+    ]
+  }
+}
