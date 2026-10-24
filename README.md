@@ -26,12 +26,14 @@ The pitching video is **5 minutes 14 seconds**, within the Participant Handbook'
 
 ### Demo Access
 
-Open the Live Demo, choose **Open demo**, then select Manager or Staff. The credentials below are public demo credentials for judges. Use only synthetic data in this shared demo.
+Open the [Live Demo](https://e-stock-maximillionc.replit.app/), click **Open demo**, select an account, and enter its password in **Access code**.
 
-| Account | Judge access instructions |
+| Account to select | Password / access code |
 | --- | --- |
-| Manager | Select **Manager** and enter password `Manager`. |
-| Shared Staff | Select **Staff** and enter password `Staff`. |
+| **Manager** | **`Manager`** |
+| **Staff** | **`Staff`** |
+
+Passwords are case-sensitive: capital **M** for `Manager`, capital **S** for `Staff`. These are public demo accounts; no registration is needed. Follow [How to Run](#how-to-run) for the complete login, account-switching and receipt walkthrough. Use only synthetic data in this shared demo.
 
 The live URL is supplied by the team. The architecture and setup below describe this repository; checking that the published Replit version matches the intended GitHub revision remains part of the release checklist.
 
@@ -137,58 +139,210 @@ flowchart TD
 
 ## How to Run
 
+Choose **Option 1** to try the published app immediately. Options 2 and 3 are for running your own copy on Replit or your computer.
+
 ### Option 1: Use the Live Demo
 
-1. Open https://e-stock-maximillionc.replit.app.
-2. Select **Open demo**, then sign in using the appropriate demo account.
-3. As Manager, prepare a synthetic receipt and **Send to Staff**.
-4. As Staff, check actual goods and confirm receiving, then inspect the updated stock. Manager can inspect receipt History and discrepancies.
+#### 1. Open the app and sign in
 
-Use only team-created synthetic documents, supplier details, products and records for the hackathon demonstration.
+1. Open **[eStock Live Demo](https://e-stock-maximillionc.replit.app/)**.
+2. On the landing page, click **Open demo**.
+3. On **Sign in to eStock**, select the account you want to use.
+4. Enter its password in the **Access code** field, then click **Sign in**.
 
-### Option 2: Run This Repository on Replit
+| Account to select | Password / access code | What you can try |
+| --- | --- | --- |
+| **Manager** | **`Manager`** | Manage products, scan documents, review and send drafts, inspect receipt History and discrepancy notifications, and record Take/Return |
+| **Staff** | **`Staff`** | Open Pending checks, confirm actual received quantities, view inventory, and record Take/Return |
+
+**Manager's password is `Manager`. Staff's password is `Staff`.** Both are case-sensitive: use a capital **M** or **S**, with no spaces before or after the password. Select the matching account before signing in. No email address or account registration is needed for these demo accounts.
+
+The published demo is ready to open in a browser; visitors do not need to install the project or provide an API key. These are the team's public demo credentials.
+
+#### Sample synthetic receipt
+
+The sample image is stored in **`public/fixtures/receipts/`** in this repository.
+
+Use [synthetic-receipt-01.png](public/fixtures/receipts/synthetic-receipt-01.png) to try the scan. Open the image link, download the original PNG, then upload it under **Scan receipt**. The sample is a clearly labelled synthetic delivery note, inspired by the document shown in the pitching video.
+
+| Printed field | Expected content |
+| --- | --- |
+| Document date | `2026-10-24` |
+| Lamp 5W | `20 pcs` |
+| Lamp 10W | `20 pcs` |
+| Extension cable 3m | `5 pcs` |
+
+The document includes example RM prices; eStock ignores monetary fields during extraction. Review the date, product matches and quantities before sending to Staff. See the [sample notes](public/fixtures/receipts/README.md) for its origin and OCR-check scope.
+
+#### 2. Try the Manager workflow
+
+1. Sign in as **Manager** with password **`Manager`**. The app opens **Inventory**.
+2. Open **Scan receipt** and upload or photograph a **team-created synthetic supplier document**. Use a clear image with a readable date, product names and quantities. Supported upload formats are JPEG, PNG and WebP, up to 6 MB.
+3. Click **Create draft** and wait for document extraction to finish.
+4. In the draft, check the document date and each product line. Confirm the **Official product** selection; correct an unsuitable match or use **Create new product** for an item that is missing from the catalogue.
+5. Set each expected quantity as a whole number in the product's base unit. Convert packs or boxes manually before sending.
+6. Click **Send to Staff** when all details are correct. The submitted details are frozen while Staff checks the delivery.
+
+Creating a draft or sending it to Staff does **not** increase stock. Stock increases when Staff confirms the quantities actually received.
+
+#### 3. Try the Staff workflow
+
+1. Switch from Manager to Staff using the account-switching steps below, or open a separate browser session. Sign in as **Staff** with password **`Staff`**.
+2. Open **Pending checks** and select the receipt sent by Manager.
+3. Compare each expected quantity with the delivery. Open each product line and enter the quantity actually received, including `0` if none arrived.
+4. Review all lines, then click **Confirm received goods**. eStock records the actual Intake and updates inventory and receipt History together.
+5. Open **Inventory** to see the stock balance. Manager can then inspect **History** and any discrepancy notification. No additional Manager approval is required after Staff confirmation.
+
+For a synthetic demonstration, use declared sample delivery counts. **Example:** Manager expects `10` units and Staff confirms `8`; eStock adds `8` units and records a shortage of `2`.
+
+#### 4. Switch accounts or use two devices
+
+- To switch roles in one browser, click the **eStock logo** to return to the landing page. Click **Sign out** in the top navigation and confirm the sign-out dialog. Click **Open demo** again, select the other account and enter its password.
+- To view both roles at once on one computer, use a normal browser window for Manager and a private/incognito window or another browser for Staff. Tabs in the same browser profile share the login session.
+- On two laptops or phones, open the **same live demo URL** on both devices. Sign in as Manager on one and Staff on the other. Both use the published app's shared inventory database; refresh the relevant view if a recent change has not appeared yet.
+
+Both accounts can also open Inventory, find a product and record **Take** or **Return**. Enter a positive whole-number quantity; Take cannot exceed the available stock. Return records usable goods returned to inventory.
+
+Use synthetic documents, supplier details, products and records throughout the competition demo. The live demo is shared, so its existing products and balances may reflect another visitor's activity.
+
+### Option 2: Run Your Own Copy on Replit
 
 1. Import `https://github.com/Swiftny/eStock` using [Replit's GitHub import](https://replit.com/import).
-2. Configure a hosted PostgreSQL database and the server secrets listed below. Secret values are not imported from GitHub.
-3. Install dependencies and apply the eStock migrations, then use the configured **Run** command.
-4. For a published server app, check production secrets and database selection, build and publish. Pulling GitHub changes does not by itself update the published app; publish the intended revision again.
+2. Connect a hosted PostgreSQL database. Set `DATABASE_URL` to that database's connection string.
+3. In Replit **Secrets**, add the server variables in the table below. To use the same account passwords as the public demo, set these exact values:
 
-The repository's [.replit](.replit) supplies the build/start configuration. See the [Replit deployment guide](docs/engineering/REPLIT_DEPLOYMENT.md) for the complete setup and hosted verification steps. The laptop's local Docker database URL cannot be used as a hosted database connection.
+   ```dotenv
+   ESTOCK_MANAGER_PASSWORD=Manager
+   ESTOCK_STAFF_PASSWORD=Staff
+   ESTOCK_GEMINI_MODEL=gemini-3.8-flash
+   ```
+
+   Also supply your `GEMINI_API_KEY` and a random `ESTOCK_SESSION_SECRET` of at least 32 characters. GitHub imports do not include your private secret values.
+
+4. In the project Shell, install dependencies and prepare the database:
+
+   ```bash
+   npm ci
+   npm run db:estock:migrate
+   ```
+
+5. Click **Run**, then open **Preview**. This repository's [.replit](.replit) runs the development server on port 3000.
+6. Open **Open demo** and sign in with **Manager / `Manager`** or **Staff / `Staff`**, using the same steps as Option 1.
+7. To make your copy available at a public URL, open **Publishing**, confirm the production database and production secrets, then publish. If you keep the passwords above, the published copy uses those same credentials.
+
+Development and production can use separate databases. All visitors to one published copy use its configured production database. When updating an existing deployment, retain its production data; leave **Copy your development database to production database** unchecked unless you intend to replace the production contents.
+
+After a GitHub update, pull the intended revision into Replit and **Republish** to update the public app. After changing a production API key or password, confirm the value in production secrets and republish. The laptop's local Docker database URL is for local development only; a hosted app needs a database reachable from Replit.
+
+These commands describe this repository's Next.js setup. For further configuration and release checks, see the [Replit deployment guide](docs/engineering/REPLIT_DEPLOYMENT.md).
 
 ### Option 3: Run Locally
 
-Requirements: Node.js **22.18 or newer**, npm, and PostgreSQL. Docker Desktop is optional when using an existing PostgreSQL instance.
+#### 1. Install the prerequisites and dependencies
+
+You need **Node.js 22.18 or newer**, npm, Git, a Gemini API key with access to `gemini-3.8-flash`, and PostgreSQL. Install and start Docker Desktop if you want to use the supplied local PostgreSQL service.
 
 ```bash
 git clone https://github.com/Swiftny/eStock.git
 cd eStock
 npm ci
+```
+
+#### 2. Create your local configuration
+
+Copy `.env.example` to `.env.local` in the project root, alongside `package.json`. For a new setup, use the command for your terminal:
+
+**Windows PowerShell:**
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+**macOS / Linux / Git Bash:**
+
+```bash
 cp .env.example .env.local
 ```
 
-Fill in these server variables in the ignored `.env.local` file:
+If `.env.local` already exists, edit that file and keep your existing connection details and secrets. For the supplied Docker database, configure these values:
 
-| Variable | Purpose |
+```dotenv
+DATABASE_URL=postgresql://estock:estock_local_only@127.0.0.1:55432/estock
+GEMINI_API_KEY=REPLACE_WITH_YOUR_GEMINI_API_KEY
+ESTOCK_GEMINI_MODEL=gemini-3.8-flash
+ESTOCK_MANAGER_PASSWORD=Manager
+ESTOCK_STAFF_PASSWORD=Staff
+ESTOCK_SESSION_SECRET=REPLACE_WITH_A_RANDOM_SECRET_OF_AT_LEAST_32_CHARACTERS
+```
+
+Replace the API-key and session-secret placeholders before starting. You can generate a session secret with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Copy the generated value into `ESTOCK_SESSION_SECRET`. Keep `.env.local` out of Git.
+
+| Server variable | Value or purpose |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `GEMINI_API_KEY` | Server API key for document extraction |
-| `ESTOCK_MANAGER_PASSWORD` | Manager account password |
-| `ESTOCK_STAFF_PASSWORD` | Shared Staff account password; different from Manager in production |
-| `ESTOCK_SESSION_SECRET` | Stable random session secret, at least 32 characters |
-| `ESTOCK_GEMINI_MODEL` | Required; set exactly to `gemini-3.8-flash`. Blank or other model IDs are rejected |
-| `ESTOCK_GEMINI_MEDIA_RESOLUTION` | Optional; blank, `medium` or `high` |
+| `DATABASE_URL` | PostgreSQL connection string. Use the Docker URL above for the supplied Compose service, or your own PostgreSQL connection string |
+| `GEMINI_API_KEY` | Your server-side Gemini API key, used to read document images |
+| `ESTOCK_GEMINI_MODEL` | Set exactly to `gemini-3.8-flash`; blank or other model IDs are rejected |
+| `ESTOCK_MANAGER_PASSWORD` | Set to `Manager` to sign in as Manager with password `Manager` |
+| `ESTOCK_STAFF_PASSWORD` | Set to `Staff` to sign in as Staff with password `Staff` |
+| `ESTOCK_SESSION_SECRET` | A stable random secret of at least 32 characters, used for login sessions |
+| `ESTOCK_GEMINI_MEDIA_RESOLUTION` | Optional: leave blank, or set `medium` or `high` |
 
-For the supplied local Compose service, use `postgresql://estock:estock_local_only@127.0.0.1:55432/estock` as `DATABASE_URL`, then run:
+The passwords `Manager` and `Staff` are different, so this setup does not need the shared-password development exception. Legacy SQLite/RunPod variables in `.env.example` are not required for the current inventory workflow.
+
+#### 3. Start PostgreSQL and prepare the tables
+
+With Docker Desktop running, start the supplied database:
 
 ```bash
 docker compose -f compose.estock.yml up -d --wait
+```
+
+If you already have a PostgreSQL server, skip that command and use its connection string in `DATABASE_URL`. Then apply the eStock schema:
+
+```bash
 npm run db:estock:migrate
+```
+
+Wait for `eStock PostgreSQL schema is ready.` before continuing. Migrations prepare or upgrade the tables without resetting existing inventory.
+
+#### 4. Start eStock and log in
+
+```bash
 npm run dev
 ```
 
-Open http://localhost:3000/demo. If you use an existing PostgreSQL server, skip the Compose command. Migrations upgrade the schema without resetting existing inventory. Preserve the database volume and existing session secret when updating the application.
+Keep the terminal running and open **http://localhost:3000/demo**. Select **Manager**, enter **`Manager`** in Access code and click **Sign in**. For Staff, select **Staff** and enter **`Staff`**. Follow the Manager and Staff workflows in Option 1.
 
-The active demo uses real backend extraction, with no mock scan fallback. A Gemini failure leaves stock unchanged. The local-only `ESTOCK_DEMO_ALLOW_SHARED_PASSWORD=true` exception is available during development; production requires separate Manager and Staff passwords. Legacy SQLite/RunPod variables in `.env.example` are not required for this workflow.
+A fresh local database starts with its own records; it does not download inventory from the public Replit demo. Local Manager and Staff sessions share whichever database you configured in `DATABASE_URL`.
+
+To stop the development server, press **Ctrl+C**. Run `npm run dev` again to restart it. Keep the Docker database volume and existing session secret when updating your local copy. After editing `.env.local`, restart the server so you can confirm it is using the intended configuration.
+
+For a local production build, stop the development server and run:
+
+```bash
+npm run build
+npm run start
+```
+
+### Troubleshooting
+
+| What you see | What to check |
+| --- | --- |
+| Incorrect account password | Select Manager and enter `Manager`, or select Staff and enter `Staff`. Passwords are case-sensitive. For your own copy, check that the environment variables contain those exact values |
+| Authentication is not configured | Set both account passwords and a session secret of at least 32 characters. For Replit, check the environment used by the failing app: Preview or the published deployment |
+| Could not connect to the database | Start PostgreSQL, check `DATABASE_URL` and run `npm run db:estock:migrate`. Replit needs a hosted connection rather than your laptop's `127.0.0.1` address |
+| Document extraction fails | Check the image format and size, `GEMINI_API_KEY`, access to `gemini-3.8-flash`, and provider quota/availability. Check Drafts before retrying in case a draft was already created |
+| Staff has no pending check | Manager must finish the draft and click Send to Staff. Confirm both sessions use the same app/database and refresh Pending checks |
+| Stock has not increased after scanning | Staff must confirm the actual received quantities. Scanning and Send to Staff leave stock unchanged |
+| A production secret change has not appeared | Confirm the new value in production secrets and republish the Replit app |
+
+Document extraction calls Gemini through the backend. A provider failure leaves stock unchanged; there is no mock scan fallback in the active app.
 
 ### Run Tests
 
