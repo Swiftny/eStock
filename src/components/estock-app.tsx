@@ -1426,7 +1426,7 @@ function ProductDialog({
         </label>
         {openingLocked ? (
           <p className={styles.infoNotice}>
-            This product starts at 0. The reviewed receipt quantity will be added once when you
+            This product starts at 0. The reviewed receipt quantity will be added once when
             Staff confirms the receipt.
           </p>
         ) : (
