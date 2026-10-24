@@ -120,6 +120,7 @@
   line-height: 1;
   letter-spacing: -0.075em;
   text-decoration: none;
+  white-space: nowrap;
 }
 .wordmark span {
   color: var(--brand);
@@ -472,6 +473,38 @@
 .field select:disabled {
   background: var(--surface-soft);
   color: var(--muted);
+}
+.secretInput {
+  position: relative;
+}
+.field .secretInput input {
+  padding-right: 48px;
+}
+.secretInput button {
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.secretInput button:hover {
+  color: var(--ink);
+}
+.secretInput button:active {
+  color: var(--brand);
+}
+.secretInput button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 .field small {
   color: var(--muted);
