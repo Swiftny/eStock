@@ -195,6 +195,7 @@ table,
   font-weight: 750;
   letter-spacing: -0.075em;
   line-height: 1;
+  white-space: nowrap;
 }
 .wordmark > span {
   color: var(--green);

@@ -120,6 +120,7 @@
   line-height: 1;
   letter-spacing: -0.075em;
   text-decoration: none;
+  white-space: nowrap;
 }
 .wordmark span {
   color: var(--brand);
